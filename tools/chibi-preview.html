@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><body style="background:#10131a;margin:0">
+<canvas id="c" width="1500" height="640"></canvas>
+<script type="module">
+import { drawChar } from '../src/render/chibi.js';
+const g = document.getElementById('c').getContext('2d');
+const ids = ['tingge','tiaotiao','gouqi','shenshen','enjidou','laoliu','laijie'];
+ids.forEach((id, i) => {
+  g.save(); g.translate(120 + i * 205, 330); g.scale(5, 5); drawChar(g, id, { t: 0.6, moving: false, atk: 0, aim: 0.1 }); g.restore();
+  g.save(); g.translate(70 + i * 205, 480); g.scale(2, 2); drawChar(g, id, { t: 1.1, moving: true, atk: 0.5, aim: 0.3 }); g.restore();
+  g.save(); g.translate(170 + i * 205, 480); g.scale(-2, 2); drawChar(g, id, { t: 1.4, moving: true, atk: 0, aim: -0.3 }); g.restore();
+  g.save(); g.translate(70 + i * 205, 600); drawChar(g, id, { t: 1.1, moving: false, atk: 0.3, aim: 0 }); g.restore();
+  g.save(); g.translate(150 + i * 205, 600); drawChar(g, id, { t: 1.1, moving: false, atk: 0, aim: 0, down: true }); g.restore();
+});
+window.done = true;
+</script>

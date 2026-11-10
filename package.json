@@ -1,0 +1,11 @@
+{
+  "name": "untag-survivors",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "UNTAG 倖存戰線 — 4 人連線合作的關卡型倖存者遊戲",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "simtest": "node tools/simtest.mjs"
+  }
+}
