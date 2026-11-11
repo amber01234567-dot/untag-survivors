@@ -204,15 +204,15 @@ W('mines', {
   ],
 });
 W('cheer', {
-  name: '爆蕉號', glyph: '車', beh: 'kart', proj: 'kart',
-  base: { dmg: 20, cd: 1.5, count: 1, speed: 560, life: 0.75, range: 430, pierce: 99, kb: 180, r: 185, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3 },
+  name: '爆蕉號', glyph: '車', beh: 'ram',
+  base: { dmg: 15, hitCd: 0.45, ramR: 44, kb: 220, boostCd: 2.4, boostMul: 2.4, boostDist: 130, r: 185, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3, armorAdd: 2 },
   lv: [
-    ['引擎聲浪範圍 +20%', { m: { r: 1.2 } }],
+    ['衝撞傷害 +25%', { m: { dmg: 1.25 } }],
     ['加速：隊友攻速與移速加成提升至 14%', { s: { buffHaste: 0.14, buffSpeed: 0.14 } }],
-    ['傷害 +35%', { m: { dmg: 1.35 } }],
+    ['氮氣衝刺冷卻 -20%', { m: { boostCd: 0.8 } }],
     ['引擎聲浪同時提升 14% 攻擊力', { s: { buffDmg: 0.14 } }],
-    ['一次放出 2 台卡丁車', { a: { count: 1 }, s: { spread: 0.5 } }],
-    ['攻速與移速加成提升至 22%，冷卻 -22%', { s: { buffHaste: 0.22, buffSpeed: 0.22 }, m: { cd: 0.78 } }],
+    ['衝撞範圍 +30%，氮氣衝刺距離 +30%', { m: { ramR: 1.3, boostDist: 1.3 } }],
+    ['攻速與移速加成提升至 22%，氮氣衝刺留下火焰', { s: { buffHaste: 0.22, buffSpeed: 0.22, trail: 1 } }],
   ],
 });
 W('drones', {

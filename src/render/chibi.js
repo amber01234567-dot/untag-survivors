@@ -250,7 +250,7 @@ function placeholder(g, p, def) {
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
 const H_DEFAULT = 82;
-const H = { moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
+const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 function loadImg(name) {
   if (IMG[name]) return IMG[name].p;

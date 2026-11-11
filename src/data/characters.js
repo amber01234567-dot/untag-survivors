@@ -145,8 +145,8 @@ C({
 });
 C({
   id: 'qiqiu', name: '起秋', en: 'QI QIU', role: 'support', cls: 'Rider', species: '擬人化香蕉',
-  hp: 100, speed: 160, armor: 0, weapon: 'cheer', unlock: 0, sheet: true,
-  quote: '引擎已經預熱，勝利只是剛好而已。', desc: '傳奇香蕉車手。放出卡丁車「爆蕉號」衝撞貫穿敵人，引擎聲浪讓附近的隊友攻速、移速全面加快。',
+  hp: 125, speed: 172, armor: 0, weapon: 'cheer', unlock: 0, sheet: true,
+  quote: '引擎已經預熱，勝利只是剛好而已。', desc: '傳奇香蕉車手，全程開著卡丁車「爆蕉號」。直接衝撞輾過敵人，移動中會自動發動氮氣衝刺；引擎聲浪讓附近的隊友攻速、移速全面加快。',
   skill: { id: 'qq_morale', name: '蕉影漂移', cd: 12, desc: '附近隊友 6 秒內攻擊、攻速、移速全面提升。' },
   ult: { id: 'qq_amp', name: '全速蕉進・終點無規則', charge: 200, desc: '全隊 10 秒內傷害與攻速大幅提升，回復生命並重置技能冷卻。' },
 });

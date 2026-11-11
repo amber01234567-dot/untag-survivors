@@ -1,7 +1,7 @@
 // 武器行為。每個行為是 (W, p, w, dt) => void；w.s 是當前等級的數值，w.t 是冷卻計時。
 // 新武器若能用既有行為 + 不同數值組合出來，就只需要改 data/weapons.js。
 import { TAU, angDiff, dist2 } from '../core/util.js';
-import { bHaste, addBuff } from './player.js';
+import { bHaste, addBuff, dash } from './player.js';
 import { solidAt } from './levelgen.js';
 
 const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5 };
@@ -306,7 +306,26 @@ export const BEH = {
     volley(W, p, w, a, s, null);
   },
 
-// 起秋：放出卡丁車衝撞貫穿，同時以引擎聲浪為附近隊友加速
+// 起秋：開著卡丁車直接衝撞。碰到的敵人持續受傷並被撞開；移動中會定期自動氮氣衝刺。
+  ram(W, p, w, dt) {
+    const s = w.s, R = s.ramR * p.st.area, mv = p.moving ? 1 : 0.5;
+    if (!p.dash) W.hash.query(p.x, p.y, R, (e) => {
+      const ot = e.ot || (e.ot = {});
+      if ((ot[w.uid] || 0) > W.time) return;
+      ot[w.uid] = W.time + s.hitCd / bHaste(p);
+      W.strike(p, e, s.dmg * mv, { kb: s.kb * mv, sx: p.x, sy: p.y });
+    });
+    w.t -= dt * bHaste(p);
+    if (w.t > 0 || !p.moving || p.dash || !W.nearestEnemy(p.x, p.y, 260)) return;
+    w.t = s.boostCd * p.st.cd; p.atkN++;
+    const a = Math.atan2(p.in.my, p.in.mx); p.atkA = a;
+    const x0 = p.x, y0 = p.y;
+    dash(p, a, s.boostDist, 0.2, { dmg: s.dmg * s.boostMul, hitR: R + 14, hitOpt: { kb: s.kb * 1.8, stun: 0.3 },
+      onEnd(W2, q) { if (s.trail) W2.addZone({ kind: 'fire', owner: q, x: (x0 + q.x) / 2, y: (y0 + q.y) / 2, r: 62, dur: 2.5, tick: 0.4, dmg: s.dmg * 0.5, hitOpt: { quiet: true } }); } });
+    W.playersIn(p.x, p.y, s.r * p.st.area, (q) => addBuff(q, 'cheer', { t: s.buffDur, dmg: s.buffDmg, haste: s.buffHaste, speed: s.buffSpeed || 0 }));
+    W.emit('r', p.x | 0, p.y | 0, (s.r * p.st.area) | 0, 4);
+  },
+  // （舊）放出卡丁車衝撞貫穿
   kart(W, p, w, dt) {
     const s = w.s;
     w.t -= dt * bHaste(p);

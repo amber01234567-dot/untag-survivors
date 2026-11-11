@@ -135,11 +135,11 @@ export const SPRITE_SHEETS = {
  "qiqiu": {
   "px": 250,
   "walk": [
-   138,
+   294,
    255
   ],
   "attack": [
-   184,
+   407,
    254
   ]
  },

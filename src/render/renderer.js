@@ -107,7 +107,7 @@ export class Renderer {
     let aim = flip ? Math.PI - p.atkA : p.atkA;
     if (a.atkT > 0.5) aim = flip ? Math.PI - p.aim : p.aim;
     aim = Math.atan2(Math.sin(aim), Math.cos(aim));
-    const dur = info.charId === 'tingge' ? 0.16 : info.charId === 'laoliu' ? 0.34 : 0.24;
+    const dur = info.charId === 'tingge' ? 0.16 : info.charId === 'laoliu' ? 0.34 : info.charId === 'qiqiu' ? 0.3 : 0.24;
     // 影子與腳下光圈
     g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(p.x, p.y, 15 - p.jz * 0.05, 6 - p.jz * 0.02, 0, 0, TAU); g.fill();
     g.strokeStyle = col; g.lineWidth = 2; g.globalAlpha = down ? 0.35 : 0.75; g.beginPath(); g.ellipse(p.x, p.y, 19, 8, 0, 0, TAU); g.stroke(); g.globalAlpha = 1;

@@ -84,7 +84,7 @@ export class Screens {
         <button class="btn ghost" data-a="roster">角色</button>
         <button class="btn ghost" data-a="talents">天賦強化</button>
       </div>
-      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a></div>
+      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 UNTAG 倖存戰線・版權所有</div>
     </div>`;
   }
 

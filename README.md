@@ -98,3 +98,7 @@ node tools/simtest.mjs 1-4 all            # 每個角色用機器人跑一次 1-
 node tools/simtest.mjs 2-B tingge,laijie 2 0 0.5   # 2 人、普通難度、局外養成 50% 的狀態打 2-B
 ```
 輸出通關與否、時間、等級、最低血量、各自傷害 / 治療，用來粗估難度曲線。
+
+## 版權
+
+版權所有，未經同意不得使用本專案的程式碼與美術素材。詳見 [LICENSE.md](LICENSE.md)。
