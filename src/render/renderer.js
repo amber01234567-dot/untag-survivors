@@ -538,8 +538,8 @@ function magicCircle(g, x, y, r, t, col, alpha, big) {
 }
 function wisp(g, x, y, s, digit, t) {
   g.save(); g.translate(x, y); g.globalCompositeOperation = 'lighter';
-  for (const [r, c] of [[s * 1.5, 'rgba(90,110,255,.3)'], [s, 'rgba(140,170,255,.6)']]) { g.fillStyle = c; g.beginPath(); g.moveTo(-r * 0.75, 0); g.quadraticCurveTo(-r * 0.9, -r * 1.2, Math.sin(t * 9) * r * 0.3, -r * 1.9); g.quadraticCurveTo(r * 0.9, -r * 1.2, r * 0.75, 0); g.arc(0, 0, r * 0.75, 0, Math.PI); g.fill(); }
+  for (const [r, c] of [[s * 1.5, 'rgba(40,200,120,.34)'], [s, 'rgba(120,255,180,.66)']]) { g.fillStyle = c; g.beginPath(); g.moveTo(-r * 0.75, 0); g.quadraticCurveTo(-r * 0.9, -r * 1.2, Math.sin(t * 9) * r * 0.3, -r * 1.9); g.quadraticCurveTo(r * 0.9, -r * 1.2, r * 0.75, 0); g.arc(0, 0, r * 0.75, 0, Math.PI); g.fill(); }
   g.globalCompositeOperation = 'source-over';
-  g.font = `900 ${s * 1.3}px "Courier New", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = digit >= 9 ? '#ffd23c' : '#ffffff'; g.strokeStyle = '#1a1f5a'; g.lineWidth = 2.5; g.strokeText(digit, 0, -s * 0.1); g.fillText(digit, 0, -s * 0.1);
+  g.font = `900 ${s * 1.3}px "Courier New", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = digit >= 9 ? '#ffd23c' : '#ffffff'; g.strokeStyle = '#06301c'; g.lineWidth = 2.5; g.strokeText(digit, 0, -s * 0.1); g.fillText(digit, 0, -s * 0.1);
   g.restore();
 }

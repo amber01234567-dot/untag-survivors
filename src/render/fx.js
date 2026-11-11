@@ -5,7 +5,7 @@ import { FXS, tinted } from './fxsprites.js';
 
 const BOOM = [
   ['#ffb347', '#ff7a2f'], ['#ffd76b', '#ff6a2f'], ['#7dffb0', '#2fd67a'], ['#ff6b6b', '#c91f3f'], ['#ff9aa6', '#e0142d'],
-  ['#fff3c4', '#ffc53d'], ['#b7a6ff', '#6b5bff'], ['#e9f6ff', '#7cc7ff'], ['#ffb347', '#ff4d2f'], ['#ffe9a8', '#ff8a2f'],
+  ['#fff3c4', '#ffc53d'], ['#a8ffd0', '#1fbf7a'], ['#e9f6ff', '#7cc7ff'], ['#ffb347', '#ff4d2f'], ['#ffe9a8', '#ff8a2f'],
   ['#b9fffb', '#2de2e6'], ['#a8ffd0', '#1fbf7a'], ['#ff6bd6', '#ffd76b'],
 ];
 const RING = ['#aab2c2', '#ffc53d', '#5dff9d', '#ffd76b', '#ff8fd0', '#9fe8ff', '#b56bff', '#2de2e6'];
