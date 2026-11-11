@@ -2,9 +2,9 @@
 // 房主自己也走同一個 snapOf → View 的路徑，所以房主與客戶端的畫面邏輯完全一致。
 import { buffBits, bHaste } from '../sim/player.js';
 
-export const PROTO = 4;
+export const PROTO = 5;
 const STATES = ['play', 'levelup', 'won', 'lost'];
-const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd'];
+const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin'];
 
 export function snapOf(W) {
   const s = {
@@ -21,7 +21,7 @@ export function snapOf(W) {
       fl: (p.down ? 1 : 0) | (p.moving ? 2 : 0) | (p.hurt > 0 ? 4 : 0) | (p.jump ? 8 : 0) | (p.dash ? 16 : 0) | (p.gone ? 32 : 0),
       rev: Math.round(p.reviveP * 100), atkN: p.atkN & 1023, atkA: Math.round(p.atkA * 100) / 100,
       cdP: Math.max(0, Math.round(p.skillCd / (p.def.skill.cd * p.st.cd) * 100)), ult: Math.floor(p.ult / p.ultMax * 100),
-      buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd),
+      buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd), skin: p.weapons[0] && p.weapons[0].def.skin ? 1 : 0,
     });
   }
   for (const e of W.enemies) {

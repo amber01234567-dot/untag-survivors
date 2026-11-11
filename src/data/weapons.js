@@ -260,7 +260,7 @@ W('rocket', {
   ],
 });
 W('siege', {
-  name: '攻城甲', glyph: '甲', beh: 'melee', fx: 'heavy', path: true,
+  name: '攻城甲', glyph: '甲', beh: 'melee', fx: 'heavy', path: true, skin: 'siege',
   branchDesc: '近戰路線：穿上攻城甲，護甲與生命提升，改用重拳橫掃並擊退敵人。',
   base: { dmg: 42, cd: 0.8, range: 108, arc: 2.6, kb: 340, armorAdd: 4, hpMul: 1.15, combo: 0, comboMul: 2, comboR: 125 },
   lv: [

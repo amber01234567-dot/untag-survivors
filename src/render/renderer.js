@@ -116,7 +116,7 @@ export class Renderer {
     if (p.buffs & BUFF_BITS.stealth) g.globalAlpha = 0.4;
     else if ((p.buffs & BUFF_BITS.invuln) && !down && Math.sin(t * 30) > 0.3) g.globalAlpha = 0.6;
     if (p.fl & 4) g.translate((Math.random() - 0.5) * 3, 0);
-    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip });
+    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin });
     g.restore();
     if (p.shield > 0) { g.strokeStyle = 'rgba(160,220,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(p.x, p.y - 26 - p.jz, 24, 34, 0, 0, TAU); g.stroke(); g.fillStyle = 'rgba(160,220,255,.08)'; g.fill(); }
     if (p.buffs & (BUFF_BITS.dmg | BUFF_BITS.haste)) { const c = p.buffs & BUFF_BITS.dmg ? '#ff7a5a' : '#ffe06b'; g.fillStyle = c; for (let i = 0; i < 3; i++) { const yy = ((t * 50 + i * 21 + p.id * 9) % 60); g.globalAlpha = 1 - yy / 60; g.fillRect(p.x - 16 + i * 14, p.y - 6 - yy, 2, 7); } g.globalAlpha = 1; }

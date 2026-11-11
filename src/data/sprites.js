@@ -99,6 +99,17 @@ export const SPRITE_SHEETS = {
    254
   ]
  },
+ "moumou_siege": {
+  "px": 250,
+  "walk": [
+   228,
+   256
+  ],
+  "attack": [
+   267,
+   254
+  ]
+ },
  "moumou": {
   "px": 250,
   "walk": [

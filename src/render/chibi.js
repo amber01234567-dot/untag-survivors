@@ -250,7 +250,7 @@ function placeholder(g, p, def) {
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
 const H_DEFAULT = 82;
-const H = { xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
+const H = { moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 function loadImg(name) {
   if (IMG[name]) return IMG[name].p;
@@ -291,7 +291,8 @@ export function drawChar(g, charId, pose) {
   if (pose.down) { g.translate(0, -5); g.rotate(-1.45); g.globalAlpha *= 0.75; }
   if (sc !== 1 && !hasSprite(charId)) g.scale(sc, sc);
   g.lineJoin = 'round';
-  if (hasSprite(charId)) spriteLook(g, pose, charId); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
+  const sid = pose.skin && hasSprite(charId + '_siege') ? charId + '_siege' : charId;      // 路線造型
+  if (hasSprite(sid)) spriteLook(g, pose, sid); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
   g.restore();
 }
 
