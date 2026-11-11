@@ -9,7 +9,7 @@ export function spawnEnemy(W, id, x, y, o = {}) {
   const hp = def.hp * W.hpMul * (el ? 10 : 1) * (o.hpMul || 1) * (def.boss ? 1 : 1 + W.ctl.cleared * 0.12);
   const e = {
     id: (W.eid = (W.eid % 65000) + 1), def, x, y, r: def.r * (el ? 1.45 : 1), hp, maxHp: hp,
-    speed: def.speed * (el ? 1.12 : 1) * W.rng.range(0.92, 1.08), dmg: def.dmg * W.dmgMul * (el ? 1.5 : 1), elite: !!el,
+    speed: def.speed * (el ? 1.12 : 1) * W.rng.range(0.92, 1.08), dmg: def.dmg * W.dmgMul * (el ? 1.3 : 1), elite: !!el,
     kx: 0, ky: 0, slowT: 0, slowF: 0, stunT: 0, dot: 0, dotT: 0, dotAcc: 0, dotP: null, mark: 0, flash: 0, hitCd: 0.4,
     spawnT: o.instant ? 0 : 0.55, st: 0, t: W.rng.range(0, 10), fdx: 0, fdy: 0, zone: o.zone === undefined ? -1 : o.zone,
     face: 1, tgt: null, ai: {}, dead: false, noDrop: !!o.noDrop,
@@ -35,7 +35,7 @@ export function updateEnemy(W, e, dt) {
   if (e.stunT > 0) { e.stunT -= dt; return; }
   let speed = e.speed;
   if (e.slowT > 0) { e.slowT -= dt; speed *= 1 - e.slowF; }
-  if (!e.tgt || e.tgt.down || e.tgt.gone || e.tgt.stealth > 0 || (W.tickN + e.id) % 30 === 0) e.tgt = W.nearestPlayer(e.x, e.y);
+  if (!e.tgt || e.tgt.down || e.tgt.gone || e.tgt.stealth > 0 || (W.tickN + e.id) % 30 === 0) e.tgt = pickTarget(W, e);
   AI[def.ai](W, e, dt, speed);
   if (e.dead) return;
   // 接觸傷害
@@ -43,7 +43,7 @@ export function updateEnemy(W, e, dt) {
     for (const p of W.players) {
       if (p.down || p.gone) continue;
       const rr = e.r + 13;
-      if (dist2(e.x, e.y, p.x, p.y - 6) < rr * rr) { W.damagePlayer(p, e.dmg * (e.st === 2 && (def.ai === 'charger' || def.boss) ? 1.3 : def.boss ? 0.55 : 1)); e.hitCd = def.boss ? 1 : 0.7; break; }
+      if (dist2(e.x, e.y, p.x, p.y - 6) < rr * rr) { W.damagePlayer(p, e.dmg * (e.st === 2 && (def.ai === 'charger' || def.boss) ? 1.15 : def.boss ? 0.5 : 1)); e.hitCd = def.boss ? 1 : 0.7; break; }
     }
   }
   // 互相推擠
@@ -58,12 +58,17 @@ export function updateEnemy(W, e, dt) {
   }
 }
 
+// 誘餌優先：在吸引範圍內的一般敵人會改追誘餌
+function pickTarget(W, e) {
+  if (W.decoys.length && !e.def.boss && !e.def.structure) for (const d of W.decoys) if (!d.gone && dist2(e.x, e.y, d.x, d.y) < d.r * d.r) return d;
+  return W.nearestPlayer(e.x, e.y);
+}
 function seek(W, e, dt, speed, tx, ty) {
   const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1;
   if (e.def.fly) { e.x += dx / d * speed * dt; e.y += dy / d * speed * dt; }
   else {
     if ((W.tickN + e.id) % 6 === 0 || e.fdx === undefined) e.fd = W.flow.dir(e);
-    if (d < 64 || e.fd <= 2 || (!e.fdx && !e.fdy)) moveBody(W.L, e, dx / d * speed * dt, dy / d * speed * dt, e.r * 0.6);
+    if (d < 64 || e.fd <= 2 || (!e.fdx && !e.fdy) || (e.tgt && e.tgt.isDecoy)) moveBody(W.L, e, dx / d * speed * dt, dy / d * speed * dt, e.r * 0.6);
     else moveBody(W.L, e, e.fdx * speed * dt, e.fdy * speed * dt, e.r * 0.6);
   }
   if (Math.abs(dx) > 6) e.face = dx > 0 ? 1 : -1;
@@ -160,7 +165,7 @@ const AI = {
   nest(W, e, dt) {
     e.ai.t = (e.ai.t === undefined ? 1.5 : e.ai.t) - dt;
     if (e.ai.t > 0) return;
-    e.ai.t = 3.2 / Math.sqrt(W.rateMul);
+    e.ai.t = 4 / Math.sqrt(W.rateMul);
     if (W.enemies.length > 240) return;
     const a = W.rng.range(0, TAU), x = e.x + Math.cos(a) * 44, y = e.y + Math.sin(a) * 44;
     if (!solidAt(W.L, x, y)) spawnEnemy(W, W.rng.weighted(W.stage.pool), x, y, { zone: e.zone });

@@ -51,6 +51,7 @@ function wrapPeerConn(c) {
 
 function peerHost(code) {
   return new Promise((resolve, reject) => {
+    if (!window.Peer || !window.RTCPeerConnection) return reject(new Error('這個頁面只支援單人試玩；連線遊玩需要把遊戲部署到自己的網址'));
     const peer = new window.Peer(PREFIX + code, peerOpts());
     const host = { onConn: null, close() { peer.destroy(); } };
     let opened = false, retries = 0;
@@ -63,6 +64,7 @@ function peerHost(code) {
 }
 function peerJoin(code) {
   return new Promise((resolve, reject) => {
+    if (!window.Peer || !window.RTCPeerConnection) return reject(new Error('這個頁面只支援單人試玩；連線遊玩需要把遊戲部署到自己的網址'));
     const peer = new window.Peer(peerOpts());
     const to = setTimeout(() => { peer.destroy(); reject(new Error('連線逾時，請確認房號或換個網路環境再試')); }, 15000);
     peer.on('open', () => {

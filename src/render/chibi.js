@@ -3,6 +3,7 @@
 //
 // pose = { t 時間, moving 是否移動, atk 攻擊動畫進度 0..1 (0=無), aim 相對朝向的瞄準角, down 倒地, cast 施法閃光 0..1 }
 import { ROLES, CHARS } from '../data/characters.js';
+import { SPRITE_SHEETS } from '../data/sprites.js';
 
 const INK = '#07080c', RIM = '#3b4252';
 const TAU = Math.PI * 2;
@@ -244,7 +245,41 @@ function placeholder(g, p, def) {
   arm(g, 8, ty - 15, 10 + Math.cos(a) * (6 + sw * 8), ty - 8 + Math.sin(a) * (6 + sw * 8), '#171920', 5.2);
 }
 
-export function hasLook(id) { return !!LOOKS[id]; }
+// ───── 圖片角色（逐格動畫） ─────
+// 每個角色兩張圖集：走路 4 格、攻擊 4 格（最後一格同時當待機姿勢），由 tools/build_sprites.py 產生。
+// 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
+// H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
+const H_DEFAULT = 82;
+const H = { xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
+const IMG = {};
+function loadImg(name) {
+  if (IMG[name]) return IMG[name].p;
+  const im = new Image(), rec = { im, ok: false };
+  rec.p = new Promise((res) => { im.onload = () => { rec.ok = true; res(); }; im.onerror = () => res(); });
+  im.src = new URL(`../../assets/sprites/${name}.png`, import.meta.url).href;
+  IMG[name] = rec;
+  return rec.p;
+}
+export function loadSprites() {
+  const ps = [];
+  for (const id in SPRITE_SHEETS) ps.push(loadImg(id + '_walk'), loadImg(id + '_attack'));
+  return Promise.all(ps);
+}
+const hasSprite = (id) => !!(SPRITE_SHEETS[id] && IMG[id + '_walk'] && IMG[id + '_walk'].ok && IMG[id + '_attack'].ok);
+// 角色頭頂高度（給名字與血條定位用）
+export function charHeight(id) { const d = CHARS[id]; return (hasSprite(id) ? H[id] || H_DEFAULT : 60 * ((d && d.small) || 1)); }
+export function setAnimMode() {}
+function spriteLook(g, p, id) {
+  const m = SPRITE_SHEETS[id], atk = p.atk > 0, useAtk = atk || !p.moving;
+  const sheet = IMG[id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk;
+  const i = atk ? Math.min(3, Math.floor(p.atk * 4)) : p.moving ? Math.floor(p.t * 9) % 4 : 3;
+  const sc = (H[id] || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
+  g.save(); g.scale(1 / (1 + breathe), 1 + breathe); g.imageSmoothingQuality = 'high';
+  g.drawImage(sheet, i * cw, 0, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
+  g.restore();
+}
+
+export function hasLook(id) { return !!LOOKS[id] || !!SPRITE_SHEETS[id]; }
 
 // 畫在 (0,0) 為腳底的位置；pose.flip = true 時朝左（aim 需已換算成相對朝向的角度）
 export function drawChar(g, charId, pose) {
@@ -254,9 +289,9 @@ export function drawChar(g, charId, pose) {
   FLIP = !!pose.flip;
   if (FLIP) g.scale(-1, 1);
   if (pose.down) { g.translate(0, -5); g.rotate(-1.45); g.globalAlpha *= 0.75; }
-  if (sc !== 1) g.scale(sc, sc);
+  if (sc !== 1 && !hasSprite(charId)) g.scale(sc, sc);
   g.lineJoin = 'round';
-  if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
+  if (hasSprite(charId)) spriteLook(g, pose, charId); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
   g.restore();
 }
 
@@ -270,8 +305,8 @@ export function portrait(charId, size = 160) {
     m.width = m.height = Math.round(size * dpr);
     const g = m.getContext('2d');
     g.scale(dpr, dpr);
-    const s = size / 78;
-    g.translate(size / 2 - 2 * s, size * 0.9); g.scale(s, s);
+    const sp = hasSprite(charId), s = size / (sp ? charHeight(charId) + 8 : 78);       // 圖片立繪比較高，縮一點才不會切到頭
+    g.translate(size / 2 - (sp ? 0 : 2 * s), size * (sp ? 0.96 : 0.9)); g.scale(s, s);
     drawChar(g, charId, { t: 0.6, moving: false, atk: 0, aim: 0.15, down: false });
     portraitCache.set(key, m);
   }

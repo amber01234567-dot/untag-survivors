@@ -126,7 +126,7 @@ export function buildLevel(stage, seed) {
       else if (r < 0.15) deco.push({ t: 'sign', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
     } else if (t === T_FLOOR) {
       const r = rng.next();
-      if (r < 0.022) deco.push({ t: 'decal', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
+      if (r < 0.011) deco.push({ t: 'decal', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
     }
   }
   for (const l of links) lights.push({ x: l.x, y: l.y, r: 170, v: 7, gate: l.idx });

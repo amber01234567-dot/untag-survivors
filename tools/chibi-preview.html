@@ -1,15 +1,25 @@
-<!doctype html><meta charset="utf-8"><body style="background:#10131a;margin:0">
-<canvas id="c" width="1500" height="640"></canvas>
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#2a3140">
+<canvas id="c" width="1280" height="720"></canvas>
 <script type="module">
-import { drawChar } from '../src/render/chibi.js';
-const g = document.getElementById('c').getContext('2d');
-const ids = ['tingge','tiaotiao','gouqi','shenshen','enjidou','laoliu','laijie'];
-ids.forEach((id, i) => {
-  g.save(); g.translate(120 + i * 205, 330); g.scale(5, 5); drawChar(g, id, { t: 0.6, moving: false, atk: 0, aim: 0.1 }); g.restore();
-  g.save(); g.translate(70 + i * 205, 480); g.scale(2, 2); drawChar(g, id, { t: 1.1, moving: true, atk: 0.5, aim: 0.3 }); g.restore();
-  g.save(); g.translate(170 + i * 205, 480); g.scale(-2, 2); drawChar(g, id, { t: 1.4, moving: true, atk: 0, aim: -0.3 }); g.restore();
-  g.save(); g.translate(70 + i * 205, 600); drawChar(g, id, { t: 1.1, moving: false, atk: 0.3, aim: 0 }); g.restore();
-  g.save(); g.translate(150 + i * 205, 600); drawChar(g, id, { t: 1.1, moving: false, atk: 0, aim: 0, down: true }); g.restore();
-});
-window.done = true;
+// 全角色動作預覽：待機 → 走路 → 攻擊 循環
+import { drawChar, loadSprites } from '../src/render/chibi.js';
+import { SPRITE_SHEETS } from '../src/data/sprites.js';
+import { CHARS } from '../src/data/characters.js';
+await loadSprites();
+const NAMES = { moumou: '哞哞', laojin: '老瑾', nongfu: '農夫哥哥' };
+const ids = ['laoliu','xia','gouqi','tingge','shaonian','moumou','enjidou','yingzhang','shenshen','tk','feijie','hajimi','wangchuan','laijie','yangdidi','allen','tiaotiao','qiqiu','maomaochong','xiaoshunzi','laojin','nongfu'].filter((i) => SPRITE_SHEETS[i]);
+const g = document.getElementById('c').getContext('2d'), F = '"Noto Sans TC","WenQuanYi Zen Hei",sans-serif', t0 = performance.now();
+(function frame() {
+  const t = (performance.now() - t0) / 1000, ph = t % 9, moving = ph >= 3 && ph < 6, attacking = ph >= 6;
+  const at = (t % 0.8) / 0.36, atk = attacking && at < 1 ? at : 0;
+  g.fillStyle = '#2a3140'; g.fillRect(0, 0, 1280, 720);
+  ids.forEach((id, i) => {
+    const x = 85 + (i % 8) * 158, y = 205 + Math.floor(i / 8) * 232;
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x, y, 40, 10, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y); g.scale(2.1, 2.1); drawChar(g, id, { t: t + i * 0.13, moving, atk, aim: 0, down: false, flip: false }); g.restore();
+    g.fillStyle = '#ffd76b'; g.font = `700 17px ${F}`; g.textAlign = 'center'; g.fillText(NAMES[id] || (CHARS[id] && CHARS[id].name) || id, x, y + 24);
+  });
+  g.fillStyle = '#fff'; g.font = `700 22px ${F}`; g.textAlign = 'center'; g.fillText(ph < 3 ? '待機' : ph < 6 ? '走路' : '攻擊', 640, 706);
+  requestAnimationFrame(frame);
+})();
 </script>

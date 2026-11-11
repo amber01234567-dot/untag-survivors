@@ -10,9 +10,11 @@ import { SLOT_COLORS } from '../render/renderer.js';
 import { fmt } from '../core/util.js';
 import { save } from '../core/save.js';
 import { sfx } from '../core/audio.js';
+import { icon, optIcon } from './icons.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const CAT_COL = { 專屬武器: '#ffd76b', 副武器: '#ff8fd0', 被動: '#2de2e6', 補給: '#5dff9d' };
+const ICON = (id) => new URL(`../../assets/ui/skills/${id}.png`, import.meta.url).href;
+const CAT_COL = { 路線分支: '#ff8a5a', 專屬武器: '#ffd76b', 副武器: '#ff8fd0', 被動: '#2de2e6', 補給: '#5dff9d' };
 
 export class Hud {
   constructor(app) {
@@ -39,8 +41,8 @@ export class Hud {
       <div class="tr"><div class="time">0:00</div><div class="dim" style="font-size:11px">${st.id} ${st.name}・${DIFFS[msg.diff].name}</div><div>擊殺 <span class="kills">0</span></div><div class="coin gold coins">0</div><div class="net"></div>
         <button class="btn small ghost pausebtn" id="btn-pause">選單<span> (Esc)</span></button></div>
       <div class="skills">
-        <button class="skbtn" id="btn-skill" style="--c:#9fe8ff"><div class="cd"></div><div class="g">技</div><div class="key">空白鍵</div><div class="nm">${def.skill.name}</div></button>
-        <button class="skbtn" id="btn-ult" style="--c:#ffd76b"><div class="fill"></div><div class="g">寶</div><div class="key">Q</div><div class="nm">${def.ult.name}</div></button>
+        <button class="skbtn" id="btn-skill" style="--c:#2de2e6"><img class="ic" alt="" src="${ICON(def.skill.id)}" onerror="this.remove()"><div class="g">技</div><div class="cd"></div><div class="key">空白鍵</div><div class="nm">${def.skill.name}</div></button>
+        <button class="skbtn ult" id="btn-ult" style="--c:#ffd76b"><img class="ic" alt="" src="${ICON(def.ult.id)}" onerror="this.remove()"><div class="g">寶</div><div class="fill"></div><div class="key">Q</div><div class="nm">${def.ult.name}</div></button>
       </div>`;
     this.el.querySelector('#hp-port').replaceWith(portrait(def.id, 62));
     this.el.classList.remove('hidden');
@@ -50,7 +52,7 @@ export class Hud {
     this.app.input.bindButton(this.r.sk, 1); this.app.input.bindButton(this.r.ult, 2);
     q('#btn-pause').addEventListener('click', () => this.togglePause());
     rt.onChoices = (m) => this.onChoices(m);
-    rt.onPicked = (o) => { if (o.k !== 'w' && o.k !== 'p') return; const b = this.build.find((x) => x.k === o.k && x.id === o.id); if (b) b.lv = o.lv; else this.build.push({ k: o.k, id: o.id, lv: o.lv }); this.renderBuild(); };
+    rt.onPicked = (o) => { if (o.k !== 'w' && o.k !== 'p') return; if (o.replace) this.build = this.build.filter((x) => !(x.k === 'w' && x.id === o.replace)); const b = this.build.find((x) => x.k === o.k && x.id === o.id); if (b) b.lv = o.lv; else this.build.push({ k: o.k, id: o.id, lv: o.lv }); this.renderBuild(); };
     this.renderBuild(); this.objKey = '';
   }
   stop() { this.el.classList.add('hidden'); this.el.innerHTML = ''; document.getElementById('touch').classList.add('hidden'); this.closeModal(); this.rt = null; }
@@ -82,7 +84,7 @@ export class Hud {
     }
   }
   renderBuild() {
-    this.r.build.innerHTML = this.build.map((b) => { const d = b.k === 'w' ? WEAPONS[b.id] : PASSIVES[b.id]; return `<span class="glyph" style="--c:${b.k === 'w' ? '#ffd76b' : '#2de2e6'}" title="${d.name}">${d.glyph}<em>${b.lv}</em></span>`; }).join('');
+    this.r.build.innerHTML = this.build.map((b) => { const d = b.k === 'w' ? WEAPONS[b.id] : PASSIVES[b.id]; return icon(optIcon(b), d.glyph, b.k === 'w' ? '#ffd76b' : '#2de2e6', '', `<em>${b.lv}</em>`); }).join('');
   }
 
   // ───────── 升級三選一 ─────────
@@ -95,7 +97,7 @@ export class Hud {
       return;
     }
     const cards = m.opts.map((o, i) => `<button class="upc panel" data-a="opt" data-v="${i}" style="--c:${CAT_COL[o.cat] || '#2de2e6'}">
-      <span class="tag" style="--c:${CAT_COL[o.cat]}">${o.cat}</span><span class="glyph" style="--c:${CAT_COL[o.cat]}">${o.glyph}</span>
+      <span class="tag" style="--c:${CAT_COL[o.cat]}">${o.cat}</span>${icon(optIcon(o), o.glyph, CAT_COL[o.cat], 'big')}
       <div class="nm">${o.name}${o.lv ? ` <span class="dim" style="font-size:12px">Lv ${o.lv}</span>` : ''}</div>${o.isNew ? '<div class="new">NEW</div>' : ''}<div class="ds">${o.desc}</div><div class="dim" style="font-size:11px;margin-top:auto">按 ${i + 1}</div></button>`).join('');
     this.showModal(`<div class="lvup"><div class="sub">${m.reason === 'chest' ? 'TREASURE' : m.reason === 'supply' ? 'SUPPLY' : 'LEVEL UP'}</div><h2>${m.reason === 'chest' ? '開啟寶箱' : m.reason === 'supply' ? '戰前補給' : '選擇強化'}</h2>
       <div class="cards3">${cards}</div>

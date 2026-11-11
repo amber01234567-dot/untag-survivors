@@ -46,6 +46,7 @@ export class World {
     this.time = 0; this.tickN = 0;
     this.players = []; this.enemies = []; this.projs = []; this.zones = []; this.summons = [];
     this.pickups = new Map();
+    this.decoys = [];
     this.ev = []; this._dmgEv = 0;
     this.eid = 0; this.prid = 0; this.zid = 0; this.gid = 0; this.sid = 0;
     this.n = players.length;
@@ -87,6 +88,7 @@ export class World {
     this.updateProjs(dt);
     this.updateZones(dt);
     this.updateSummons(dt);
+    for (const d of this.decoys) { d.t -= dt; if (d.follow) { d.x = d.follow.x; d.y = d.follow.y; if (d.follow.dead) d.gone = true; } if (d.t <= 0) d.gone = true; }
     this.updatePickups(dt);
     this.ctl.update(dt);
     if (this.tickN % 20 === 0) {
@@ -95,6 +97,7 @@ export class World {
       this.summons = this.summons.filter((s) => !s.dead);
     }
     this.projs = this.projs.filter((p) => !p.dead);
+    if (this.decoys.length) this.decoys = this.decoys.filter((d) => !d.gone);
     if (this.endT > 0) { this.endT -= dt; if (this.endT <= 0) this.state = this.endState; return; }
     if (!this.alive().length) { this.endState = 'lost'; this.endT = 1.6; this.emit('bn', '全員倒下', 'DEFEATED', 2); }
     else if (this.lvQueue > 0) { this.lvQueue--; this.startPicks(this.time < 1 ? 'supply' : 'level'); }
@@ -271,7 +274,14 @@ export class World {
     }
     this.drop('g', x + this.rng.range(-6, 6), y + this.rng.range(-6, 6), v);
   }
-  attract(g, p) { if (g.to || !p) return; g.to = p; g.sp = 120; this.emit('g>', g.id, p.id); }
+// 誘餌：吸引範圍內的敵人，時間到（或 follow 的召喚物消失）就失效
+  addDecoy(x, y, r, dur, follow) {
+    const d = { x, y, r, t: dur, down: false, gone: false, stealth: 0, isDecoy: true, follow };
+    this.decoys.push(d);
+    this.hash.query(x, y, r, (e) => { if (!e.def.boss && !e.def.structure) e.tgt = d; });
+    return d;
+  }
+    attract(g, p) { if (g.to || !p) return; g.to = p; g.sp = 120; this.emit('g>', g.id, p.id); }
 
   // ───────── 子彈 ─────────
   updateProjs(dt) {

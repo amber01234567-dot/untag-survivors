@@ -2,7 +2,7 @@
 // 房主自己也走同一個 snapOf → View 的路徑，所以房主與客戶端的畫面邏輯完全一致。
 import { buffBits, bHaste } from '../sim/player.js';
 
-export const PROTO = 3;
+export const PROTO = 4;
 const STATES = ['play', 'levelup', 'won', 'lost'];
 const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd'];
 

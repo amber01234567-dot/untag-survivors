@@ -4,10 +4,19 @@ import { ENEMY_LIST } from '../data/enemies.js';
 import { TAU, clamp } from '../core/util.js';
 import { zoneAt } from '../sim/levelgen.js';
 import { MapRenderer } from './map.js';
-import { enemySprite } from './enemySprites.js';
-import { drawChar, rune } from './chibi.js';
+import { enemySprite, setEnemyTheme } from './enemySprites.js';
+import { drawChar, rune, charHeight } from './chibi.js';
 import { Fx } from './fx.js';
+import { FXS, tinted } from './fxsprites.js';
 
+// 子彈貼圖：[素材, 寬度, 旋轉方式, 染色]
+const PSPR = {
+  bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
+  knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
+  baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
+  note: ['pk_c', 13, 'spin'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
+  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
+};
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
 
@@ -15,7 +24,7 @@ export class Renderer {
   constructor(canvas, L, myId, roster) {
     this.cv = canvas; this.g = canvas.getContext('2d'); this.L = L; this.myId = myId;
     this.roster = new Map(roster.map((p, i) => [p.id, Object.assign({ slot: i }, p)]));
-    this.map = new MapRenderer(L); this.fx = new Fx();
+    this.map = new MapRenderer(L); this.fx = new Fx(); setEnemyTheme(L.theme);
     this.cam = { x: L.spawn.x - 640, y: L.spawn.y - 360 }; this.anim = new Map(); this.lobs = new Map();
     this.lc = document.createElement('canvas'); this.lg = this.lc.getContext('2d');
     this.t = 0; this.gates = L.links.map((l) => l.open);
@@ -69,6 +78,7 @@ export class Renderer {
     for (const [k, v] of seen) if (!v.live) seen.delete(k);
     for (const z of f.zones) if (z.len) this.beam(g, z, t);
     fx.draw(g);
+    fx.drawSprites(g);
     this.map.drawOver(g, cam, vw, vh, t);
 
     // 光照
@@ -97,7 +107,7 @@ export class Renderer {
     let aim = flip ? Math.PI - p.atkA : p.atkA;
     if (a.atkT > 0.5) aim = flip ? Math.PI - p.aim : p.aim;
     aim = Math.atan2(Math.sin(aim), Math.cos(aim));
-    const dur = info.charId === 'tingge' ? 0.16 : 0.24;
+    const dur = info.charId === 'tingge' ? 0.16 : info.charId === 'laoliu' ? 0.34 : 0.24;
     // 影子與腳下光圈
     g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(p.x, p.y, 15 - p.jz * 0.05, 6 - p.jz * 0.02, 0, 0, TAU); g.fill();
     g.strokeStyle = col; g.lineWidth = 2; g.globalAlpha = down ? 0.35 : 0.75; g.beginPath(); g.ellipse(p.x, p.y, 19, 8, 0, 0, TAU); g.stroke(); g.globalAlpha = 1;
@@ -113,7 +123,7 @@ export class Renderer {
   }
   playerLabel(g, p, t) {
     const info = this.roster.get(p.id) || { name: '?', slot: 0 }, col = SLOT_COLORS[info.slot % 4], down = p.fl & 1;
-    const y = p.y - 88 - p.jz * 0.5;
+    const y = p.y - charHeight(info.charId) * 1.15 - 18 - p.jz * 0.5;
     g.font = `700 11px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
     g.strokeStyle = 'rgba(5,6,10,.85)'; g.lineWidth = 3; g.strokeText(info.name, p.x, y); g.fillStyle = col; g.fillText(info.name, p.x, y);
     const w = 40, hp = clamp(p.hp / p.maxHp, 0, 1);
@@ -157,6 +167,15 @@ export class Renderer {
   // ───────── 召喚物 ─────────
   summon(g, s, t) {
     const k = SUMMON_KINDS[s.k];
+    const sm = k !== 'wisp' && FXS[k];
+    if (sm) {                                     // 圖片召喚物
+      const size = { drone: 30, cat: 26, lion: 66, rat: 22, tank: 62 }[k], h = size * sm.height / sm.width, fly = k === 'drone';
+      const bob = fly ? Math.sin(t * 5 + s.id) * 2 : s.st === 1 ? Math.abs(Math.sin(t * 14 + s.id)) * 3 : 0;
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(s.x, s.y + (fly ? 46 : 0), size * 0.36, size * 0.13, 0, 0, TAU); g.fill();
+      g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); if (s.st === 2) g.rotate(0.18);
+      g.drawImage(sm, -size / 2, fly ? -h / 2 : -h, size, h); g.restore();
+      return;
+    }
     if (k === 'wisp') {
       if (!s.st) return;
       wisp(g, s.x, s.y, 8, s.st, t + s.id);
@@ -190,6 +209,15 @@ export class Renderer {
 
   // ───────── 掉落物 ─────────
   pickup(g, p, t) {
+    const pk = FXS[p.type === 'g' ? (p.v >= 10 ? 'pk_g3' : p.v >= 3 ? 'pk_g2' : 'pk_g1') : 'pk_' + p.type];
+    if (pk) {
+      const size = p.type === 'g' ? (p.v >= 10 ? 24 : p.v >= 3 ? 19 : 15) : { c: 17, h: 26, k: 30, m: 26, x: 40 }[p.type] || 20;
+      const bx = p.x, by = p.y - 6 + Math.sin(t * 4 + p.id) * 2, h = size * pk.height / pk.width;
+      if (p.type === 'x') { g.globalCompositeOperation = 'lighter'; const gr = g.createLinearGradient(0, by - 90, 0, by); gr.addColorStop(0, 'rgba(255,210,60,0)'); gr.addColorStop(1, 'rgba(255,210,60,.35)'); g.fillStyle = gr; g.fillRect(bx - 12, by - 90, 24, 90); g.globalCompositeOperation = 'source-over'; }
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(p.x, p.y + 4, size * 0.36, size * 0.13, 0, 0, TAU); g.fill();
+      g.drawImage(pk, bx - size / 2, by - h / 2, size, h);
+      return;
+    }
     const b = Math.sin(t * 4 + p.id) * 2, x = p.x, y = p.y - 6 + b;
     if (p.type === 'g') {
       const big = p.v >= 10, mid = p.v >= 3, s = big ? 7 : mid ? 5.5 : 4.2, col = big ? '#ffd23c' : mid ? '#9d8bff' : '#2de2e6';
@@ -221,7 +249,28 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
-      case 'mine': {
+      case 'decoy': {                              // 誘餌：吸引範圍圈 + 鈔票堆
+        g.strokeStyle = 'rgba(255,215,107,.55)'; g.lineWidth = 2; g.setLineDash([10, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, t * 0.6, t * 0.6 + TAU); g.stroke(); g.setLineDash([]);
+        g.fillStyle = `rgba(255,215,107,${0.05 + 0.05 * Math.sin(t * 6)})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
+        const dim = FXS.decoy || FXS.pk_c, dw = 34 + Math.sin(t * 8) * 2;
+        if (dim) { const dh = dw * dim.height / dim.width; g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x, y + 4, 15, 5, 0, 0, TAU); g.fill(); g.drawImage(dim, x - dw / 2, y - dh + 8, dw, dh); }
+        if (z.p > 0.75) { g.strokeStyle = '#ff5a6b'; g.lineWidth = 2; g.beginPath(); g.arc(x, y - 6, 22 * (1 - (z.p - 0.75) * 4) + 6, 0, TAU); g.stroke(); }
+        break;
+      }
+      case 'aura': {                               // 增幅光環
+        g.fillStyle = 'rgba(255,138,47,.06)'; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
+        g.strokeStyle = 'rgba(255,170,80,.6)'; g.lineWidth = 2; g.setLineDash([14, 10]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, -t * 0.5, -t * 0.5 + TAU); g.stroke(); g.setLineDash([]);
+        break;
+      }
+      case 'mine': if (FXS.mine) {
+        const mw = 21, mh = mw * FXS.mine.height / FXS.mine.width;
+        g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x, y + 3, 10, 4, 0, 0, TAU); g.fill();
+        g.drawImage(FXS.mine, x - mw / 2, y - mh / 2 - 1, mw, mh);
+        if (z.p > 0.02 && Math.sin(t * 10 + z.id) > 0) { g.fillStyle = '#b9fffb'; g.beginPath(); g.arc(x, y - 2, 1.8, 0, TAU); g.fill(); }
+        break;
+      }
+      // eslint-disable-next-line no-fallthrough
+      case 'mine_old': {
         const armed = z.p > 0.02;
         g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x, y + 2, 9, 4, 0, 0, TAU); g.fill();
         g.fillStyle = '#1f3a2f'; g.strokeStyle = '#07080c'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(x, y, 8, 5.5, 0, 0, TAU); g.fill(); g.stroke();
@@ -230,7 +279,11 @@ export class Renderer {
         g.fillStyle = on ? '#5cf0ee' : '#1b6f6e'; if (on) { g.shadowColor = '#5cf0ee'; g.shadowBlur = 8; } g.beginPath(); g.arc(x, y - 2, 1.8, 0, TAU); g.fill(); g.shadowBlur = 0;
         break;
       }
-      case 'rune': case 'runebig': case 'seal': magicCircle(g, x, y, r, t * (k === 'seal' ? 0.5 : 1.2) + z.id, k === 'seal' ? '#ff3d6e' : '#2de2e6', z.on ? 0.8 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5, k !== 'rune'); break;
+      case 'rune': case 'runebig': case 'seal': if (FXS.circle) {
+        const im = k === 'seal' ? tinted('circle', '#ff3d6e') : FXS.circle, al = z.on ? 0.95 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5;
+        g.save(); g.translate(x, y); g.scale(1, 0.86); g.globalAlpha = Math.max(0, al) * 0.16; g.fillStyle = k === 'seal' ? '#ff3d6e' : '#2de2e6'; g.beginPath(); g.arc(0, 0, r * (z.on ? 1 : z.dp), 0, TAU); g.fill();
+        g.globalAlpha = Math.max(0, al) * (r > 300 ? 0.4 : 1); g.rotate((t * (k === 'seal' ? 0.25 : 0.6) + z.id) % TAU); g.drawImage(im, -r, -r, r * 2, r * 2); g.restore(); break;
+      } magicCircle(g, x, y, r, t * (k === 'seal' ? 0.5 : 1.2) + z.id, k === 'seal' ? '#ff3d6e' : '#2de2e6', z.on ? 0.8 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5, k !== 'rune'); break;
       case 'blackhole': {
         const gr = g.createRadialGradient(x, y, 4, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,.95)'); gr.addColorStop(0.35, 'rgba(30,8,60,.75)'); gr.addColorStop(1, 'rgba(120,60,255,0)');
         g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
@@ -238,10 +291,10 @@ export class Renderer {
         break;
       }
       case 'fire': case 'grill': {
-        const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,140,40,.34)'); gr.addColorStop(0.7, 'rgba(255,80,20,.2)'); gr.addColorStop(1, 'rgba(255,60,10,0)');
+        const gr = g.createRadialGradient(x, y, 0, x, y, r); const fa = r > 250 ? 0.4 : 1; gr.addColorStop(0, `rgba(255,140,40,${0.34 * fa})`); gr.addColorStop(0.7, `rgba(255,80,20,${0.2 * fa})`); gr.addColorStop(1, 'rgba(255,60,10,0)');
         g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
         g.globalCompositeOperation = 'lighter';
-        const n = Math.min(26, Math.round(r / 9));
+        const n = Math.min(r > 250 ? 16 : 26, Math.round(r / 9));
         for (let i = 0; i < n; i++) { const a = i * 2.4 + z.id, d = r * 0.85 * Math.sqrt(((i * 37) % 100) / 100), fl = (t * 1.6 + i * 0.37) % 1; g.fillStyle = `rgba(255,${150 - fl * 90},40,${0.5 * (1 - fl)})`; g.beginPath(); g.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86 - fl * 24, 6 * (1 - fl) + 2, 9 * (1 - fl) + 2, 0, 0, TAU); g.fill(); }
         g.globalCompositeOperation = 'source-over';
         if (k === 'grill') { g.fillStyle = '#2a2d35'; g.strokeStyle = '#07080c'; g.lineWidth = 1.5; g.beginPath(); g.roundRect(x - 18, y - 14, 36, 12, 3); g.fill(); g.stroke(); g.strokeStyle = '#59606e'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 13, y - 2); g.lineTo(x - 16, y + 10); g.moveTo(x + 13, y - 2); g.lineTo(x + 16, y + 10); g.stroke(); g.strokeStyle = 'rgba(93,255,157,.55)'; g.lineWidth = 2; g.setLineDash([8, 6]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, t, t + TAU); g.stroke(); g.setLineDash([]); }
@@ -305,6 +358,12 @@ export class Renderer {
       y -= Math.sin(pr * Math.PI) * 70 + (k === 'baseball' ? (1 - pr) * 300 : 0);
     }
     g.save(); g.translate(x, y);
+    const sp = PSPR[k], sim = sp && (sp[3] ? tinted(sp[0], sp[3]) : FXS[sp[0]]);
+    if (sim) {                                    // 圖片子彈
+      const w = sp[1], h = w * sim.height / sim.width;
+      g.rotate(sp[2] === 'spin' ? t * 14 + p.id : sp[2] === 'aim' ? p.a : 0);
+      g.drawImage(sim, -w / 2, -h / 2, w, h); g.restore(); return;
+    }
     switch (k) {
       case 'gatling': case 'bullet': case 'pistol': case 'dronebolt': case 'revolver': {
         const len = k === 'revolver' ? 26 : k === 'gatling' ? 16 : 12, col = k === 'pistol' ? '#bff4ff' : k === 'dronebolt' ? '#2de2e6' : '#ffe69a';
@@ -324,7 +383,9 @@ export class Renderer {
       case 'syringe': g.rotate(p.a); g.fillStyle = '#e9eef2'; g.strokeStyle = '#2a2d35'; g.lineWidth = 1; g.beginPath(); g.roundRect(-9, -2.6, 12, 5.2, 1.5); g.fill(); g.stroke(); g.fillStyle = '#7dff6b'; g.fillRect(-6, -1.4, 7, 2.8); g.strokeStyle = '#cfd6de'; g.beginPath(); g.moveTo(3, 0); g.lineTo(10, 0); g.stroke(); g.fillStyle = '#ff5a8a'; g.fillRect(-12, -3.4, 3, 6.8); break;
       case 'skewer': g.rotate(p.a); g.strokeStyle = '#c9a56b'; g.lineWidth = 2; g.beginPath(); g.moveTo(-16, 0); g.lineTo(18, 0); g.stroke(); for (let i = 0; i < 3; i++) { g.fillStyle = i === 1 ? '#6fbf4a' : '#b5562a'; g.strokeStyle = '#3a1a0a'; g.lineWidth = 1; g.beginPath(); g.roundRect(-6 + i * 7, -3.4, 6, 6.8, 1.6); g.fill(); g.stroke(); } break;
       case 'bead': g.fillStyle = '#8a5a2a'; g.strokeStyle = '#2a1a08'; g.lineWidth = 1.2; g.shadowColor = '#ffd76b'; g.shadowBlur = 10; g.beginPath(); g.arc(0, 0, 6.5, 0, TAU); g.fill(); g.shadowBlur = 0; g.stroke(); g.fillStyle = 'rgba(255,230,170,.8)'; g.beginPath(); g.arc(-2, -2, 2, 0, TAU); g.fill(); break;
-      case 'wave': g.rotate(p.a); g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#bfe0ff'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.arc(-22, 0, 34, -0.9, 0.9); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 2.5; g.beginPath(); g.arc(-22, 0, 36, -0.8, 0.8); g.stroke(); break;
+      case 'wave': { const wv = tinted('slash', '#7fd8ff'); if (wv) { const hh = 62, ww = hh * wv.width / wv.height; g.rotate(p.a); g.globalAlpha = 0.92; g.drawImage(wv, 14 - ww, -hh / 2, ww, hh); g.globalAlpha = 1; break; } }
+      // eslint-disable-next-line no-fallthrough
+      case 'wave_old': g.rotate(p.a); g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#bfe0ff'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.arc(-22, 0, 34, -0.9, 0.9); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 2.5; g.beginPath(); g.arc(-22, 0, 36, -0.8, 0.8); g.stroke(); break;
       case 'baseball': g.fillStyle = '#f6f3ea'; g.strokeStyle = '#2a2d35'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, 5.5, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = '#d23a3a'; g.beginPath(); g.arc(-4, 0, 5, -0.7, 0.7); g.stroke(); break;
       case 'laserbolt': g.globalCompositeOperation = 'lighter'; for (const [r, c] of [[20, 'rgba(45,226,230,.35)'], [13, 'rgba(120,255,250,.7)'], [7, '#fff']]) { g.fillStyle = c; g.beginPath(); g.arc(0, 0, r + Math.sin(t * 40) * 1.5, 0, TAU); g.fill(); } break;
       case 'missile': g.rotate(p.a); g.fillStyle = '#d9dde3'; g.strokeStyle = '#2a2d35'; g.lineWidth = 1; g.beginPath(); g.roundRect(-8, -2.6, 14, 5.2, 2); g.fill(); g.stroke(); g.fillStyle = '#ff4d5e'; g.beginPath(); g.moveTo(6, -2.6); g.lineTo(11, 0); g.lineTo(6, 2.6); g.fill(); g.globalCompositeOperation = 'lighter'; g.fillStyle = '#ffb347'; g.beginPath(); g.ellipse(-12, 0, 5 + Math.random() * 3, 2.5, 0, 0, TAU); g.fill(); break;

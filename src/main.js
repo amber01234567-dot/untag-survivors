@@ -3,6 +3,10 @@ import { save, DEV } from './core/save.js';
 import { sfx, setVolume, unlockAudio } from './core/audio.js';
 import { Session } from './net/session.js';
 import { Renderer } from './render/renderer.js';
+import { loadSprites } from './render/chibi.js';
+import { loadEnemySprites } from './render/enemySprites.js';
+import { loadMapTextures } from './render/map.js';
+import { loadFxSprites } from './render/fxsprites.js';
 import { Screens } from './ui/screens.js';
 import { Hud } from './ui/hud.js';
 import { Input } from './ui/input.js';
@@ -71,6 +75,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
+await Promise.all([loadSprites(), loadEnemySprites(), loadMapTextures(), loadFxSprites()]);                      // 圖片立繪要先載好，選單上的頭像才畫得出來
 // 啟動畫面。?quick=1-1,tingge 直接開一場單人（開發用）
 if (qs.get('quick')) {
   const [stage, ch] = qs.get('quick').split(',');

@@ -2,7 +2,7 @@
 // 新角色的技能直接在這裡加一個 (W, p) => {...} 即可，盡量用現成的積木（aoe / addZone / shoot / dash / addBuff）。
 import { TAU, dist2 } from '../core/util.js';
 import { addBuff, dash, moveDir } from './player.js';
-import { swing, beamUpd, lob, plantMine } from './weapons.js';
+import { swing, beamUpd, lob, plantMine, throwDecoy } from './weapons.js';
 import { solidAt } from './levelgen.js';
 
 const wdmg = (p) => p.weapons[0].s.dmg;
@@ -201,6 +201,48 @@ export const SKILLS = {
       const tx = t ? t.x : p.x + Math.cos(a) * d, ty = t ? t.y : p.y + Math.sin(a) * d;
       lob(W2, p, 'grenade', tx, ty, 0.5, (W3) => { W3.aoe(tx, ty, 105, wdmg(p) * 2.6, p, { fx: 12, kb: 200 }); W3.emit('sh', 3); });
     });
+  },
+  // ── 哞哞 ──
+  mou_ram(W, p) {
+    dash(p, moveDir(p), 300, 0.3, { dmg: 60 + wdmg(p) * 1.5, hitR: 64, hitOpt: { kb: 520, stun: 0.8 } });
+    W.emit('sh', 6);
+  },
+  mou_barrage(W, p) {
+    const d = 55 + wdmg(p) * 1.6;
+    channel(W, p, 3.5, 0.09, (W2) => {
+      const t = W2.randomEnemies(p.x, p.y, 560, 1)[0];
+      const tx = t ? t.x : p.x + W2.rng.range(-380, 380), ty = t ? t.y : p.y + W2.rng.range(-260, 260);
+      lob(W2, p, 'missile', tx, ty, 0.4, (W3) => { W3.aoe(tx, ty, 95, d, p, { kb: 240, fx: 1 }); W3.emit('sh', 3); }, tx + W2.rng.range(-60, 60), ty - 480);
+    });
+  },
+  // ── 老瑾 ──
+  lk_cash(W, p) {
+    const s = p.weapons[0].s;
+    for (let i = 0; i < 3; i++) { const a = p.aim + i * TAU / 3, x = p.x + Math.cos(a) * 150, y = p.y + Math.sin(a) * 150; throwDecoy(W, p, solidAt(W.L, x, y) ? p.x : x, solidAt(W.L, x, y) ? p.y : y, s, true); }
+    W.emit('r', p.x | 0, p.y | 0, 220, 1);
+  },
+  lk_tank(W, p) {
+    const d = p.weapons[0].s.boomDmg;
+    const tank = W.addSummon({ kind: 'tank', owner: p, x: p.x + Math.cos(p.aim) * 70, y: p.y + Math.sin(p.aim) * 70, life: 12, bt: 0.4 });
+    W.addDecoy(tank.x, tank.y, 300, 12, tank);
+    tank.upd = (W2, m, dt) => {
+      const tgt = W2.nearestEnemy(m.x, m.y, 460);
+      const gx = p.x + Math.cos(p.aim) * 90, gy = p.y + Math.sin(p.aim) * 90, dx = gx - m.x, dy = gy - m.y, dd = Math.hypot(dx, dy) || 1;
+      if (dd > 60) { const mv = Math.min(dd - 60, 150 * dt); m.x += dx / dd * mv; m.y += dy / dd * mv; m.st = 1; } else m.st = 0;
+      if (tgt) m.face = tgt.x > m.x ? 1 : -1;
+      m.bt -= dt;
+      if (tgt && m.bt <= 0) { m.bt = 0.7; W2.shoot(p, { kind: 'missile', x: m.x, y: m.y - 16, a: Math.atan2(tgt.y - m.y, tgt.x - m.x), speed: 520, dmg: d * 1.2, aoe: 90, life: 1.2, r: 10, fx: 1, kb: 160 }); }
+    };
+    W.emit('sh', 12); W.emit('r', tank.x | 0, tank.y | 0, 300, 1);
+  },
+  // ── 農夫哥哥 ──
+  nf_domain(W, p) {
+    W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y, r: 200 * p.st.area, dur: 6, tick: 0.4, dmg: wdmg(p) * 0.7, buff: { t: 1, dmg: 0.3 }, hitOpt: { dot: 10, dotDur: 2, quiet: true } });
+  },
+  nf_judgment(W, p) {
+    W.addZone({ kind: 'fire', owner: p, follow: p, r: 420, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.6, aux: 1, hitOpt: { dot: 16, dotDur: 3, quiet: true } });
+    allies(W, p, 0, (q) => { addBuff(q, 'judgment', { t: 10, dmg: 0.5, ult: 1 }); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
+    W.emit('sh', 14);
   },
   // ── 起秋 ──
   qq_morale(W, p) {

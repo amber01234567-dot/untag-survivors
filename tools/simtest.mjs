@@ -6,7 +6,7 @@ import { CHAR_LIST } from '../src/data/characters.js';
 import { TILE, T_FLOOR } from '../src/sim/const.js';
 import { zoneAt } from '../src/sim/levelgen.js';
 
-const [stageId = '1-1', who = 'all', nP = '1', diff = '0', meta = '0'] = process.argv.slice(2);
+const [stageId = '1-1', who = 'all', nP = '1', diff = '0', meta = '0', pickAlt = '0'] = process.argv.slice(2);
 const M = +meta, BONUS = { hp: 0.8 * M, dmg: 0.7 * M, speed: 0.1 * M, cd: 0.1 * M, armor: 4 * M, regen: 1 * M, magnet: 0.6 * M, xp: 0.25 * M, crit: 0.1 * M, revives: Math.round(2 * M), rerolls: 0, ult: 0.3 * M, coin: 0 };
 
 function bfs(L, gx, gy) {
@@ -21,7 +21,7 @@ function run(stage, chars, diffI, seed) {
   const L = W.L; let nav = null, navKey = '', minHp = 1, lvlAt = [];
   const maxT = 60 * 60 * 14;
   for (let tick = 0; tick < maxT && (W.state === 'play' || W.state === 'levelup'); tick++) {
-    if (W.state === 'levelup') { for (const p of W.players) W.choose(p.id, 0); }
+    if (W.state === 'levelup') { for (const p of W.players) { const pk = W.picks[p.id]; W.choose(p.id, +pickAlt && pk && pk.opts[1] && pk.opts[1].branch ? 1 : 0); } }
     for (const p of W.players) {
       if (p.down) continue;
       minHp = Math.min(minHp, p.hp / p.st.maxHp);

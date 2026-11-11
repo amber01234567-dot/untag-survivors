@@ -10,6 +10,7 @@ import { SLOT_COLORS } from '../render/renderer.js';
 import { save } from '../core/save.js';
 import { sfx } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
+import { icon } from './icons.js';
 
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -68,7 +69,7 @@ export class Screens {
   // ───────── 主選單 ─────────
   home() {
     const room = new URLSearchParams(location.search).get('room') || '';
-    const heroes = CHAR_LIST.filter((c) => hasLook(c.id)).map((c) => P(c.id, 150)).join('');
+    const heroes = ['yingzhang', 'gouqi', 'shenshen', 'laoliu', 'tingge', 'enjidou', 'tiaotiao', 'xia', 'laijie'].filter(hasLook).map((id) => P(id, 150)).join('');
     return `<div class="page home">
       <div class="wallet coin gold">${save.data.coins}</div>
       <div class="heroes">${heroes}</div>
@@ -177,9 +178,10 @@ export class Screens {
           ${hasLook(sel.id) ? '' : '<div class="tag" style="--c:var(--gold2);align-self:flex-start">外觀待補：收到設定圖後繪製</div>'}
           <div class="stats"><div><b>${sel.hp}</b>生命</div><div><b>${sel.speed}</b>移速</div><div><b>${sel.armor}</b>護甲</div></div>
           <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>熟練度 <b style="color:var(--teal)">Rank ${rank}</b>　<span class="dim">每階 生命 / 傷害 +3%</span></span><span class="dim">${rank >= MASTERY.maxRank ? 'MAX' : xp + ' / ' + need}</span></div><div class="bar"><i style="width:${rank >= MASTERY.maxRank ? 100 : xp / need * 100}%"></i></div></div>
-          <div class="kit"><span class="glyph" style="--c:${col}">${w.glyph}</span><div><b>${w.name}</b>　<span class="dim">專屬武器・自動攻擊</span><ul class="lvlist">${w.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>
-          <div class="kit"><span class="glyph" style="--c:#9fe8ff">技</span><div><b>${sel.skill.name}</b>　<span class="dim">冷卻 ${sel.skill.cd} 秒</span><br>${sel.skill.desc}</div></div>
-          <div class="kit"><span class="glyph" style="--c:var(--gold2)">寶</span><div><b>${sel.ult.name}</b>　<span class="dim">寶具・擊殺充能</span><br>${sel.ult.desc}</div></div>
+          <div class="kit">${icon('icons/w_' + w.id, w.glyph, col)}<div><b>${w.name}</b>　<span class="dim">專屬武器・自動攻擊</span><ul class="lvlist">${w.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>
+          ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>`; }).join('')}
+          <div class="kit">${icon('skills/' + sel.skill.id, '技', '#2de2e6')}<div><b>${sel.skill.name}</b>　<span class="dim">冷卻 ${sel.skill.cd} 秒</span><br>${sel.skill.desc}</div></div>
+          <div class="kit">${icon('skills/' + sel.ult.id, '寶', 'var(--gold2)')}<div><b>${sel.ult.name}</b>　<span class="dim">寶具・擊殺充能</span><br>${sel.ult.desc}</div></div>
           ${sel.sheet ? `<img class="sheet-thumb" src="assets/sheets/${sel.id}.jpg" data-a="sheet" data-v="${sel.id}" alt="${sel.name} 設定圖">` : ''}
           <div style="margin-top:auto">${un ? `<button class="btn primary" style="width:100%" data-a="use" data-v="${sel.id}" ${sel.id === cur ? 'disabled' : ''}>${sel.id === cur ? '目前出戰中' : '選擇出戰'}</button>` : `<button class="btn primary" style="width:100%" data-a="buy" data-v="${sel.id}" ${save.data.coins >= sel.unlock ? '' : 'disabled'}>解鎖　${sel.unlock} 金幣</button>`}</div>
         </div>
@@ -192,7 +194,7 @@ export class Screens {
       <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">天賦強化</div><div class="dim" style="font-size:12px">永久生效，所有角色共用</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${save.data.coins}</div></div>
       <div class="panel tgrid scroll">${TALENTS.map((t) => {
         const lv = save.talent(t.id), max = lv >= t.max, cost = max ? 0 : t.cost(lv);
-        return `<div class="tcard"><span class="glyph" style="--c:var(--gold2)">${t.glyph}</span><div class="mid"><div class="nm">${t.name}</div><div class="ds">${t.desc}／級</div><div class="pips">${Array.from({ length: t.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div></div>
+        return `<div class="tcard">${icon('icons/t_' + t.id, t.glyph, 'var(--gold2)')}<div class="mid"><div class="nm">${t.name}</div><div class="ds">${t.desc}／級</div><div class="pips">${Array.from({ length: t.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div></div>
           <button class="btn small ${max ? 'ghost' : ''}" data-a="talent" data-v="${t.id}" ${max || save.data.coins < cost ? 'disabled' : ''}>${max ? 'MAX' : `<span class="coin">${cost}</span>`}</button></div>`;
       }).join('')}</div></div>`;
   }

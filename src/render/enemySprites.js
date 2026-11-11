@@ -202,18 +202,39 @@ const DRAW = {
   },
 };
 
+// ── 圖片怪物 ──
+// assets/enemies/<id>.png 單張圖，走路的彈跳擠壓由程式做（4 格）。沒有圖的敵人退回上面的程式繪製。
+// VIS = 顯示高度相對碰撞半徑的倍率；巢穴依章節主題換圖。
+const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, nest: 2.6, golem: 2.9, champ: 3, warden: 3.1, conecrab: 3, vending: 3, sandbag: 3.1, brute: 2.9, signghost: 3, popup: 2.7 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3' };
+const IMG = {};
+let theme = 'slums';
 const cache = new Map();
+export function setEnemyTheme(t) { if (t !== theme) { theme = t; cache.clear(); } }
+export function loadEnemySprites() {
+  const names = ENEMY_LIST.map((d) => d.id).filter((id) => id !== 'nest').concat(Object.values(NEST));
+  return Promise.all(names.map((n) => new Promise((res) => {
+    const im = new Image(); im.onload = () => { IMG[n] = im; res(); }; im.onerror = () => res();
+    im.src = new URL(`../../assets/enemies/${n}.png`, import.meta.url).href;
+  })));
+}
 export function enemySprite(idx, frame, flash) {
   const key = idx * 16 + frame * 2 + (flash ? 1 : 0);
   let s = cache.get(key);
   if (s) return s;
-  const def = ENEMY_LIST[idx], r = def.r;
-  const w = Math.ceil(r * 5.2 + 20), h = Math.ceil(r * 4.4 + 24);
+  const def = ENEMY_LIST[idx], r = def.r, im = IMG[def.id === 'nest' ? NEST[theme] : def.id];
+  const vh = r * (VIS[def.id] || VIS.default), vw = im ? vh * im.width / im.height : 0;
+  const w = im ? Math.ceil(vw * 1.2 + 8) : Math.ceil(r * 5.2 + 20), h = im ? Math.ceil(vh * 1.14 + 10) : Math.ceil(r * 4.4 + 24);
   const c = document.createElement('canvas');
   c.width = w * SC; c.height = h * SC;
   const g = c.getContext('2d');
   g.scale(SC, SC); g.translate(w / 2, h - 8); g.lineJoin = 'round';
-  (DRAW[def.id] || DRAW.slime)(g, r, frame / 4);
+  if (im) {
+    const ph = Math.sin(frame / 4 * TAU), still = def.structure;
+    const sy = still ? 1 + ph * 0.02 : 1 + ph * 0.07, sx = still ? 1 : 1 - ph * 0.06;         // 走路時上下擠壓
+    g.imageSmoothingQuality = 'high'; g.scale(sx, sy);
+    g.drawImage(im, -vw / 2, -vh, vw, vh);
+  } else (DRAW[def.id] || DRAW.slime)(g, r, frame / 4);
   if (flash) { g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(255,255,255,.78)'; g.fillRect(0, 0, c.width, c.height); }
   s = { c, w, h, ox: w / 2, oy: h - 8 };
   cache.set(key, s);

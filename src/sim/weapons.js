@@ -26,6 +26,7 @@ function volley(W, p, w, a, s, extra) {
       kind: w.def.proj, a: a + off + jit, speed: s.speed, dmg: s.dmg, pierce: s.pierce || 0, life: s.life * (p.st.area * 0.5 + 0.5),
       bounce: s.bounce || 0, homing: s.homing || 0, dot: s.dot, dotDur: s.dotDur, slow: s.slow, slowDur: s.slowDur, kb: s.kb || 0,
       critAdd: s.critAdd || 0, ret: s.ret, x: p.x + Math.cos(a) * 16, y: p.y - 14 + Math.sin(a) * 16,
+      aoe: s.aoe ? s.aoe * p.st.area : 0, fx: s.aoe ? 1 : 0,
     }, extra));
   }
 }
@@ -211,7 +212,7 @@ export const BEH = {
     if (!W.nearestEnemy(p.x, p.y, r * 2.4)) return;
     w.t = s.cd * p.st.cd; p.atkN++;
     W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg, { kb: s.kb }));
-    W.playersIn(p.x, p.y, r * 1.4, (q) => addBuff(q, 'cheer', { t: s.buffDur, dmg: s.buffDmg, haste: s.buffHaste }));
+    W.playersIn(p.x, p.y, r * 1.4, (q) => addBuff(q, 'cheer', { t: s.buffDur, dmg: s.buffDmg, haste: s.buffHaste, speed: s.buffSpeed || 0 }));
     W.emit('r', p.x | 0, p.y | 0, r | 0, 4);
   },
 
@@ -267,6 +268,42 @@ export const BEH = {
       W.emit('r', c.x | 0, c.y | 0, s.purrR | 0, 2);
       W.playersIn(c.x, c.y, s.purrR, (q) => { if (done.has(q)) return; done.add(q); W.heal(q, s.purrHeal, p); if (s.purrHaste) addBuff(q, 'purr', { t: 4, haste: s.purrHaste }); });
     }
+  },
+
+// 老瑾：平時彈硬幣，定期丟出誘餌
+  decoy(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    const tgt = W.nearestEnemy(p.x, p.y, s.range);
+    if (tgt && w.t <= 0) {
+      w.t = s.cd * p.st.cd; p.atkN++;
+      const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
+      W.shoot(p, { kind: 'note', a, speed: 620, dmg: s.dmg, life: 0.8, r: 8, pierce: 1 });
+    }
+    w.dt = (w.dt === undefined ? 2 : w.dt) - dt * bHaste(p);
+    if (w.dt > 0 || !W.nearestEnemy(p.x, p.y, 520)) return;
+    w.dt = s.decoyCd * p.st.cd;
+    for (let i = 0; i < s.decoys; i++) {
+      const c = W.cluster(p.x, p.y, 420) || { x: p.x, y: p.y };
+      let x = (p.x + c.x) / 2 + W.rng.range(-50, 50), y = (p.y + c.y) / 2 + W.rng.range(-50, 50);
+      if (solidAt(W.L, x, y)) { x = p.x; y = p.y; }
+      throwDecoy(W, p, x, y, s);
+    }
+  },
+  // 農夫哥哥：增幅光環 + 火球
+  aura(W, p, w, dt) {
+    const s = w.s, r = s.auraR * p.st.area;
+    if (!w.zone || w.zone.dead) w.zone = W.addZone({ kind: 'aura', owner: p, follow: p, r, dur: 1e9, tick: 9, upd() {} });
+    w.zone.r = r;
+    w.at = (w.at || 0) - dt;
+    if (w.at <= 0 && !p.down) { w.at = 0.4; W.playersIn(p.x, p.y, r, (q) => addBuff(q, 'dragon', { t: 0.9, dmg: s.buffDmg, haste: s.buffHaste })); }
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const tgt = W.nearestEnemy(p.x, p.y, s.range);
+    if (!tgt) return;
+    w.t = s.cd * p.st.cd; p.atkN++;
+    const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
+    volley(W, p, w, a, s, null);
   },
 
   lightning(W, p, w, dt) {
@@ -337,5 +374,16 @@ export function plantMine(W, p, x, y, s, small) {
         const tx = z.x + Math.cos(a) * d, ty = z.y + Math.sin(a) * d;
         lob(W2, p, 'grenade', tx, ty, 0.4, (W3) => W3.aoe(tx, ty, blast * 0.6, dmg * 0.45, p, { fx: 1 }), z.x, z.y);
       }
+    } });
+}
+
+// 丟出一個誘餌：吸引敵人，結束時爆炸
+export function throwDecoy(W, p, x, y, s, mark) {
+  const r = s.decoyR * p.st.area;
+  W.addDecoy(x, y, r, s.decoyDur);
+  return W.addZone({ kind: 'decoy', owner: p, x, y, r, dur: s.decoyDur, tick: 0.5, dmg: 0, hitOpt: mark ? { mark: 0.7, quiet: true } : null,
+    onEnd(W2, z) {
+      W2.aoe(z.x, z.y, s.boomR * p.st.area, s.boomDmg, p, { fx: 1, kb: 200 });
+      for (let i = 0; i < (s.coins || 0); i++) W2.drop('c', z.x + W2.rng.range(-30, 30), z.y + W2.rng.range(-30, 30), 2);
     } });
 }

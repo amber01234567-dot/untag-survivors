@@ -247,3 +247,120 @@ body.touch .pausebtn span { display: none; }
   .lvup .cards3 { gap: 6px; } .upc { padding: 12px 6px; min-height: 160px; } .upc .glyph { width: 44px; height: 44px; font-size: 22px; } .upc .nm { font-size: 14px; } .upc .ds { font-size: 11.5px; }
 }
 @media (max-height: 520px) { .home .heroes { display: none; } .logo { font-size: 48px; } }
+
+/* ═════ 戰鬥介面 v2：深色底＋金青細框（對應角色設定圖的邊框語言） ═════ */
+:root { --gold-line: #c9a45a; --ink: #06080d; }
+/* 共用牌框：金色外框、內縮青色細線、對角菱形飾角 */
+#hud .me, #hud .objv, #hud .tr, .upc.panel, .pausebox.panel, .result.panel {
+  background: linear-gradient(180deg, rgba(13, 17, 26, .94), rgba(6, 8, 13, .94));
+  border: 1px solid var(--gold-line); border-radius: 2px;
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px rgba(45, 226, 230, .30), 0 6px 18px rgba(0, 0, 0, .55);
+  backdrop-filter: none;
+}
+.upc.panel, .pausebox.panel, .result.panel { position: relative; }
+#hud .me::before, #hud .me::after, #hud .objv::before, #hud .objv::after, #hud .tr::before, #hud .tr::after,
+.upc.panel::before, .upc.panel::after, .pausebox.panel::before, .pausebox.panel::after, .result.panel::before, .result.panel::after {
+  content: ""; position: absolute; width: 7px; height: 7px; background: var(--gold-line); border: 1px solid var(--ink); transform: rotate(45deg); opacity: 1; pointer-events: none;
+}
+#hud .me::before, #hud .objv::before, #hud .tr::before, .upc.panel::before, .pausebox.panel::before, .result.panel::before { left: -4px; top: -4px; right: auto; bottom: auto; }
+#hud .me::after, #hud .objv::after, #hud .tr::after, .upc.panel::after, .pausebox.panel::after, .result.panel::after { right: -4px; bottom: -4px; left: auto; top: auto; }
+
+/* 經驗條與等級 */
+#hud .xp { height: 9px; background: var(--ink); border-bottom: 1px solid var(--gold-line); }
+#hud .xp i { background: linear-gradient(180deg, #8ff7f2 0 40%, #2de2e6 40% 100%); box-shadow: none; }
+#hud .lv { top: 2px; padding: 3px 18px 4px; font-size: 13px; color: var(--gold2); background: var(--ink); border: 1px solid var(--gold-line); border-top: 0; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 9px 100%); text-shadow: none; }
+
+/* 自己的狀態牌 */
+#hud .me { top: 20px; padding: 8px 14px 8px 8px; gap: 10px; }
+#hud .me canvas { width: 64px !important; height: 64px !important; border: 1px solid var(--c); border-radius: 0; background: radial-gradient(circle at 50% 35%, #1b2434, #080b12); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px color-mix(in srgb, var(--c) 45%, transparent); }
+#hud .me .nm { font-family: var(--serif); font-weight: 900; font-size: 14px; letter-spacing: .06em; color: #f1e7cf; text-shadow: none; }
+#hud .hpbar { width: 214px; height: 17px; background: #12060a; border: 1px solid var(--gold-line); border-radius: 0; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+#hud .hpbar i { background: linear-gradient(180deg, #ff8f99 0 38%, #e23a52 38% 100%); }
+#hud .hpbar u { height: 5px; background: linear-gradient(180deg, #d6f1ff, #7fc8f5); }
+#hud .hpbar span { font-family: "Arial Black", var(--sans); font-size: 10.5px; letter-spacing: .04em; text-shadow: 0 1px 0 #000, 0 0 3px #000; }
+#hud .build .glyph { border-radius: 0; background: var(--ink); text-shadow: none; }
+#hud .mate { font-family: var(--serif); }
+#hud .mate .mb { height: 7px; border: 1px solid rgba(201, 164, 90, .6); border-radius: 0; background: var(--ink); }
+
+/* 目標牌 */
+#hud .objv { border-left: 1px solid var(--gold-line); padding: 7px 14px 9px; }
+#hud .objv .r { font-family: var(--serif); font-size: 13px; letter-spacing: .12em; color: #f1e7cf; }
+#hud .objv .r span:last-child { font-family: "Arial Black", var(--sans); letter-spacing: 0; color: var(--gold2); }
+#hud .objv .bar, #hud .boss .bar { height: 7px; border-radius: 0; background: var(--ink); border: 1px solid rgba(201, 164, 90, .5); }
+#hud .objv .bar i { background: linear-gradient(180deg, #ffe7a3 0 40%, #e2b53e 40% 100%); }
+#hud .boss .bn { color: #ffe1e1; text-shadow: 0 2px 0 #000; }
+#hud .boss .bar { height: 13px; border-color: var(--gold-line); clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 100%, 0 100%); }
+#hud .boss .bar i { background: linear-gradient(180deg, #ff8f99 0 38%, #d92b45 38% 100%); }
+
+/* 右上資訊牌 */
+#hud .tr { padding: 6px 14px 10px; line-height: 1.6; text-shadow: none; }
+#hud .tr .time { font-family: var(--serif); font-weight: 900; font-size: 24px; color: #f1e7cf; }
+#hud .pausebtn { border-radius: 0; border-color: rgba(201, 164, 90, .6); }
+
+/* 技能鈕 */
+.skbtn { width: 72px; height: 72px; border-radius: 0; border: 1px solid var(--gold-line); background: var(--ink); overflow: visible; box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--c), 0 6px 14px rgba(0, 0, 0, .55); }
+.skbtn .ic { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: cover; display: block; }
+.skbtn .ic ~ .g { display: none; }
+.skbtn .g { position: absolute; inset: 0; display: grid; place-items: center; }
+.skbtn .cd { left: 4px; right: 4px; bottom: 4px; background: rgba(4, 6, 10, .78); border-top: 1px solid var(--c); }
+.skbtn .fill { left: 4px; right: 4px; bottom: 4px; top: auto; background: rgba(4, 6, 10, .0); }
+.skbtn.ult.off .ic { filter: grayscale(1) brightness(.45); }
+.skbtn.ult .fill { background: linear-gradient(0deg, rgba(255, 215, 107, .0), rgba(255, 215, 107, .0)); border-top: 2px solid var(--gold2); }
+.skbtn .key { right: auto; left: 50%; top: -9px; transform: translateX(-50%); padding: 0 6px; font-size: 10px; color: var(--ink); background: var(--c); border: 1px solid var(--ink); white-space: nowrap; }
+.skbtn .nm { bottom: -17px; font-family: var(--serif); font-size: 10.5px; color: #f1e7cf; text-shadow: 0 1px 0 #000, 0 0 4px #000; overflow: visible; }
+.skbtn.ready { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--c), 0 0 16px var(--c); animation: skready 1.2s infinite; }
+@keyframes skready { 50% { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--c), 0 0 26px 3px var(--c); } }
+.skbtn.off { border-color: #4a4434; }
+#hud .skills { gap: 22px; bottom: max(30px, env(safe-area-inset-bottom)); }
+body.touch .skbtn { border-radius: 0; }
+body.touch .skbtn .nm { bottom: -17px; padding: 0; }
+
+/* 升級卡片 */
+.lvup h2 { font-family: var(--serif); color: #f1e7cf; text-shadow: 0 2px 0 #000; }
+.lvup h2::before, .lvup h2::after { content: "◆"; font-size: .4em; color: var(--gold-line); vertical-align: middle; margin: 0 .8em; }
+.upc.panel { padding: 22px 14px 16px; }
+.upc.panel:hover { border-color: var(--gold2); box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px var(--c), 0 12px 30px rgba(0, 0, 0, .6), 0 0 22px color-mix(in srgb, var(--c) 40%, transparent); }
+.upc .tag { border-radius: 0; background: var(--ink); }
+.upc .glyph { border-radius: 0; background: var(--ink); text-shadow: none; box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px color-mix(in srgb, var(--c) 50%, transparent); transform: rotate(45deg); margin: 12px 0; }
+.upc .nm { font-family: var(--serif); color: #f1e7cf; }
+@media (max-width: 980px) { #hud .hpbar { width: 150px; } #hud .me canvas { width: 46px !important; height: 46px !important; } }
+
+/* ═════ 圖示 ═════ */
+.glyph { position: relative; overflow: hidden; border-radius: 0; background: var(--ink); text-shadow: none; }
+.glyph img { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); object-fit: cover; display: block; }
+.glyph img ~ b { visibility: hidden; }
+.glyph b { font-weight: 900; }
+#hud .build .glyph em { right: 0; bottom: 0; z-index: 1; }
+.upc .glyph.big { width: 62px; height: 62px; }
+.upc .glyph.big b { transform: rotate(-45deg); font-size: 28px; display: block; }
+.upc .glyph.big:has(img) { transform: none; width: 84px; height: 84px; margin: 4px 0; }
+.kit .glyph { width: 46px; height: 46px; }
+.tcard .glyph { width: 48px; height: 48px; }
+
+/* ═════ 選單 v2：與戰鬥介面同一套牌框 ═════ */
+#screen.on { background: linear-gradient(180deg, rgba(6, 8, 13, .70), rgba(6, 8, 13, .93)), url(../assets/ui/menubg.jpg) center / cover no-repeat, #05060a; }
+#screen.on::before { display: none; }
+.panel { background: linear-gradient(180deg, rgba(13, 17, 26, .93), rgba(6, 8, 13, .95)); border: 1px solid var(--gold-line); border-radius: 2px; box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px rgba(45, 226, 230, .26), 0 8px 24px rgba(0, 0, 0, .55); backdrop-filter: none; }
+.panel::before, .panel::after { width: 7px; height: 7px; background: var(--gold-line); border: 1px solid var(--ink); transform: rotate(45deg); opacity: 1; }
+.panel::before { left: -4px; top: -4px; } .panel::after { right: -4px; bottom: -4px; }
+.btn { border-radius: 0; border: 1px solid rgba(201, 164, 90, .7); background: linear-gradient(180deg, #1a2030 0 50%, #10141e 50% 100%); font-family: var(--serif); font-weight: 900; color: #f1e7cf; box-shadow: inset 0 0 0 2px var(--ink); }
+.btn:hover:not(:disabled) { border-color: var(--gold2); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--teal), 0 0 16px rgba(45, 226, 230, .25); }
+.btn.primary { background: linear-gradient(180deg, #f0cf7a 0 48%, #c9a13a 48% 100%); border-color: #ffe7a3; color: #1a1204; text-shadow: none; }
+.btn.primary:hover:not(:disabled) { box-shadow: inset 0 0 0 2px #1a1204, 0 0 22px rgba(255, 215, 107, .45); }
+.btn.ghost { background: rgba(6, 8, 13, .6); }
+.field { border-radius: 0; border-color: rgba(201, 164, 90, .55); background: rgba(6, 8, 13, .85); }
+.topbar .title, .info h3, .detail h2 { color: #f1e7cf; }
+.topbar .title::before { content: "◆"; color: var(--gold-line); font-size: .5em; vertical-align: middle; margin-right: .7em; }
+.tag, .slot, .ccard, .tcard, .roomcode, .chtab, .wmap, .topo, .stats div, .diffs button, .sheet-thumb { border-radius: 0; }
+.slot, .ccard, .tcard { background: linear-gradient(180deg, rgba(20, 26, 38, .9), rgba(8, 10, 16, .95)); border-color: rgba(201, 164, 90, .35); }
+.ccard:hover { border-color: var(--gold2); } .ccard.sel { border-color: var(--gold2); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--c), 0 0 16px rgba(255, 215, 107, .3); }
+.ccard .nm, .slot .nm, .tcard .nm, .node .nm { font-family: var(--serif); }
+.chtab { font-family: var(--serif); } .chtab.on { background: rgba(201, 164, 90, .14); border-color: var(--gold-line); }
+.wmap { border-color: rgba(201, 164, 90, .45); background: rgba(5, 7, 12, .72); }
+.node .dia { background: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px color-mix(in srgb, var(--c) 45%, transparent); }
+.bar { border-radius: 0; } .bar i { background: linear-gradient(180deg, #8ff7f2 0 40%, #2de2e6 40% 100%); }
+.pips i { border-radius: 0; transform: skewX(-18deg); }
+.logo { text-shadow: 0 4px 0 #05060a, 0 0 46px rgba(45, 226, 230, .35); }
+.home .menu { gap: 12px; }
+.result h1, .pausebox h2 { color: #f1e7cf; }
+#toast div { border-radius: 0; border-color: var(--gold-line); font-family: var(--serif); }

@@ -27,6 +27,7 @@ export function makePlayer(W, info, slot) {
   recalc(p);
   p.hp = p.st.maxHp;
   addWeapon(p, def.weapon);
+  recalc(p); p.hp = p.st.maxHp;
   return p;
 }
 
@@ -38,6 +39,7 @@ export function recalc(p) {
     xp: 1 + b.xp, heal: 1, ultRate: 1 + b.ult,
   };
   for (const id in p.passives) PASSIVES[id].apply(s, p.passives[id]);
+  for (const w of p.weapons) { if (w.s.armorAdd) s.armor += w.s.armorAdd; if (w.s.hpMul) s.maxHp *= w.s.hpMul; }
   s.maxHp = Math.round(s.maxHp);
   p.st = s;
   if (old && s.maxHp > old) p.hp += s.maxHp - old;
@@ -141,6 +143,7 @@ export function rollOptions(W, p, n) {
   const pool = [];
   const main = p.weapons[0];
   if (main.level < main.def.maxLv) pool.push([{ k: 'w', id: main.def.id, lv: main.level + 1, main: true }, 3.4]);
+  const forced = main.level >= main.def.maxLv && main.def.branch ? main.def.branch.map((id) => describe({ k: 'w', id, lv: 1, main: true, branch: true, replace: main.def.id })) : [];
   const subs = p.weapons.slice(1);
   for (const w of subs) if (w.level < w.def.maxLv) pool.push([{ k: 'w', id: w.def.id, lv: w.level + 1 }, 1.7]);
   if (subs.length < 2) for (const id of SUB_WEAPONS) if (!subs.some((w) => w.def.id === id)) pool.push([{ k: 'w', id, lv: 1, isNew: true }, 0.8]);
@@ -152,7 +155,7 @@ export function rollOptions(W, p, n) {
     if (!lv && owned.length >= 6) continue;
     pool.push([{ k: 'p', id, lv: lv + 1, isNew: !lv }, lv ? 1.5 : 1]);
   }
-  const out = [];
+  const out = forced.slice();           // 路線分支：兩條路線一定同時出現
   while (out.length < n && pool.length) {
     const pick = W.rng.weighted(pool);
     pool.splice(pool.findIndex((x) => x[0] === pick), 1);
@@ -165,7 +168,8 @@ function describe(o) {
   if (o.k === 'w') {
     const d = WEAPONS[o.id];
     o.name = d.name; o.glyph = d.glyph; o.cat = o.main ? '專屬武器' : '副武器';
-    o.desc = o.lv === 1 ? '獲得新的副武器' : d.lv[o.lv - 2][0];
+    o.desc = o.branch ? d.branchDesc : o.lv === 1 ? '獲得新的副武器' : d.lv[o.lv - 2][0];
+    if (o.branch) o.cat = '路線分支';
   } else if (o.k === 'p') {
     const d = PASSIVES[o.id];
     o.name = d.name; o.glyph = d.glyph; o.cat = '被動'; o.desc = d.desc;
@@ -176,7 +180,13 @@ function describe(o) {
 export function applyOption(W, p, o) {
   if (o.k === 'w') {
     let w = p.weapons.find((x) => x.def.id === o.id);
-    if (!w) w = addWeapon(p, o.id); else { w.level = Math.min(w.def.maxLv, w.level + 1); w.s = weaponStats(w.def, w.level); }
+    if (o.replace && !w) {                     // 路線分支：換掉基礎武器
+      const i = p.weapons.findIndex((x) => x.def.id === o.replace);
+      if (i < 0) return;
+      for (const k of ['orbs']) if (p.weapons[i][k]) for (const e of p.weapons[i][k]) e.dead = true;
+      w = addWeapon(p, o.id); p.weapons.pop(); p.weapons[i] = w;
+    } else if (!w) w = addWeapon(p, o.id); else { w.level = Math.min(w.def.maxLv, w.level + 1); w.s = weaponStats(w.def, w.level); }
+    recalc(p);
   } else if (o.k === 'p') { p.passives[o.id] = (p.passives[o.id] || 0) + 1; recalc(p); }
   else if (o.k === 'heal') { if (!p.down) p.hp = Math.min(p.st.maxHp, p.hp + p.st.maxHp * 0.4); }
   else W.coins += 30;

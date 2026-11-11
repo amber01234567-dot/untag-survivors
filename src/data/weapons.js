@@ -42,7 +42,7 @@ W('cleaver', {
 });
 W('gloves', {
   name: '無束拳套', glyph: '拳', beh: 'melee', fx: 'punch',
-  base: { dmg: 11, cd: 0.25, range: 66, arc: 1.8, kb: 55, combo: 4, comboMul: 2.6, comboR: 95 },
+  base: { dmg: 13, cd: 0.25, range: 72, arc: 1.9, kb: 55, combo: 4, comboMul: 3, comboR: 100 },
   lv: [
     ['傷害 +25%', { m: { dmg: 1.25 } }],
     ['攻速 +15%', { m: { cd: 0.85 } }],
@@ -53,15 +53,15 @@ W('gloves', {
   ],
 });
 W('bat', {
-  name: '棒球球棒', glyph: '棒', beh: 'melee', fx: 'wood',
-  base: { dmg: 24, cd: 0.7, range: 96, arc: 2.2, kb: 380, ballEvery: 3, ballDmg: 1.4 },
+  name: '狼牙棒', glyph: '棒', beh: 'melee', fx: 'wood',
+  base: { dmg: 24, cd: 0.7, range: 96, arc: 2.2, kb: 380, ballEvery: 3, ballDmg: 1.15 },
   lv: [
     ['傷害 +25%', { m: { dmg: 1.25 } }],
-    ['每 2 次揮棒擊出棒球', { s: { ballEvery: 2 } }],
+    ['每 2 次揮擊甩出尖刺鐵球', { s: { ballEvery: 2 } }],
     ['攻擊範圍 +20%', { m: { range: 1.2 } }],
-    ['棒球多彈跳 2 次、傷害 +30%', { a: { ballBounce: 2 }, m: { ballDmg: 1.3 } }],
+    ['鐵球多彈跳 2 次、傷害 +30%', { a: { ballBounce: 2 }, m: { ballDmg: 1.3 } }],
     ['冷卻 -18%', { m: { cd: 0.82 } }],
-    ['傷害 +35%，每次揮棒都擊出棒球', { m: { dmg: 1.35 }, s: { ballEvery: 1 } }],
+    ['傷害 +35%，每次揮擊都甩出鐵球', { m: { dmg: 1.35 }, s: { ballEvery: 1 } }],
   ],
 });
 
@@ -204,15 +204,15 @@ W('mines', {
   ],
 });
 W('cheer', {
-  name: '應援音波', glyph: '援', beh: 'pulse',
-  base: { dmg: 16, cd: 1.6, r: 150, kb: 70, buffDmg: 0.1, buffHaste: 0, buffDur: 3 },
+  name: '引擎聲浪', glyph: '引', beh: 'pulse',
+  base: { dmg: 18, cd: 1.5, r: 185, kb: 90, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3 },
   lv: [
     ['音波範圍 +20%', { m: { r: 1.2 } }],
-    ['增幅：攻擊力加成提升至 16%', { s: { buffDmg: 0.16 } }],
+    ['加速：隊友攻速與移速加成提升至 14%', { s: { buffHaste: 0.14, buffSpeed: 0.14 } }],
     ['傷害 +35%', { m: { dmg: 1.35 } }],
-    ['增幅同時提升 12% 攻速', { s: { buffHaste: 0.12 } }],
+    ['聲浪同時提升 14% 攻擊力', { s: { buffDmg: 0.14 } }],
     ['冷卻 -22%', { m: { cd: 0.78 } }],
-    ['攻擊力加成提升至 25%，範圍 +20%', { s: { buffDmg: 0.25 }, m: { r: 1.2 } }],
+    ['攻速與移速加成提升至 22%，範圍 +20%', { s: { buffHaste: 0.22, buffSpeed: 0.22 }, m: { r: 1.2 } }],
   ],
 });
 W('drones', {
@@ -237,6 +237,65 @@ W('cats', {
     ['呼嚕同時提升隊友 10% 攻速', { s: { purrHaste: 0.1 } }],
     ['小貓 +1、攻擊更快', { a: { count: 1 }, m: { cd: 0.8 } }],
     ['傷害 +40%，小貓攻擊造成流血', { m: { dmg: 1.4 }, s: { dot: 8, dotDur: 3 } }],
+  ],
+});
+
+// ───────── 哞哞：基礎武器升滿後二選一分支（branch） ─────────
+W('rocket0', {
+  name: '火箭筒', glyph: '砲', beh: 'gun', proj: 'missile', branch: ['rocket', 'siege'],
+  base: { dmg: 22, cd: 1.35, count: 1, speed: 500, life: 1.2, range: 500, aoe: 62, kb: 120 },
+  lv: [['傷害 +25%', { m: { dmg: 1.25 } }]],
+});
+W('rocket', {
+  name: '火箭炮', glyph: '砲', beh: 'gun', proj: 'missile', path: true,
+  branchDesc: '遠攻路線：大範圍爆炸的重型火箭，之後可升級成多發齊射。',
+  base: { dmg: 34, cd: 1.2, count: 1, spread: 0.3, speed: 540, life: 1.2, range: 540, aoe: 82, kb: 160 },
+  lv: [
+    ['爆炸範圍 +25%', { m: { aoe: 1.25 } }],
+    ['傷害 +30%', { m: { dmg: 1.3 } }],
+    ['雙發齊射', { a: { count: 1 } }],
+    ['冷卻 -20%', { m: { cd: 0.8 } }],
+    ['爆炸造成燃燒', { s: { dot: 14, dotDur: 3 } }],
+    ['傷害 +40%，三發齊射', { m: { dmg: 1.4 }, a: { count: 1 } }],
+  ],
+});
+W('siege', {
+  name: '攻城甲', glyph: '甲', beh: 'melee', fx: 'heavy', path: true,
+  branchDesc: '近戰路線：穿上攻城甲，護甲與生命提升，改用重拳橫掃並擊退敵人。',
+  base: { dmg: 42, cd: 0.8, range: 108, arc: 2.6, kb: 340, armorAdd: 4, hpMul: 1.15, combo: 0, comboMul: 2, comboR: 125 },
+  lv: [
+    ['護甲 +3', { a: { armorAdd: 3 } }],
+    ['傷害 +25%', { m: { dmg: 1.25 } }],
+    ['每 3 次攻擊引發震地衝擊波', { s: { combo: 3 } }],
+    ['最大生命再 +25%', { m: { hpMul: 1.22 } }],
+    ['冷卻 -15%', { m: { cd: 0.85 } }],
+    ['傷害 +40%，衝擊波附帶暈眩', { m: { dmg: 1.4 }, s: { comboStun: 0.8 } }],
+  ],
+});
+// ───────── 老瑾：誘餌 ─────────
+W('bait', {
+  name: '鈔票誘餌', glyph: '餌', beh: 'decoy',
+  base: { dmg: 9, cd: 0.75, range: 420, decoyCd: 6, decoyDur: 3.5, decoyR: 190, boomDmg: 40, boomR: 110, decoys: 1 },
+  lv: [
+    ['誘餌持續 +1 秒', { a: { decoyDur: 1 } }],
+    ['誘餌爆炸傷害 +40%', { m: { boomDmg: 1.4 } }],
+    ['吸引範圍 +25%', { m: { decoyR: 1.25 } }],
+    ['誘餌冷卻 -20%', { m: { decoyCd: 0.8 } }],
+    ['同時丟出 2 個誘餌', { a: { decoys: 1 } }],
+    ['爆炸傷害 +40%，並噴出金幣', { m: { boomDmg: 1.4 }, s: { coins: 2 } }],
+  ],
+});
+// ───────── 農夫哥哥：增幅 ─────────
+W('dragonfire', {
+  name: '龍炎咒力', glyph: '炎', beh: 'aura', proj: 'fireball',
+  base: { dmg: 20, cd: 1.4, count: 1, speed: 430, life: 1.3, range: 480, aoe: 60, auraR: 170, buffDmg: 0.12, buffHaste: 0 },
+  lv: [
+    ['增幅：光環內隊友傷害加成提升至 18%', { s: { buffDmg: 0.18 } }],
+    ['火球傷害 +30%', { m: { dmg: 1.3 } }],
+    ['光環範圍 +25%', { m: { auraR: 1.25 } }],
+    ['光環同時提升 10% 攻速', { s: { buffHaste: 0.1 } }],
+    ['一次發射 2 顆火球', { a: { count: 1 } }],
+    ['傷害加成提升至 28%，火球造成燃燒', { s: { buffDmg: 0.28, dot: 12, dotDur: 3 } }],
   ],
 });
 
