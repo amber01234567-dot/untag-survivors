@@ -1,0 +1,5 @@
+Use your image generation tool to create ONE image and save it as s3.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a wall-mounted glowing sign seen straight-on from the front: a yellow neon arrow pointing down. Icon only, no letters or words. Simple shape, strong glow colour, dark frame.
+Art style: 2D ANIME / cartoon animation background-art style: clean dark lineart, CEL SHADING with 2-3 flat tones per colour, simple shapes. NOT 3D, NOT photorealistic, no soft airbrush gradients. Two references are attached: the first is the game's character sheet (style), the second shows map assets ALREADY MADE for this game - match their drawing style, line weight and level of detail exactly.
+The background MUST be fully transparent (alpha 0): no backdrop, no ground, no cast shadow, no text labels. Landscape 3:2.
+After saving, print the file path.

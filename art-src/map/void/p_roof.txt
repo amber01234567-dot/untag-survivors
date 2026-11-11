@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as roof.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a ROOF / out-of-bounds TEXTURE for a 2D top-down game, viewed from directly above (flat, orthographic): an endless dark void with a faint cyan grid and tiny floating data squares, deep blue-black. VERY DARK and low-contrast so it recedes behind the playfield. Evenly lit, no objects sticking out, no text. Fills the entire image edge to edge. Square 1024x1024.
+Art style: 2D ANIME / cartoon animation background-art style: clean dark lineart, CEL SHADING with 2-3 flat tones per colour, simple shapes. NOT 3D, NOT photorealistic, no soft airbrush gradients. Two references are attached: the first is the game's character sheet (style), the second shows map assets ALREADY MADE for this game - match their drawing style, line weight and level of detail exactly.
+After saving, print the file path.

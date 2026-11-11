@@ -1,0 +1,6 @@
+Use your image generation tool to create ONE image and save it as p1c.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a small pile of flattened and stacked brown cardboard boxes tied with string.
+One single game map object for a 2D top-down action game, drawn in classic top-down RPG view (seen from the front and slightly above, so the top face and the front face are both visible), centered, filling the frame. Setting: night-time neon back-alley.
+Art style: 2D ANIME / cartoon animation background-art style: clean dark lineart, CEL SHADING with 2-3 flat tones per colour, simple shapes. NOT 3D, NOT photorealistic, no soft airbrush gradients. Two references are attached: the first is the game's character sheet (style), the second shows map assets ALREADY MADE for this game - match their drawing style, line weight and level of detail exactly.
+The background MUST be fully transparent (alpha 0): no backdrop, no ground, no cast shadow, no text labels. Square 1024x1024.
+After saving, print the file path.
