@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as menubg.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a moody BACKGROUND illustration for a game menu, 16:9 landscape: a night-time neon back-alley city street receding into the distance, wet pavement, glowing pink and teal signs with no readable text, dark silhouetted buildings, a large empty dark area in the centre for menu text. No characters. Dark overall with teal and gold accents.
+Art style: 2D ANIME / cartoon animation style: clean dark lineart, CEL SHADING with 2-3 flat tones per colour, simple bold shapes. NOT 3D, NOT photorealistic, no soft airbrush gradients. Two references are attached: the game's character sheet, and a sheet of icons and effects ALREADY MADE for this game - match their drawing style, line weight and level of detail exactly.
+After saving, print the file path.
