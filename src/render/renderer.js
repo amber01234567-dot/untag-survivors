@@ -297,7 +297,7 @@ export class Renderer {
         const fade = Math.min(1, z.p * 10, (1 - z.p) * 6);
         disc(g, FXS.blackhole, x, y, r * 1.15, t * 2.6 + z.id, fade);
         g.font = '900 13px "Courier New", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        for (let i = 0; i < 14; i++) { const k2 = (t * 0.55 + i / 14) % 1, a = i * 2.4 + t * 2.2 + k2 * 5, d = r * (1.05 - k2); g.globalAlpha = fade * Math.min(1, k2 * 4) * (1 - k2 * 0.5); g.fillStyle = i % 3 ? '#d7a6ff' : '#7cfff2'; g.fillText(String((i * 7 + z.id) % 10), x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86); }
+        for (let i = 0; i < 14; i++) { const k2 = (t * 0.55 + i / 14) % 1, a = i * 2.4 + t * 2.2 + k2 * 5, d = r * (1.05 - k2); g.globalAlpha = fade * Math.min(1, k2 * 4) * (1 - k2 * 0.5); g.fillStyle = i % 3 ? '#7dffb0' : '#eafff4'; g.fillText(String((i * 7 + z.id) % 10), x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86); }
         g.globalAlpha = 1; break;
       }
       // eslint-disable-next-line no-fallthrough
