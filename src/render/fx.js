@@ -4,7 +4,7 @@ import { TAU } from '../core/util.js';
 import { FXS, tinted } from './fxsprites.js';
 
 const BOOM = [
-  ['#ffb347', '#ff7a2f'], ['#ffd76b', '#ff6a2f'], ['#7dffb0', '#2fd67a'], ['#ff6b6b', '#c91f3f'], ['#8ff7f2', '#2de2e6'],
+  ['#ffb347', '#ff7a2f'], ['#ffd76b', '#ff6a2f'], ['#7dffb0', '#2fd67a'], ['#ff6b6b', '#c91f3f'], ['#ff9aa6', '#e0142d'],
   ['#fff3c4', '#ffc53d'], ['#b7a6ff', '#6b5bff'], ['#e9f6ff', '#7cc7ff'], ['#ffb347', '#ff4d2f'], ['#ffe9a8', '#ff8a2f'],
   ['#b9fffb', '#2de2e6'], ['#d7a6ff', '#8a2be2'], ['#ff6bd6', '#ffd76b'],
 ];
@@ -118,7 +118,7 @@ export class Fx {
       const k = l.life / l.max;
       g.globalAlpha = k;
       if (l.st === 1 || l.st === 3) {          // 閃電 / 符文光柱
-        const col = l.st === 1 ? '#bfe6ff' : '#8ff7f2';
+        const col = l.st === 1 ? '#bfe6ff' : '#ff5a6e';
         g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 14; g.lineWidth = l.st === 3 ? 9 * k : 3.5;
         g.beginPath(); g.moveTo(l.x1, l.y1);
         if (l.st === 1) for (let i = 1; i < 8; i++) g.lineTo(l.x1 + (l.x2 - l.x1) * i / 8 + Math.sin(l.seed + i * 7.3) * 16, l.y1 + (l.y2 - l.y1) * i / 8);

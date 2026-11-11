@@ -280,8 +280,8 @@ export class Renderer {
         break;
       }
       case 'rune': case 'runebig': case 'seal': if (FXS.circle) {
-        const im = k === 'seal' ? tinted('circle', '#ff3d6e') : FXS.circle, al = z.on ? 0.95 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5;
-        g.save(); g.translate(x, y); g.scale(1, 0.86); g.globalAlpha = Math.max(0, al) * 0.16; g.fillStyle = k === 'seal' ? '#ff3d6e' : '#2de2e6'; g.beginPath(); g.arc(0, 0, r * (z.on ? 1 : z.dp), 0, TAU); g.fill();
+        const im = FXS.circle, al = z.on ? 0.95 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5;
+        g.save(); g.translate(x, y); g.scale(1, 0.86); g.globalAlpha = Math.max(0, al) * 0.16; g.fillStyle = '#e0142d'; g.beginPath(); g.arc(0, 0, r * (z.on ? 1 : z.dp), 0, TAU); g.fill();
         g.globalAlpha = Math.max(0, al) * (r > 300 ? 0.4 : 1); g.rotate((t * (k === 'seal' ? 0.25 : 0.6) + z.id) % TAU); g.drawImage(im, -r, -r, r * 2, r * 2); g.restore(); break;
       } magicCircle(g, x, y, r, t * (k === 'seal' ? 0.5 : 1.2) + z.id, k === 'seal' ? '#ff3d6e' : '#2de2e6', z.on ? 0.8 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5, k !== 'rune'); break;
       case 'blackhole': {
