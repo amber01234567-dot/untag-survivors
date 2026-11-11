@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as w_skewer.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a square GAME ICON: a grilled meat skewer. One bold simple emblem centered, filling most of the square, on a flat very dark navy background. Colour scheme: the object's natural colours with a subtle glow. No frame, no border, no text, no letters, no numbers. Square 1024x1024.
+Art style: 2D ANIME / cartoon animation style: clean dark lineart, CEL SHADING with 2-3 flat tones per colour, simple bold shapes. NOT 3D, NOT photorealistic, no soft airbrush gradients. Two references are attached: the game's character sheet, and a sheet of icons and effects ALREADY MADE for this game - match their drawing style, line weight and level of detail exactly.
+After saving, print the file path.
