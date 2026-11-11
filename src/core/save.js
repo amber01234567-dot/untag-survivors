@@ -4,7 +4,7 @@ import { TALENTS, emptyBonus } from '../data/upgrades.js';
 import { STAGES, DIFFS } from '../data/chapters.js';
 
 const KEY = 'untag_survivors_save';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const DEV = new URLSearchParams(location.search).get('dev') === '1';
 
 function fresh() {
@@ -13,6 +13,11 @@ function fresh() {
 }
 function migrate(s) {
   const f = fresh();
+  if ((s.v || 1) < 2 && Array.isArray(s.unlocked)) {        // v2：角色全面免費，退還先前花在解鎖上的金幣
+    const PRICY = ['xia', 'yingzhang', 'tk', 'moumou', 'laojin', 'nongfu'];
+    for (const id of s.unlocked) s.coins = (s.coins || 0) + (PRICY.includes(id) ? 900 : 600);
+    s.unlocked = [];
+  }
   for (const k in f) if (s[k] === undefined) s[k] = f[k];
   for (const k in f.settings) if (s.settings[k] === undefined) s.settings[k] = f.settings[k];
   s.v = SAVE_VERSION;
