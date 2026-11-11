@@ -6,7 +6,7 @@ import { moveBody, solidAt } from './levelgen.js';
 export function spawnEnemy(W, id, x, y, o = {}) {
   const def = ENEMIES[id];
   const el = o.elite ? 1 : 0;
-  const hp = def.hp * W.hpMul * (el ? 10 : 1) * (o.hpMul || 1) * (def.boss ? 1 : 1 + W.ctl.cleared * 0.12);
+  const hp = def.hp * W.hpMul * (el ? 10 : 1) * (o.hpMul || 1) * (def.boss ? (1 + 0.38 * (W.n - 1)) / (1 + 0.55 * (W.n - 1)) : 1 + W.ctl.cleared * 0.12);   // 首領血量隨人數的加成較緩
   const e = {
     id: (W.eid = (W.eid % 65000) + 1), def, x, y, r: def.r * (el ? 1.45 : 1), hp, maxHp: hp,
     speed: def.speed * (el ? 1.12 : 1) * W.rng.range(0.92, 1.08), dmg: def.dmg * W.dmgMul * (el ? 1.3 : 1), elite: !!el,
@@ -65,6 +65,7 @@ function pickTarget(W, e) {
 }
 function seek(W, e, dt, speed, tx, ty) {
   const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1;
+  if (e.def.boss && d < e.r + 14) return d;          // 首領貼到身邊就停下，不會整個疊在玩家身上
   if (e.def.fly) { e.x += dx / d * speed * dt; e.y += dy / d * speed * dt; }
   else {
     if ((W.tickN + e.id) % 6 === 0 || e.fdx === undefined) e.fd = W.flow.dir(e);

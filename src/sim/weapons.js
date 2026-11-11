@@ -167,10 +167,10 @@ export const BEH = {
       const o = w.orbs[i], a = w.rot + i * TAU / n;
       o.x = p.x + Math.cos(a) * R; o.y = p.y - 12 + Math.sin(a) * R * 0.86; o.a = a + 1.57;
       if (p.down) continue;
-      W.hash.query(o.x, o.y, 12, (e) => {
-        const ot = e.ot || (e.ot = {});
-        if ((ot[w.uid] || 0) > W.time) return;
-        ot[w.uid] = W.time + s.hitCd;
+      W.hash.query(o.x, o.y, 22, (e) => {
+        const ot = e.ot || (e.ot = {}), key = w.uid * 32 + i;          // 每顆珠子各自計算命中間隔
+        if ((ot[key] || 0) > W.time) return;
+        ot[key] = W.time + s.hitCd;
         W.strike(p, e, s.dmg, { slow: s.slow, slowDur: s.slowDur, kb: 30, sx: p.x, sy: p.y });
       });
     }
@@ -180,7 +180,7 @@ export const BEH = {
     const r = s.pulseR * p.st.area;
     if (!W.nearestEnemy(p.x, p.y, r)) return;
     w.pt = s.pulseCd * p.st.cd; p.atkN++;
-    W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg, { stun: s.pulseStun, mark: s.pulseMark ? s.pulseStun + 1 : 0 }));
+    W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg * 4, { stun: s.pulseStun, mark: s.pulseMark ? s.pulseStun + 1 : 0 }));
     W.emit('r', p.x | 0, p.y | 0, r | 0, 3);
   },
 

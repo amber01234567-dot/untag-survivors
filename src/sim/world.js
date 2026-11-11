@@ -165,7 +165,11 @@ export class World {
     if (e.dead) return;
     if (e.mark > 0) amount *= 1.3;
     e.hp -= amount; e.flash = 0.1;
-    if (p) { p.stats.dmg += amount; p.ult = Math.min(p.ultMax, p.ult + amount * 0.012 * p.st.ultRate); }
+    if (e.def.boss && e.hp > 0) {            // 首領每掉 25% 血噴出補給，讓長時間的首領戰撐得下去
+      const q = Math.floor((1 - e.hp / e.maxHp) * 4);
+      if (q > (e.supplyQ || 0)) { e.supplyQ = q; for (let i = 0; i < 1 + this.n; i++) { const a = i * 2.1 + q; this.drop('h', e.x + Math.cos(a) * (e.r + 70), e.y + Math.sin(a) * (e.r + 70), 20); } this.emit('a', 'heal'); }
+    }
+    if (p) { p.stats.dmg += amount; p.ult = Math.min(p.ultMax, p.ult + Math.min(amount, 80) * (e.def.boss ? 0.004 : 0.012) * p.st.ultRate); }   // 打首領的充能較慢，避免寶具無限連發
     if (!(o && o.quiet) && this._dmgEv < 14) { this._dmgEv++; this.emit('d', e.x | 0, (e.y - e.r) | 0, Math.max(1, Math.round(amount)), crit ? 1 : 0); }
     if (o) {
       const res = 1 - (e.def.kbRes || 0) * (e.elite ? 1 : 1);

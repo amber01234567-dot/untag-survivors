@@ -16,7 +16,7 @@ const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const P = (id, size) => `<i data-p="${id}" data-s="${size}"></i>`;
 function mount(root) { root.querySelectorAll('i[data-p]').forEach((el) => el.replaceWith(portrait(el.dataset.p, +el.dataset.s))); }
-const objLine = (o) => (o.t === 'kill' ? `殲滅 ${Math.round(o.n * 1.5)} 名敵人` : o.t === 'survive' ? `撐過 ${o.s} 秒` : o.t === 'nests' ? `摧毀 ${o.n} 個巢穴` : o.t === 'elite' ? `擊敗菁英「${ENEMIES[o.who].name}」` : o.t === 'boss' ? `擊敗首領「${ENEMIES[o.who].name}」` : o.t === 'goblins' ? `${o.s} 秒內盡量攔截運鈔鼠` : '寶藏');
+const objLine = (o) => (o.t === 'kill' ? `殲滅 ${Math.round(o.n * 1.8)} 名敵人` : o.t === 'survive' ? `撐過 ${o.s} 秒` : o.t === 'nests' ? `摧毀 ${o.n} 個巢穴` : o.t === 'elite' ? `擊敗菁英「${ENEMIES[o.who].name}」` : o.t === 'boss' ? `擊敗首領「${ENEMIES[o.who].name}」` : o.t === 'goblins' ? `${o.s} 秒內盡量攔截運鈔鼠` : '寶藏');
 
 export class Screens {
   constructor(app) {

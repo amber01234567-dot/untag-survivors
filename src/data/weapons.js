@@ -105,7 +105,7 @@ W('runes', {
 });
 W('wisps', {
   name: '數字鬼火', glyph: '數', beh: 'wisp',
-  base: { dmg: 13, cd: 0.5, count: 3, regen: 1.1, speed: 520, homing: 8, minDigit: 1, aoe: 0, range: 520 },
+  base: { dmg: 18, cd: 0.45, count: 3, regen: 1.0, speed: 520, homing: 8, minDigit: 1, aoe: 0, range: 520 },
   lv: [
     ['傷害 +25%', { m: { dmg: 1.25 } }],
     ['鬼火 +1', { a: { count: 1 } }],
@@ -155,7 +155,7 @@ W('knives', {
 // ───────── 輔助 ─────────
 W('syringe', {
   name: '針筒', glyph: '針', beh: 'gun', proj: 'syringe', extra: 'heal',
-  base: { dmg: 13, cd: 0.5, count: 1, speed: 680, pierce: 1, life: 0.8, range: 440, dot: 12, dotDur: 3,
+  base: { dmg: 18, cd: 0.48, count: 1, speed: 680, pierce: 1, life: 0.8, range: 440, dot: 16, dotDur: 3,
     healCd: 3.5, healAmt: 12, healCount: 1, healRange: 620 },
   lv: [
     ['治療量 +35%', { m: { healAmt: 1.35 } }],
@@ -181,7 +181,7 @@ W('skewer', {
 });
 W('beads', {
   name: '佛珠', glyph: '珠', beh: 'orbit', proj: 'bead',
-  base: { dmg: 9, count: 4, radius: 95, rot: 3.2, hitCd: 0.45, slow: 0.35, slowDur: 1.2, pulseCd: 6, pulseR: 150, pulseStun: 1.0 },
+  base: { dmg: 20, count: 4, radius: 84, rot: 3.4, hitCd: 0.36, slow: 0.35, slowDur: 1.2, pulseCd: 6, pulseR: 150, pulseStun: 1.0 },
   lv: [
     ['佛珠 +2', { a: { count: 2 } }],
     ['緩速效果提升至 50%', { s: { slow: 0.5 } }],
@@ -205,7 +205,7 @@ W('mines', {
 });
 W('cheer', {
   name: '爆蕉號', glyph: '車', beh: 'ram',
-  base: { dmg: 15, hitCd: 0.45, ramR: 44, kb: 220, boostCd: 2.4, boostMul: 2.4, boostDist: 130, r: 185, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3, armorAdd: 2 },
+  base: { dmg: 32, hitCd: 0.4, ramR: 48, kb: 220, boostCd: 2.4, boostMul: 2.4, boostDist: 130, r: 185, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3, armorAdd: 2 },
   lv: [
     ['衝撞傷害 +25%', { m: { dmg: 1.25 } }],
     ['加速：隊友攻速與移速加成提升至 14%', { s: { buffHaste: 0.14, buffSpeed: 0.14 } }],
@@ -275,7 +275,7 @@ W('siege', {
 // ───────── 老瑾：誘餌 ─────────
 W('bait', {
   name: '鈔票誘餌', glyph: '餌', beh: 'decoy',
-  base: { dmg: 9, cd: 0.75, range: 420, decoyCd: 6, decoyDur: 3.5, decoyR: 190, boomDmg: 40, boomR: 110, decoys: 1 },
+  base: { dmg: 13, cd: 0.7, range: 420, decoyCd: 6, decoyDur: 3.5, decoyR: 190, boomDmg: 55, boomR: 110, decoys: 1 },
   lv: [
     ['誘餌持續 +1 秒', { a: { decoyDur: 1 } }],
     ['誘餌爆炸傷害 +40%', { m: { boomDmg: 1.4 } }],

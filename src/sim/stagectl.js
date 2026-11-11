@@ -5,7 +5,7 @@ import { openLink, zoneAt, solidAt } from './levelgen.js';
 import { spawnEnemy } from './enemy.js';
 import { ENEMIES } from '../data/enemies.js';
 
-const RATE = { kill: 1.0, survive: 1.3, nests: 0.45, elite: 0.6, boss: 0.32, goblins: 1.0, treasure: 0 };
+const RATE = { kill: 1.0, survive: 1.3, nests: 0.45, elite: 0.6, boss: 0.28, goblins: 1.0, treasure: 0 };
 export const OBJ_TEXT = { kill: '殲滅敵人', survive: '撐過時間', nests: '摧毀巢穴', elite: '擊敗菁英', boss: '擊敗首領', goblins: '攔截運鈔鼠', treasure: '寶藏' };
 
 export class StageCtl {
@@ -47,7 +47,7 @@ export class StageCtl {
     z.state = 'active'; z.t = 0; z.acc = 0; z.wave = 6; z.alive = 0;
     o.cur = 0;
     const scale = 1 + 0.5 * (n - 1);
-    if (o.t === 'kill') o.max = Math.round(o.n * 1.5 * scale);
+    if (o.t === 'kill') o.max = Math.round(o.n * 1.8 * scale);
     else if (o.t === 'survive' || o.t === 'goblins') { o.max = o.s; o.gob = 2; }
     else if (o.t === 'nests') {
       o.max = o.n; o.nests = [];
@@ -62,7 +62,7 @@ export class StageCtl {
     } else if (o.t === 'elite') {
       o.max = 1;
       const pt = this.farPoint(z);
-      const e = spawnEnemy(W, o.who, pt.x, pt.y, { zone: z.idx, elite: true, hpMul: 1.7 }); e.isObj = true; o.ent = e;
+      const e = spawnEnemy(W, o.who, pt.x, pt.y, { zone: z.idx, elite: true, hpMul: 3 }); e.isObj = true; o.ent = e;
     } else if (o.t === 'boss') {
       o.max = 1;
       const e = spawnEnemy(W, o.who, z.cx, z.cy - 60, { zone: z.idx }); e.isObj = true; e.spawnT = 1.6; o.ent = e; this.bossE = e;
@@ -92,8 +92,8 @@ export class StageCtl {
     const inZone = W.players.filter((p) => !p.down && !p.gone && zoneAt(this.L, p.x, p.y) === z.idx);
     if (!inZone.length) return;
     const ramp = 0.7 + Math.min(1.5, z.t / 60);        // 進區後前 20 秒較緩，讓玩家先升幾級
-    const rate = 2.0 * RATE[o.t] * W.rateMul * ramp * (0.7 + W.stage.diff * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1));
-    const cap = Math.min(230, 62 * (1 + 0.5 * (W.n - 1)) * (0.8 + RATE[o.t] * 0.4));
+    const rate = 2.5 * RATE[o.t] * W.rateMul * ramp * (0.7 + W.stage.diff * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1));
+    const cap = Math.min(260, 80 * (1 + 0.5 * (W.n - 1)) * (0.8 + RATE[o.t] * 0.4));
     let alive = 0;
     for (const e of W.enemies) if (!e.dead && e.zone === z.idx) alive++;
     z.acc += rate * dt;

@@ -26,9 +26,9 @@ E('virus', { name: '病毒炸彈', hp: 40, speed: 106, dmg: 16, r: 13, xp: 3, ai
 // 目標物
 E('nest', { name: '巢穴', hp: 220, speed: 0, dmg: 0, r: 26, xp: 20, ai: 'nest', kbRes: 1, structure: true });
 // 首領
-E('golem', { name: '垃圾巨像', hp: 3000, speed: 58, dmg: 22, r: 44, xp: 300, ai: 'boss_golem', kbRes: 1, boss: true });
-E('champ', { name: '鐵籠拳王', hp: 5600, speed: 72, dmg: 26, r: 40, xp: 400, ai: 'boss_champ', kbRes: 1, boss: true });
-E('warden', { name: '核心守門者', hp: 8000, speed: 50, dmg: 28, r: 46, xp: 500, ai: 'boss_warden', kbRes: 1, boss: true, fly: true });
+E('golem', { name: '垃圾巨像', hp: 18000, speed: 58, dmg: 22, r: 44, xp: 300, ai: 'boss_golem', kbRes: 1, boss: true });
+E('champ', { name: '鐵籠拳王', hp: 32000, speed: 72, dmg: 26, r: 40, xp: 400, ai: 'boss_champ', kbRes: 1, boss: true });
+E('warden', { name: '核心守門者', hp: 46000, speed: 50, dmg: 28, r: 46, xp: 500, ai: 'boss_warden', kbRes: 1, boss: true, fly: true });
 // 獎勵關的寶藏怪
 E('goblin', { name: '運鈔黃鼠狼', hp: 60, speed: 150, dmg: 0, r: 13, xp: 3, ai: 'flee', coins: 12 });
 // ── 第二批新增（一律加在最後，順序是網路同步索引） ──
