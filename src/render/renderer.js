@@ -14,7 +14,7 @@ const PSPR = {
   bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
   knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
-  note: ['pk_c', 13, 'spin'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
+  note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
   e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
@@ -169,7 +169,7 @@ export class Renderer {
     const k = SUMMON_KINDS[s.k];
     const sm = k !== 'wisp' && FXS[k];
     if (sm) {                                     // 圖片召喚物
-      const size = { drone: 30, cat: 26, lion: 66, rat: 22, tank: 62 }[k], h = size * sm.height / sm.width, fly = k === 'drone';
+      const size = { drone: 30, cat: 26, lion: 66, rat: 27, tank: 62 }[k], h = size * sm.height / sm.width, fly = k === 'drone';
       const bob = fly ? Math.sin(t * 5 + s.id) * 2 : s.st === 1 ? Math.abs(Math.sin(t * 14 + s.id)) * 3 : 0;
       g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(s.x, s.y + (fly ? 46 : 0), size * 0.36, size * 0.13, 0, 0, TAU); g.fill();
       g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); if (s.st === 2) g.rotate(0.18);
@@ -249,6 +249,15 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
+      case 'crack': if (FXS.crack) { const pop = Math.min(1, z.p * 22); disc(g, FXS.crack, x, y, r * (0.5 + 0.5 * pop), z.id, Math.min(0.9, (1 - z.p) * 2.2)); } break;
+      case 'zero': {                                  // 歸零：駭客 HUD 圈 + 大倒數
+        const fade = Math.min(1, z.p * 10, (1 - z.p) * 8), n = Math.max(0, 3 - Math.floor(z.p * 3.2 / 1.0667));
+        if (FXS.zerogrid) { disc(g, FXS.zerogrid, x, y, 330, t * 0.7, fade * 0.8); disc(g, FXS.zerogrid, x, y, r, -t * 0.25, fade * 0.3); }
+        const pulse = 1 + ((z.p * 3) % 1 < 0.15 ? 0.3 : 0);
+        g.font = `900 ${Math.round(120 * pulse)}px "Courier New", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = fade;
+        for (const [ox, c] of [[-4, '#ff2d86'], [4, '#2de2e6'], [0, '#eafcff']]) { g.fillStyle = c; g.fillText(String(n), x + ox * (Math.sin(t * 40) > 0 ? 1 : 0.3), y - 150); }
+        g.globalAlpha = 1; break;
+      }
       case 'decoy': {                              // 誘餌：吸引範圍圈 + 鈔票堆
         g.strokeStyle = 'rgba(255,215,107,.55)'; g.lineWidth = 2; g.setLineDash([10, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, t * 0.6, t * 0.6 + TAU); g.stroke(); g.setLineDash([]);
         g.fillStyle = `rgba(255,215,107,${0.05 + 0.05 * Math.sin(t * 6)})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
@@ -284,13 +293,36 @@ export class Renderer {
         g.save(); g.translate(x, y); g.scale(1, 0.86); g.globalAlpha = Math.max(0, al) * 0.16; g.fillStyle = '#e0142d'; g.beginPath(); g.arc(0, 0, r * (z.on ? 1 : z.dp), 0, TAU); g.fill();
         g.globalAlpha = Math.max(0, al) * (r > 300 ? 0.4 : 1); g.rotate((t * (k === 'seal' ? 0.25 : 0.6) + z.id) % TAU); g.drawImage(im, -r, -r, r * 2, r * 2); g.restore(); break;
       } magicCircle(g, x, y, r, t * (k === 'seal' ? 0.5 : 1.2) + z.id, k === 'seal' ? '#ff3d6e' : '#2de2e6', z.on ? 0.8 * (1 - Math.max(0, z.p - 0.8) * 5) : z.dp * 0.5, k !== 'rune'); break;
-      case 'blackhole': {
+      case 'blackhole': if (FXS.blackhole) {             // 黑洞：旋轉的吸積盤 + 被吸進去的數字
+        const fade = Math.min(1, z.p * 10, (1 - z.p) * 6);
+        disc(g, FXS.blackhole, x, y, r * 1.15, t * 2.6 + z.id, fade);
+        g.font = '900 13px "Courier New", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (let i = 0; i < 14; i++) { const k2 = (t * 0.55 + i / 14) % 1, a = i * 2.4 + t * 2.2 + k2 * 5, d = r * (1.05 - k2); g.globalAlpha = fade * Math.min(1, k2 * 4) * (1 - k2 * 0.5); g.fillStyle = i % 3 ? '#d7a6ff' : '#7cfff2'; g.fillText(String((i * 7 + z.id) % 10), x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86); }
+        g.globalAlpha = 1; break;
+      }
+      // eslint-disable-next-line no-fallthrough
+      case 'blackhole_old': {
         const gr = g.createRadialGradient(x, y, 4, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,.95)'); gr.addColorStop(0.35, 'rgba(30,8,60,.75)'); gr.addColorStop(1, 'rgba(120,60,255,0)');
         g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
         g.strokeStyle = '#b56bff'; g.lineWidth = 2.5; for (let i = 0; i < 3; i++) { g.globalAlpha = 0.7 - i * 0.2; g.beginPath(); g.ellipse(x, y, r * (0.3 + i * 0.22), r * (0.3 + i * 0.22) * 0.86, 0, t * (5 - i) + i, t * (5 - i) + i + 4); g.stroke(); } g.globalAlpha = 1;
         break;
       }
-      case 'fire': case 'grill': {
+      case 'fire': case 'grill': case 'dragonfire': if (FXS.flame) {   // 火焰區域：燃燒的地面 + 一簇簇火焰
+        const fade = Math.min(1, z.p * 12, (1 - z.p) * 6), gnd = k === 'grill' ? FXS.coalground || FXS.fireground : FXS.fireground;
+        if (gnd) disc(g, gnd, x, y, r, z.id * 1.7, fade * (r > 300 ? 0.55 : 0.85));
+        if (k === 'dragonfire' && FXS.dragonring) disc(g, FXS.dragonring, x, y, r * 0.98, -t * (r > 300 ? 0.9 : 1.5) + z.id, fade * (r > 300 ? 0.8 : 1));
+        const fl = FXS.flame, cw = fl.width / 4, n = Math.max(4, Math.min(r > 300 ? 16 : 20, Math.round(r / 13)));
+        for (let i = 0; i < n; i++) {
+          const a = i * 2.39996 + z.id, d = r * 0.86 * Math.sqrt((i + 0.5) / n), fx = x + Math.cos(a) * d, fy = y + Math.sin(a) * d * 0.86;
+          const sz = (24 + (i * 37 % 16)) * (r > 300 ? 1.25 : 1) * fade, fh = sz * fl.height / cw;
+          g.drawImage(fl, ((Math.floor(t * 9) + i) & 3) * cw, 0, cw, fl.height, fx - sz / 2, fy - fh * 0.9, sz, fh);
+        }
+        if (k === 'grill') { g.fillStyle = '#2a2d35'; g.strokeStyle = '#07080c'; g.lineWidth = 1.5; g.beginPath(); g.roundRect(x - 18, y - 14, 36, 12, 3); g.fill(); g.stroke(); g.strokeStyle = 'rgba(93,255,157,.6)'; g.lineWidth = 2; g.setLineDash([8, 6]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, t, t + TAU); g.stroke(); g.setLineDash([]); }
+        if (k === 'dragonfire') { g.strokeStyle = 'rgba(255,170,80,.6)'; g.lineWidth = 2; g.setLineDash([12, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, -t, -t + TAU); g.stroke(); g.setLineDash([]); }
+        break;
+      }
+      // eslint-disable-next-line no-fallthrough
+      case 'fire_old': case 'grill_old': {
         const gr = g.createRadialGradient(x, y, 0, x, y, r); const fa = r > 250 ? 0.4 : 1; gr.addColorStop(0, `rgba(255,140,40,${0.34 * fa})`); gr.addColorStop(0.7, `rgba(255,80,20,${0.2 * fa})`); gr.addColorStop(1, 'rgba(255,60,10,0)');
         g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
         g.globalCompositeOperation = 'lighter';
@@ -301,9 +333,22 @@ export class Renderer {
         break;
       }
       case 'heal': { g.fillStyle = 'rgba(93,255,157,.12)'; g.strokeStyle = 'rgba(93,255,157,.6)'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.setLineDash([10, 8]); g.stroke(); g.setLineDash([]); g.fillStyle = '#5dff9d'; for (let i = 0; i < 6; i++) { const a = i * 1.05 + t * 0.6, yy = (t * 30 + i * 13) % 40; g.globalAlpha = 1 - yy / 40; g.fillRect(x + Math.cos(a) * r * 0.6 - 1, y + Math.sin(a) * r * 0.5 - yy - 4, 2, 8); g.fillRect(x + Math.cos(a) * r * 0.6 - 4, y + Math.sin(a) * r * 0.5 - yy - 1, 8, 2); } g.globalAlpha = 1; break; }
-      case 'garbage': { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(110,140,50,.34)'); gr.addColorStop(0.8, 'rgba(70,90,40,.24)'); gr.addColorStop(1, 'rgba(60,80,30,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); for (let i = 0; i < 16; i++) { const a = i * 2.4 + t * 0.4, d = r * 0.9 * (((i * 53) % 100) / 100); g.fillStyle = ['#1d1f25', '#8a6a44', '#c9c2a8', '#9dff3c'][i % 4]; g.globalAlpha = 0.7; g.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86 + Math.sin(t * 3 + i) * 3, 7, 5); } g.globalAlpha = 1; break; }
-      case 'whirl': { g.globalCompositeOperation = 'lighter'; g.strokeStyle = z.aux ? '#dfe8f5' : '#ffd0a0'; g.lineWidth = z.aux ? 3 : 7; for (let i = 0; i < 4; i++) { g.globalAlpha = 0.5; g.beginPath(); g.ellipse(x, y - 14, r * (0.55 + (i % 2) * 0.35), r * (0.55 + (i % 2) * 0.35) * 0.8, 0, t * 14 + i * 1.57, t * 14 + i * 1.57 + 1.1); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; break; }
-      case 'bell': { g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 3; i++) { const rr = r * Math.min(1, z.p * 1.3 + i * 0.12); g.strokeStyle = '#ffd76b'; g.globalAlpha = (1 - z.p) * 0.6; g.lineWidth = 10 - i * 3; g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; break; }
+      case 'garbage': if (FXS.garbageground) { disc(g, FXS.garbageground, x, y, r * 1.05, t * 0.5, Math.min(1, z.p * 10, (1 - z.p) * 6) * 0.92); break; }
+      // eslint-disable-next-line no-fallthrough
+      case 'garbage_old': { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(110,140,50,.34)'); gr.addColorStop(0.8, 'rgba(70,90,40,.24)'); gr.addColorStop(1, 'rgba(60,80,30,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); for (let i = 0; i < 16; i++) { const a = i * 2.4 + t * 0.4, d = r * 0.9 * (((i * 53) % 100) / 100); g.fillStyle = ['#1d1f25', '#8a6a44', '#c9c2a8', '#9dff3c'][i % 4]; g.globalAlpha = 0.7; g.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.86 + Math.sin(t * 3 + i) * 3, 7, 5); } g.globalAlpha = 1; break; }
+      case 'whirl': { const wim = z.aux ? tinted('whirl', '#dfe8f5') : FXS.whirl; if (wim) { g.save(); g.translate(x, y - 14); g.scale(1, 0.8); g.rotate(t * 13); g.globalAlpha = Math.min(1, z.p * 14, (1 - z.p) * 8) * (z.aux ? 0.7 : 0.95); g.drawImage(wim, -r, -r, r * 2, r * 2); g.rotate(-t * 22); g.globalAlpha *= 0.35; g.drawImage(wim, -r * 0.62, -r * 0.62, r * 1.24, r * 1.24); g.restore(); g.globalAlpha = 1; break; } }
+      // eslint-disable-next-line no-fallthrough
+      case 'whirl_old': { g.globalCompositeOperation = 'lighter'; g.strokeStyle = z.aux ? '#dfe8f5' : '#ffd0a0'; g.lineWidth = z.aux ? 3 : 7; for (let i = 0; i < 4; i++) { g.globalAlpha = 0.5; g.beginPath(); g.ellipse(x, y - 14, r * (0.55 + (i % 2) * 0.35), r * (0.55 + (i % 2) * 0.35) * 0.8, 0, t * 14 + i * 1.57, t * 14 + i * 1.57 + 1.1); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; break; }
+      case 'bell': if (FXS.mandala) {                  // 萬佛朝宗：金色蓮花法陣展開，巨掌從天而降
+        const R = 400, grow = Math.min(1, z.p * 3.2), ease = 1 - (1 - grow) * (1 - grow), fade = Math.min(1, (1 - z.p) * 3);
+        disc(g, FXS.mandala, x, y, R * ease, t * 0.5, fade);
+        g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#ffd76b'; g.lineWidth = 6; g.globalAlpha = fade * 0.5;
+        const rr = r * Math.min(1, z.p * 1.6); g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); g.globalCompositeOperation = 'source-over';
+        if (FXS.palm && z.p < 0.6) { const k2 = Math.min(1, z.p / 0.22), sz = 250 * (1.7 - 0.7 * k2), ph = sz * FXS.palm.height / FXS.palm.width; g.globalAlpha = Math.min(1, k2 * 1.5) * Math.min(1, (0.6 - z.p) * 6); g.drawImage(FXS.palm, x - sz / 2, y - ph / 2 - 30 - (1 - k2) * 220, sz, ph); }
+        g.globalAlpha = 1; break;
+      }
+      // eslint-disable-next-line no-fallthrough
+      case 'bell_old': { g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 3; i++) { const rr = r * Math.min(1, z.p * 1.3 + i * 0.12); g.strokeStyle = '#ffd76b'; g.globalAlpha = (1 - z.p) * 0.6; g.lineWidth = 10 - i * 3; g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; break; }
       case 'mark': case 'airstrike': {
         const col = k === 'mark' ? '#ff5a6b' : '#ffb52f', pu = k === 'airstrike' ? z.dp : 1;
         if (k === 'airstrike' && z.on) break;
@@ -416,7 +461,7 @@ export class Renderer {
     for (const l of this.fx.lights) hole(l.x, l.y, l.r, l.life / l.max);
     let n = 0;
     for (const p of f.projs) { if (n++ > 70) break; hole(p.x, p.y, p.tm ? 60 : 44, 0.55); }
-    for (const z of f.zones) { const kk = ZONE_KINDS[z.k]; if (kk === 'fire' || kk === 'grill' || kk === 'rune' || kk === 'runebig' || kk === 'seal' || kk === 'heal' || kk === 'e_warn') hole(z.x, z.y, z.r * 1.5, 0.6); }
+    for (const z of f.zones) { const kk = ZONE_KINDS[z.k]; if (kk === 'fire' || kk === 'grill' || kk === 'dragonfire' || kk === 'rune' || kk === 'runebig' || kk === 'seal' || kk === 'heal' || kk === 'e_warn') hole(z.x, z.y, z.r * 1.5, 0.6); }
     for (const p of f.pickups.values()) if (p.type === 'x') hole(p.x, p.y, 110, 0.7);
     const g = this.g;
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -472,6 +517,11 @@ export class Renderer {
   }
 }
 
+// 把圓形俯視素材畫成地面上的圓盤（壓扁 0.86、可旋轉）
+function disc(g, im, x, y, r, rot, alpha) {
+  if (alpha <= 0) return;
+  g.save(); g.translate(x, y); g.scale(1, 0.86); g.rotate(rot); g.globalAlpha = Math.min(1, alpha); g.drawImage(im, -r, -r, r * 2, r * 2); g.restore(); g.globalAlpha = 1;
+}
 function magicCircle(g, x, y, r, t, col, alpha, big) {
   g.save(); g.translate(x, y); g.scale(1, 0.86); g.globalAlpha = Math.max(0, alpha);
   g.fillStyle = col + (r > 300 ? '0c' : '1c'); g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();

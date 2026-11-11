@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as kart.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a 2D game visual effect sprite: a small black-and-gold racing go-kart with a banana emblem and flames from the exhaust, seen from DIRECTLY above (top-down), front pointing RIGHT. Centered, horizontal. Landscape 3:2.
+Art style: 2D ANIME / cartoon animation VFX style: bold shapes, clean dark or coloured outlines, CEL SHADING with 2-3 flat tones, hand-drawn anime effect look. NOT 3D, NOT photorealistic, no soft airbrush glow. Two references are attached for the game's style. The background MUST be fully transparent (alpha 0): no backdrop, no panel, no ground plane, no text.
+After saving, print the file path.

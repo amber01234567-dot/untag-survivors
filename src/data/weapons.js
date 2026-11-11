@@ -204,15 +204,15 @@ W('mines', {
   ],
 });
 W('cheer', {
-  name: '引擎聲浪', glyph: '引', beh: 'pulse',
-  base: { dmg: 18, cd: 1.5, r: 185, kb: 90, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3 },
+  name: '爆蕉號', glyph: '車', beh: 'kart', proj: 'kart',
+  base: { dmg: 20, cd: 1.5, count: 1, speed: 560, life: 0.75, range: 430, pierce: 99, kb: 180, r: 185, buffDmg: 0.08, buffHaste: 0.08, buffSpeed: 0.08, buffDur: 3 },
   lv: [
-    ['音波範圍 +20%', { m: { r: 1.2 } }],
+    ['引擎聲浪範圍 +20%', { m: { r: 1.2 } }],
     ['加速：隊友攻速與移速加成提升至 14%', { s: { buffHaste: 0.14, buffSpeed: 0.14 } }],
     ['傷害 +35%', { m: { dmg: 1.35 } }],
-    ['聲浪同時提升 14% 攻擊力', { s: { buffDmg: 0.14 } }],
-    ['冷卻 -22%', { m: { cd: 0.78 } }],
-    ['攻速與移速加成提升至 22%，範圍 +20%', { s: { buffHaste: 0.22, buffSpeed: 0.22 }, m: { r: 1.2 } }],
+    ['引擎聲浪同時提升 14% 攻擊力', { s: { buffDmg: 0.14 } }],
+    ['一次放出 2 台卡丁車', { a: { count: 1 }, s: { spread: 0.5 } }],
+    ['攻速與移速加成提升至 22%，冷卻 -22%', { s: { buffHaste: 0.22, buffSpeed: 0.22 }, m: { cd: 0.78 } }],
   ],
 });
 W('drones', {

@@ -306,6 +306,20 @@ export const BEH = {
     volley(W, p, w, a, s, null);
   },
 
+// 起秋：放出卡丁車衝撞貫穿，同時以引擎聲浪為附近隊友加速
+  kart(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const tgt = W.nearestEnemy(p.x, p.y, s.range);
+    if (!tgt) return;
+    w.t = s.cd * p.st.cd; p.atkN++;
+    const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
+    volley(W, p, w, a, s, { r: 20, y: p.y });
+    W.playersIn(p.x, p.y, s.r * p.st.area, (q) => addBuff(q, 'cheer', { t: s.buffDur, dmg: s.buffDmg, haste: s.buffHaste, speed: s.buffSpeed || 0 }));
+    W.emit('r', p.x | 0, p.y | 0, (s.r * p.st.area) | 0, 4);
+  },
+
   lightning(W, p, w, dt) {
     const s = w.s;
     w.t -= dt * bHaste(p);

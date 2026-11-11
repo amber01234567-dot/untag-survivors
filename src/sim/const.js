@@ -9,11 +9,11 @@ export const VIEW_W = 1170, VIEW_H = 660;
 export const PROJ_KINDS = [
   'bullet', 'gatling', 'revolver', 'pistol', 'knife', 'rune', 'wisp', 'syringe', 'skewer', 'bead',
   'wave', 'cleaver', 'baseball', 'laserbolt', 'missile', 'molotov', 'blade', 'dronebolt',
-  'e_can', 'e_spore', 'e_orb', 'e_laser', 'e_trash', 'e_chain', 'grenade', 'note', 'fireball',
+  'e_can', 'e_spore', 'e_orb', 'e_laser', 'e_trash', 'e_chain', 'grenade', 'note', 'fireball', 'kart',
 ];
 export const ZONE_KINDS = [
   'mine', 'rune', 'runebig', 'blackhole', 'fire', 'frost', 'beam', 'pulse', 'heal', 'grill',
-  'e_warn', 'e_slam', 'e_beam', 'garbage', 'seal', 'whirl', 'bell', 'airstrike', 'mark', 'shadow', 'toxic', 'decoy', 'aura',
+  'e_warn', 'e_slam', 'e_beam', 'garbage', 'seal', 'whirl', 'bell', 'airstrike', 'mark', 'shadow', 'toxic', 'decoy', 'aura', 'dragonfire', 'crack', 'zero',
 ];
 export const SUMMON_KINDS = ['drone', 'cat', 'lion', 'rat', 'wisp', 'turret', 'tank'];
 

@@ -32,7 +32,8 @@ export const SKILLS = {
     const x = p.x + Math.cos(p.aim) * 90, y = p.y + Math.sin(p.aim) * 90;
     W.addZone({ kind: 'e_slam', owner: p, x, y, r: 380, dur: 0.45, delay: 0.4, tick: 9, onStart(W2) {
       W2.aoe(x, y, 380, wdmg(p) * 9, p, { stun: 2, kb: 300, fx: 9 }); W2.emit('sh', 18);
-      for (let i = 0; i < 5; i++) { const a = i * TAU / 5; W2.addZone({ kind: 'fire', owner: p, x: x + Math.cos(a) * 180, y: y + Math.sin(a) * 180, r: 90, dur: 5, tick: 0.4, dmg: wdmg(p) * 0.3, hitOpt: { quiet: true } }); }
+      W2.addZone({ kind: 'crack', owner: p, x, y, r: 380, dur: 6, tick: 9 });
+      for (let i = 0; i < 3; i++) { const a = i * TAU / 3; W2.addZone({ kind: 'fire', owner: p, x: x + Math.cos(a) * 180, y: y + Math.sin(a) * 180, r: 90, dur: 5, tick: 0.4, dmg: wdmg(p) * 0.3, hitOpt: { quiet: true } }); }
     } });
   },
   // ── 狗企 ──
@@ -42,7 +43,7 @@ export const SKILLS = {
   },
   gq_empire(W, p) {
     W.addZone({ kind: 'garbage', owner: p, x: p.x, y: p.y, r: 300, dur: 10, tick: 0.5, dmg: wdmg(p) * 0.9, hitOpt: { slow: 0.5, slowDur: 0.8, dot: 10, dotDur: 3, quiet: true } });
-    for (let i = 0; i < 10; i++) { const a = i * TAU / 10; minion(W, p, 'rat', p.x + Math.cos(a) * 50, p.y + Math.sin(a) * 50, { life: 12, speed: 300, dmg: wdmg(p) * 1.2, cd: 0.5, dot: 8 }); }
+    for (let i = 0; i < 14; i++) { const a = i * TAU / 14, d = 50 + (i % 3) * 34; minion(W, p, 'rat', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, { life: 12, speed: 300, dmg: wdmg(p) * 0.9, cd: 0.5, dot: 8 }); }
     W.emit('sh', 10);
   },
   // ── 庭哥 ──
@@ -110,7 +111,7 @@ export const SKILLS = {
   },
   tk_zero(W, p) {
     const targets = W.enemiesIn(p.x, p.y, 720).slice();
-    W.emit('r', p.x | 0, p.y | 0, 720, 6);
+    W.addZone({ kind: 'zero', owner: p, follow: p, r: 720, dur: 3.2, tick: 9 });
     for (const e of targets) { e.mark = 4; e.cnt = 3; }
     let n = 3;
     channel(W, p, 3.1, 1, (W2) => {
@@ -177,7 +178,7 @@ export const SKILLS = {
     W.emit('r', p.x | 0, p.y | 0, (310 * p.st.area) | 0, 3);
   },
   al_buddha(W, p) {
-    W.addZone({ kind: 'bell', owner: p, follow: p, r: 800, dur: 1.2, tick: 9 });
+    W.addZone({ kind: 'bell', owner: p, follow: p, r: 800, dur: 2, tick: 9 });
     W.hash.query(p.x, p.y, 800, (e) => W.strike(p, e, wdmg(p) * 14, { stun: 5, mark: 5 }));
     allies(W, p, 0, (q) => { q.shield = Math.max(q.shield, 40 + q.st.maxHp * 0.3 * p.st.heal); addBuff(q, 'buddha', { t: 6, regen: 4 }); W.emit('r', q.x | 0, q.y | 0, 80, 3); });
     W.emit('sh', 14);
@@ -237,10 +238,10 @@ export const SKILLS = {
   },
   // ── 農夫哥哥 ──
   nf_domain(W, p) {
-    W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y, r: 200 * p.st.area, dur: 6, tick: 0.4, dmg: wdmg(p) * 0.7, buff: { t: 1, dmg: 0.3 }, hitOpt: { dot: 10, dotDur: 2, quiet: true } });
+    W.addZone({ kind: 'dragonfire', owner: p, x: p.x, y: p.y, r: 200 * p.st.area, dur: 6, tick: 0.4, dmg: wdmg(p) * 0.7, buff: { t: 1, dmg: 0.3 }, hitOpt: { dot: 10, dotDur: 2, quiet: true } });
   },
   nf_judgment(W, p) {
-    W.addZone({ kind: 'fire', owner: p, follow: p, r: 420, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.6, aux: 1, hitOpt: { dot: 16, dotDur: 3, quiet: true } });
+    W.addZone({ kind: 'dragonfire', owner: p, follow: p, r: 420, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.6, aux: 1, hitOpt: { dot: 16, dotDur: 3, quiet: true } });
     allies(W, p, 0, (q) => { addBuff(q, 'judgment', { t: 10, dmg: 0.5, ult: 1 }); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
     W.emit('sh', 14);
   },
