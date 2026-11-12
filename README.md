@@ -93,7 +93,7 @@ tools/       serve.mjs（靜態伺服器）、simtest.mjs（無頭機器人模�
 - **天賦分頁**：`data/upgrades.js` 的 `TALENT_PAGES`，每個系列加一頁（`req` = 需先通關的關卡）。
 
 ### 音訊（`core/audio.js`）
-- **音效**：`assets/sfx/` 的取樣音效（`SAMPLES` 表：變體數、音量、殘響），載入前或缺檔時退回 WebAudio 合成（`SFX` 表）。
+- **音效**：WebAudio 即時合成（`SFX` 表），每個聲音由多層疊成並經壓縮與短殘響。也支援取樣音檔（`USE_SAMPLES` 與 `SAMPLES` 表）。
 - **背景音樂**：`assets/music/`（來源與授權見該資料夾的 `CREDITS.md`），依情境自動切換：主選單 / 各系列戰鬥 / 首領。換歌改 `TRACKS` 或直接換檔。
 - **LOGO 字體**：`assets/fonts/`（Google Fonts，SIL OFL 授權，只含 LUHAI 五個字母）。`css/style.css` 的 `--logo` 決定用哪一款，網址加 `?logo=A`～`H` 可預覽。
 

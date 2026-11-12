@@ -98,10 +98,11 @@ const SAMPLES = {
   skill: [1, 0.6], ult: [1, 1.0, 0.4], gate: [1, 0.7, 0.3], boss: [1, 1.0, 0.5], bossdie: [1, 1.0, 0.5], click: [1, 0.5], select: [1, 0.5],
 };
 const FIXED = { levelup: 1, chest: 1, clear: 1, revive: 1, click: 1, select: 1, gem: 0, coin: 1 };      // 旋律性的聲音不變調
+const USE_SAMPLES = false;      // 目前使用合成音效；要改用取樣，把音檔放進 assets/sfx/ 並設為 true
 const bufs = {};
 let loading = false;
 function loadSamples() {
-  if (loading || !ctx) return; loading = true;
+  if (!USE_SAMPLES || loading || !ctx) return; loading = true;
   for (const name in SAMPLES) for (let i = 1; i <= SAMPLES[name][0]; i++) {
     fetch(new URL(`../../assets/sfx/${name}${i}.wav`, import.meta.url)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((ab) => ctx.decodeAudioData(ab)).then((b) => { (bufs[name] || (bufs[name] = [])).push(b); }).catch(() => {});
   }
@@ -127,14 +128,14 @@ export function sfx(name) {
   if (t - (last[name] || 0) < (GAP[name] || 0.03)) return;
   if (voices > (LIGHT[name] ? 22 : 40)) return;
   last[name] = t;
-  try { if (!ac()) return; if (!sample(name)) SFX[name](); } catch (e) { /* 音訊尚未解鎖時忽略 */ }
+  try { if (!ac()) return; if (!USE_SAMPLES || !sample(name)) SFX[name](); } catch (e) { /* 音訊尚未解鎖時忽略 */ }
 }
 export function setVolume(v) { vol = v; if (sfxBus) sfxBus.gain.value = v * SFX_GAIN; }
 
 // ───── 背景音樂 ─────
 // TRACKS：情境 → assets/music/ 內的檔名。檔案不存在時安靜略過。換歌只要換檔案或改這張表。
-export const TRACKS = { menu: 'menu', s1: 'series1', s2: 'series2', boss: 'boss' };      // 兩個情境指到同一個檔案時不會重播
-const MUSIC_GAIN = 0.38, SFX_GAIN = 1.5;      // 音樂壓低、音效拉高，打擊聲才不會被蓋住
+export const TRACKS = { menu: 'menu', s1: 'series1', s2: 'series2' };      // 沒有列出的情境（例如 boss）沿用當下正在播的曲子      // 兩個情境指到同一個檔案時不會重播
+const MUSIC_GAIN = 0.38, SFX_GAIN = 1.7;      // 音樂壓低、音效拉高，打擊聲才不會被蓋住
 const players = {};
 let want = null, cur = null;
 function player(id) {
@@ -150,6 +151,7 @@ function player(id) {
 function fade(p, to, sec) { const t = ctx.currentTime; p.g.gain.cancelScheduledValues(t); p.g.gain.setValueAtTime(p.g.gain.value, t); p.g.gain.linearRampToValueAtTime(to, t + sec); }
 // 切換情境音樂（交叉淡入淡出）。傳 null 停止。尚未解鎖音訊時先記著，解鎖後自動開始。
 export function music(id) {
+  if (id && !TRACKS[id]) return;
   want = id;
   if (!unlocked || id === cur) return;
   if (id && cur && TRACKS[id] === TRACKS[cur] && players[cur]) { players[id] = players[cur]; cur = id; return; }
