@@ -1,0 +1,6 @@
+Use your image generation tool to create ONE image and save it as bison.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a simple game enemy: a stocky round bison covered in rusty scrap-metal armour plates with short horns.
+Design: VERY SIMPLE - one basic shape, few details, at most 3 main colours, simple face (two eyes and a mouth), cute and slightly mischievous. Readable at 50 pixels. Single creature, facing right, centered, bottom-aligned.
+Art style: 2D ANIME / cartoon animation style exactly like the character art in the attached sheet: clean confident dark lineart, CEL SHADING with only 2-3 flat tones per colour, simple shapes. Absolutely NOT 3D, NOT a rendered or plush/toy look, NO realistic textures, NO soft airbrushed gradients, NO glossy highlights.
+The background MUST be fully transparent (alpha 0) everywhere: no backdrop, no panel, no ground, no shadow, no text labels, no effects. Square 1024x1024.
+After saving, print the file path.
