@@ -11,6 +11,7 @@ import { save, DEV } from '../core/save.js';
 import { sfx, setVolume, setMusicVolume } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
 import { icon } from './icons.js';
+import { startLogoFire } from './logofire.js';
 
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -35,6 +36,7 @@ export class Screens {
     this.el.innerHTML = this[name]();
     mount(this.el);
     if (name === 'lobby') this.drawTopo();
+    if (name === 'home') startLogoFire(this.el);
   }
   refresh() { if (this.cur) { const sc = this.el.querySelector('.scroll'); const y = sc ? sc.scrollTop : 0; this.show(this.cur); const s2 = this.el.querySelector('.scroll'); if (s2) s2.scrollTop = y; } }
 
@@ -77,7 +79,7 @@ export class Screens {
     return `<div class="page home">
       <div class="wallet coin gold">${save.data.coins}</div>
       <div class="heroes" style="--n:${ids.length}"><div class="belt">${heroes}</div></div>
-      <div class="logo">LUHAI<small>倖存戰線</small></div>
+      <div class="logo fire"><canvas class="flames"></canvas><span>LUHAI</span><small>倖存戰線</small></div>
       <div class="tagline">不被定義・不被束縛 ── 4 人連線合作倖存者</div>
       <div class="row"><input class="field" id="name" maxlength="12" value="${esc(save.data.name)}" placeholder="你的名字"></div>
       <div class="menu">

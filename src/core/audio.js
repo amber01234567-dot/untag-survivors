@@ -13,8 +13,8 @@ function ac() {
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 18; comp.ratio.value = 5; comp.attack.value = 0.003; comp.release.value = 0.16;
     master = ctx.createGain(); master.gain.value = 0.9; master.connect(comp); comp.connect(ctx.destination);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = vol; sfxBus.connect(master);
-    musicBus = ctx.createGain(); musicBus.gain.value = mvol; musicBus.connect(master);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = vol * SFX_GAIN; sfxBus.connect(master);
+    musicBus = ctx.createGain(); musicBus.gain.value = mvol * MUSIC_GAIN; musicBus.connect(master);
     // 短殘響：指數衰減的雜訊當脈衝響應
     const len = Math.floor(ctx.sampleRate * 1.1), ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
@@ -68,7 +68,9 @@ const SFX = {
   zap: () => { noise(0.13, { type: 'highpass', freq: 4200, gain: 0.1 }); tone(2400, 0.11, { type: 'sawtooth', gain: 0.045, to: 300, lp: 5200 }); tone(1300, 0.06, { type: 'square', gain: 0.03, to: 2600, delay: 0.02, lp: 4200 }); },
   boom: () => { noise(0.03, { type: 'highpass', freq: 3000, gain: 0.16 }); noise(0.5, { freq: 1400, freqTo: 160, gain: 0.3, rev: 0.5 }); tone(120, 0.42, { gain: 0.32, to: 30 }); },
   // ── 命中 / 擊殺 ──
-  kill: () => { tone(430, 0.09, { type: 'triangle', gain: 0.07, to: 110 }); noise(0.045, { type: 'bandpass', freq: 2400, q: 1.2, gain: 0.07 }); },
+  hit: () => { tone(240, 0.07, { gain: 0.2, to: 70 }); noise(0.035, { type: 'bandpass', freq: 2200, q: 0.8, gain: 0.16 }); noise(0.01, { type: 'highpass', freq: 6000, gain: 0.1 }); },
+  crit: () => { tone(300, 0.12, { gain: 0.3, to: 55 }); noise(0.07, { type: 'bandpass', freq: 3000, freqTo: 900, q: 0.9, gain: 0.22 }); tone(1800, 0.09, { type: 'triangle', gain: 0.07, to: 2600, rev: 0.3 }); },
+  kill: () => { tone(380, 0.12, { type: 'triangle', gain: 0.13, to: 80 }); tone(120, 0.1, { gain: 0.16, to: 50 }); noise(0.06, { type: 'bandpass', freq: 2400, q: 1.0, gain: 0.13 }); },
   ehit: () => { tone(180, 0.2, { type: 'sawtooth', gain: 0.17, to: 52, lp: 900, lpTo: 220 }); noise(0.09, { freq: 900, gain: 0.14 }); },
   down: () => { tone(380, 0.7, { type: 'sawtooth', gain: 0.16, to: 55, lp: 1400, lpTo: 200, rev: 0.4 }); tone(95, 0.5, { gain: 0.18, to: 40, delay: 0.1 }); },
   // ── 拾取 ──
@@ -87,8 +89,8 @@ const SFX = {
   bossdie: () => { noise(1.3, { freq: 2200, freqTo: 120, gain: 0.32, rev: 0.7 }); tone(140, 1.0, { gain: 0.3, to: 28 }); chime([220, 330, 440, 660, 880], 0.12, 0.09, 0.6); },
   click: () => { tone(760, 0.045, { type: 'triangle', gain: 0.05, to: 1100, fixed: true }); noise(0.012, { type: 'highpass', freq: 4000, gain: 0.03 }); },
 };
-const GAP = { kill: 0.06, gem: 0.045, shot: 0.07, slash: 0.08, punch: 0.07, boom: 0.09, zap: 0.09, coin: 0.06, ehit: 0.12, heal: 0.15 };
-const LIGHT = { kill: 1, gem: 1, shot: 1, slash: 1, punch: 1, zap: 1, coin: 1 };      // 聲音太多時先捨棄這些
+const GAP = { hit: 0.055, crit: 0.09, kill: 0.06, gem: 0.045, shot: 0.07, slash: 0.08, punch: 0.07, boom: 0.09, zap: 0.09, coin: 0.06, ehit: 0.12, heal: 0.15 };
+const LIGHT = { hit: 1, kill: 1, gem: 1, shot: 1, slash: 1, punch: 1, zap: 1, coin: 1 };      // 聲音太多時先捨棄這些
 
 export function sfx(name) {
   if (!unlocked || vol <= 0 || !SFX[name]) return;      // 瀏覽器規定：使用者互動後才能出聲
@@ -98,11 +100,12 @@ export function sfx(name) {
   last[name] = t;
   try { SFX[name](); } catch (e) { /* 音訊尚未解鎖時忽略 */ }
 }
-export function setVolume(v) { vol = v; if (sfxBus) sfxBus.gain.value = v; }
+export function setVolume(v) { vol = v; if (sfxBus) sfxBus.gain.value = v * SFX_GAIN; }
 
 // ───── 背景音樂 ─────
 // TRACKS：情境 → assets/music/ 內的檔名。檔案不存在時安靜略過。換歌只要換檔案或改這張表。
-export const TRACKS = { menu: 'menu', s1: 'series1', s2: 'series2', boss: 'boss' };
+export const TRACKS = { menu: 'main', s1: 'main', s2: 'main', boss: 'main' };      // 目前全程同一首；兩個情境指到同一個檔案時不會重播
+const MUSIC_GAIN = 0.38, SFX_GAIN = 1.7;      // 音樂壓低、音效拉高，打擊聲才不會被蓋住
 const players = {};
 let want = null, cur = null;
 function player(id) {
@@ -120,12 +123,13 @@ function fade(p, to, sec) { const t = ctx.currentTime; p.g.gain.cancelScheduledV
 export function music(id) {
   want = id;
   if (!unlocked || id === cur) return;
-  if (cur && players[cur]) { const old = players[cur]; fade(old, 0, 1.2); setTimeout(() => { if (cur !== Object.keys(players).find((k) => players[k] === old)) old.el.pause(); }, 1400); }
+  if (id && cur && TRACKS[id] === TRACKS[cur] && players[cur]) { players[id] = players[cur]; cur = id; return; }
+  if (cur && players[cur]) { const old = players[cur]; fade(old, 0, 1.2); setTimeout(() => { if (!cur || players[cur] !== old) old.el.pause(); }, 1400); }
   cur = id;
   if (!id || !TRACKS[id]) return;
   const p = player(id);
   if (!p || p.bad) return;
   p.el.play().then(() => fade(p, 1, 1.5)).catch(() => {});
 }
-export function setMusicVolume(v) { mvol = v; if (musicBus) musicBus.gain.value = v; }
+export function setMusicVolume(v) { mvol = v; if (musicBus) musicBus.gain.value = v * MUSIC_GAIN; }
 export function unlockAudio() { const first = !unlocked; unlocked = true; ac(); if (first && want) { const w = want; cur = null; music(w); } }

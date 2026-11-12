@@ -31,6 +31,7 @@ export class Fx {
     switch (k) {
       case 'd': {
         const f = ev[4];
+        if (f === 1) this.sfx('crit'); else if (f === 0) this.sfx('hit');
         if (f === 2) this.text(ev[1], ev[2], '+' + ev[3], '#5dff9d', 13);
         else if (f === 3) { this.text(ev[1], ev[2], '-' + ev[3], '#ff5a6b', 15, 0.8); this.spark(ev[1], ev[2] + 20, 6, '#ff5a6b', 140, 0.35, 3); }
         else if (this.opts.dmgNum) this.text(ev[1], ev[2], String(ev[3]), f === 1 ? '#ffd23c' : '#f4f6fa', f === 1 ? 18 : 12, f === 1 ? 0.8 : 0.55);
@@ -58,7 +59,7 @@ export class Fx {
         this.sfx(def.boss ? 'bossdie' : 'kill');
         break;
       }
-      case 'h': if (FXS.hit && this.hits.length < 30) this.hits.push({ x: ev[1], y: ev[2], a: Math.random() * TAU, life: 0.14, max: 0.14 }); else this.spark(ev[1], ev[2], 3, '#fff5c4', 110, 0.2, 2.2); break;
+      case 'h': this.sfx('hit'); if (FXS.hit && this.hits.length < 30) this.hits.push({ x: ev[1], y: ev[2], a: Math.random() * TAU, life: 0.14, max: 0.14 }); else this.spark(ev[1], ev[2], 3, '#fff5c4', 110, 0.2, 2.2); break;
       case 'l': this.lines.push({ x1: ev[1], y1: ev[2], x2: ev[3], y2: ev[4], st: ev[5], life: 0.22, max: 0.22, seed: Math.random() * 99 }); if (ev[5] === 1 || ev[5] === 3) { this.light(ev[3], ev[4], 160, 0.2); this.sfx('zap'); } else if (ev[5] === 0) this.sfx('shot'); break;
       case 't': this.text(ev[1], ev[2], ev[3], ['#ffffff', '#ffd23c', '#5dff9d', '#ff5a6b', '#b7a6ff'][ev[4]] || '#fff', 17, 1.1); break;
       case 'r': this.ring(ev[1], ev[2], ev[3], RING[ev[4]] || RING[0], ev[3] > 500 ? 0.8 : 0.45, ev[3] > 300 ? 8 : 4); if (ev[4] === 2) this.spark(ev[1], ev[2] - 20, 6, '#5dff9d', 60, 0.6, 3); if (ev[4] === 7) this.light(ev[1], ev[2], 900, 0.6); break;

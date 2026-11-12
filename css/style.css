@@ -382,7 +382,7 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 @font-face { font-family: "LogoF"; src: url(../assets/fonts/Bungee.woff2); font-display: swap; }
 @font-face { font-family: "LogoG"; src: url(../assets/fonts/SairaStencilOne.woff2); font-display: swap; }
 @font-face { font-family: "LogoH"; src: url(../assets/fonts/Anton.woff2); font-display: swap; }
-:root { --logo: "LogoB"; }
+:root { --logo: "LogoC"; }
 .logo { font-family: var(--logo), "Arial Black", Impact, sans-serif; letter-spacing: .06em; }
 .logo small { font-family: var(--serif); }
 /* 主選單角色跑馬燈 */
@@ -392,3 +392,10 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .home .heroes:hover .belt { animation-play-state: paused; }
 @keyframes belt { to { transform: translateX(-50%); } }
 .home .sound { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+/* 火焰 LOGO：文字為熔金漸層，後方 Canvas 冒火（src/ui/logofire.js） */
+.logo.fire { position: relative; display: inline-block; text-shadow: none; margin-top: clamp(10px, 3vh, 34px); }
+.logo.fire canvas.flames { position: absolute; pointer-events: none; z-index: 0; }
+.logo.fire span { position: relative; z-index: 1; display: inline-block; background: linear-gradient(180deg, #fff6c8 0%, #ffd34d 30%, #ff8a1f 62%, #d8320f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 2px #1a0703; paint-order: stroke fill; filter: drop-shadow(0 4px 0 #120402) drop-shadow(0 0 22px rgba(255, 110, 20, .55)); animation: ember 2.4s ease-in-out infinite; }
+.logo.fire small { position: relative; z-index: 1; }
+@keyframes ember { 50% { filter: drop-shadow(0 4px 0 #120402) drop-shadow(0 0 34px rgba(255, 150, 40, .8)); } }
