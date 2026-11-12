@@ -372,3 +372,23 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .sertab i { display: block; font-style: normal; font-size: 9px; letter-spacing: 2px; opacity: .6; }
 .sertab.on { color: var(--text); border-color: var(--cyan, #3df2d2); background: rgba(61, 242, 210, .08); box-shadow: 0 0 0 1px rgba(61, 242, 210, .25) inset; }
 .sertab:disabled { opacity: .35; }
+
+/* ───── LOGO 字體（assets/fonts，只含 LUHAI 五個字母）。網址加 ?logo=A~H 可預覽其他款 ───── */
+@font-face { font-family: "LogoA"; src: url(../assets/fonts/Orbitron.woff2); font-display: swap; }
+@font-face { font-family: "LogoB"; src: url(../assets/fonts/RussoOne.woff2); font-display: swap; }
+@font-face { font-family: "LogoC"; src: url(../assets/fonts/BlackOpsOne.woff2); font-display: swap; }
+@font-face { font-family: "LogoD"; src: url(../assets/fonts/Audiowide.woff2); font-display: swap; }
+@font-face { font-family: "LogoE"; src: url(../assets/fonts/ZenDots.woff2); font-display: swap; }
+@font-face { font-family: "LogoF"; src: url(../assets/fonts/Bungee.woff2); font-display: swap; }
+@font-face { font-family: "LogoG"; src: url(../assets/fonts/SairaStencilOne.woff2); font-display: swap; }
+@font-face { font-family: "LogoH"; src: url(../assets/fonts/Anton.woff2); font-display: swap; }
+:root { --logo: "LogoB"; }
+.logo { font-family: var(--logo), "Arial Black", Impact, sans-serif; letter-spacing: .06em; }
+.logo small { font-family: var(--serif); }
+/* 主選單角色跑馬燈 */
+.home .heroes { display: block; width: 100vw; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
+.home .heroes .belt { display: flex; align-items: flex-end; height: 100%; width: max-content; animation: belt calc(var(--n) * 2.6s) linear infinite; }
+.home .heroes .belt canvas { margin: 0 clamp(0px, .4vw, 8px); flex: none; }
+.home .heroes:hover .belt { animation-play-state: paused; }
+@keyframes belt { to { transform: translateX(-50%); } }
+.home .sound { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }

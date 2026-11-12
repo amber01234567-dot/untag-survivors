@@ -8,7 +8,7 @@ import { OBJ_TEXT } from '../sim/stagectl.js';
 import { portrait, hasLook } from '../render/chibi.js';
 import { SLOT_COLORS } from '../render/renderer.js';
 import { save, DEV } from '../core/save.js';
-import { sfx } from '../core/audio.js';
+import { sfx, setVolume, setMusicVolume } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
 import { icon } from './icons.js';
 
@@ -51,6 +51,7 @@ export class Screens {
         case 'leave': ses.leave(); ses.lobby.players = []; this.show('home'); break;
         case 'tab': this.tab = +v; this.show('lobby'); break;
         case 'series': this.tab = CHAPTERS.find((c) => (c.series || 1) === +v).id; this.show('lobby'); break;
+        case 'vol': { const s = save.data.settings, cyc = [0, 0.2, 0.45, 0.8], i = cyc.findIndex((x) => x >= s[v] - 0.01); s[v] = cyc[(i + 1) % 4]; if (v === 'sfx') setVolume(s.sfx); else setMusicVolume(s.music); save.write(); this.refresh(); break; }
         case 'tpage': this.tpage = +v; this.refresh(); break;
         case 'node': if (ses.isHost()) { const cl = ses.lobby.cleared[v] || 0; ses.select(v, Math.min(ses.lobby.sel.diff, cl)); } break;
         case 'diff': if (ses.isHost()) ses.select(ses.lobby.sel.stage, +v); break;
@@ -71,11 +72,12 @@ export class Screens {
   // ───────── 主選單 ─────────
   home() {
     const room = new URLSearchParams(location.search).get('room') || '';
-    const heroes = ['yingzhang', 'gouqi', 'shenshen', 'laoliu', 'tingge', 'enjidou', 'tiaotiao', 'xia', 'laijie'].filter(hasLook).map((id) => P(id, 150)).join('');
+    const ids = CHAR_LIST.map((c) => c.id).filter(hasLook), heroes = ids.concat(ids).map((id) => P(id, 150)).join('');      // 排兩輪，跑馬燈才能無縫循環
+    const st = save.data.settings, lv = (v) => (v <= 0 ? '關' : v < 0.3 ? '小' : v < 0.6 ? '中' : '大');
     return `<div class="page home">
       <div class="wallet coin gold">${save.data.coins}</div>
-      <div class="heroes">${heroes}</div>
-      <div class="logo">UNTAG<small>倖存戰線</small></div>
+      <div class="heroes" style="--n:${ids.length}"><div class="belt">${heroes}</div></div>
+      <div class="logo">LUHAI<small>倖存戰線</small></div>
       <div class="tagline">不被定義・不被束縛 ── 4 人連線合作倖存者</div>
       <div class="row"><input class="field" id="name" maxlength="12" value="${esc(save.data.name)}" placeholder="你的名字"></div>
       <div class="menu">
@@ -86,7 +88,8 @@ export class Screens {
         <button class="btn ghost" data-a="roster">角色</button>
         <button class="btn ghost" data-a="talents">天賦強化</button>
       </div>
-      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 UNTAG 倖存戰線・版權所有</div>
+      <div class="sound"><button class="btn small ghost" data-a="vol" data-v="music">♪ 音樂：${lv(st.music)}</button><button class="btn small ghost" data-a="vol" data-v="sfx">🔊 音效：${lv(st.sfx)}</button></div>
+      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 LUHAI 倖存戰線・版權所有</div>
     </div>`;
   }
 

@@ -9,7 +9,7 @@ const DEV = new URLSearchParams(location.search).get('dev') === '1';
 
 function fresh() {
   return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, unlocked: [], cleared: {}, char: 'tingge',
-    settings: { sfx: 0.5, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
+    settings: { sfx: 0.5, music: 0.35, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
 }
 function migrate(s) {
   const f = fresh();

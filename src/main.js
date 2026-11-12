@@ -1,6 +1,6 @@
 // 進入點：把存檔、連線、畫面、輸入串起來。
 import { save, DEV } from './core/save.js';
-import { sfx, setVolume, unlockAudio } from './core/audio.js';
+import { sfx, setVolume, setMusicVolume, music, unlockAudio } from './core/audio.js';
 import { Session } from './net/session.js';
 import { Renderer } from './render/renderer.js';
 import { loadSprites } from './render/chibi.js';
@@ -15,8 +15,10 @@ import { STAGES } from './data/chapters.js';
 
 const qs = new URLSearchParams(location.search);
 save.load();
+if (/^[A-H]$/i.test(qs.get('logo') || '')) document.documentElement.style.setProperty('--logo', '"Logo' + qs.get('logo').toUpperCase() + '"');
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
-setVolume(save.data.settings.sfx);
+setVolume(save.data.settings.sfx); setMusicVolume(save.data.settings.music);
+music('menu');
 addEventListener('pointerdown', unlockAudio, { once: true });
 addEventListener('keydown', unlockAudio, { once: true });
 
@@ -29,7 +31,8 @@ const app = {
     this.rt = rt; this.frame = null;
     this.screens.hide();
     this.renderer = new Renderer(this.canvas, rt.view.L, rt.myId, msg.players);
-    this.renderer.fx.onSfx = sfx;
+    this.renderer.fx.onSfx = (n) => { if (n === 'boss') music('boss'); sfx(n); };
+    music('s' + (STAGES[msg.stage] ? STAGES[msg.stage].series : 1));
     this.renderer.fx.opts.shake = save.data.settings.shake; this.renderer.fx.opts.dmgNum = save.data.settings.dmgNum;
     rt.view.onEvent = (ev) => this.renderer.fx.event(ev, this.frame && this.frame.players);
     rt.onEnd = (res) => this.hud.showResult(res);
@@ -37,7 +40,7 @@ const app = {
     this.input.enabled = true;
     this.input.onPause = () => this.hud.togglePause();
   },
-  stopGame() { this.input.enabled = false; this.hud.stop(); this.rt = null; this.renderer = null; this.frame = null; const g = this.canvas.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, this.canvas.width, this.canvas.height); },
+  stopGame() { music('menu'); this.input.enabled = false; this.hud.stop(); this.rt = null; this.renderer = null; this.frame = null; const g = this.canvas.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, this.canvas.width, this.canvas.height); },
   // 結算後回大廳
   endGame() { this.stopGame(); this.session.backToLobby(); if (!this.screens.cur) this.screens.show('lobby'); },
   // 中途離開
