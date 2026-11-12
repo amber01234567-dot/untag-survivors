@@ -89,23 +89,52 @@ const SFX = {
   bossdie: () => { noise(1.3, { freq: 2200, freqTo: 120, gain: 0.32, rev: 0.7 }); tone(140, 1.0, { gain: 0.3, to: 28 }); chime([220, 330, 440, 660, 880], 0.12, 0.09, 0.6); },
   click: () => { tone(760, 0.045, { type: 'triangle', gain: 0.05, to: 1100, fixed: true }); noise(0.012, { type: 'highpass', freq: 4000, gain: 0.03 }); },
 };
+// ───── 取樣音效（assets/sfx/，來源見該資料夾 CREDITS.md）─────
+// 名稱 → [變體數, 音量, 殘響量]。同一個聲音有多個變體時隨機挑，並略微變調，避免重複感。
+// 取樣還沒載完（或載入失敗）時退回上面的合成音效。
+const SAMPLES = {
+  hit: [4, 0.5], crit: [3, 0.8, 0.2], punch: [3, 0.75], slash: [3, 0.5], shot: [3, 0.4], zap: [3, 0.45], boom: [4, 0.85, 0.3], kill: [3, 0.55],
+  ehit: [2, 0.8], down: [1, 0.9, 0.3], gem: [3, 0.3], coin: [2, 0.4], heal: [2, 0.5], levelup: [1, 0.7, 0.2], chest: [1, 0.8, 0.2], clear: [1, 0.8, 0.3], revive: [1, 0.7, 0.2],
+  skill: [1, 0.6], ult: [1, 1.0, 0.4], gate: [1, 0.7, 0.3], boss: [1, 1.0, 0.5], bossdie: [1, 1.0, 0.5], click: [1, 0.5], select: [1, 0.5],
+};
+const FIXED = { levelup: 1, chest: 1, clear: 1, revive: 1, click: 1, select: 1, gem: 0, coin: 1 };      // 旋律性的聲音不變調
+const bufs = {};
+let loading = false;
+function loadSamples() {
+  if (loading || !ctx) return; loading = true;
+  for (const name in SAMPLES) for (let i = 1; i <= SAMPLES[name][0]; i++) {
+    fetch(new URL(`../../assets/sfx/${name}${i}.wav`, import.meta.url)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((ab) => ctx.decodeAudioData(ab)).then((b) => { (bufs[name] || (bufs[name] = [])).push(b); }).catch(() => {});
+  }
+}
+function sample(name) {
+  const list = bufs[name];
+  if (!list || !list.length) return false;
+  const [, gain, rev] = SAMPLES[name], c = ctx, s = c.createBufferSource(), g = c.createGain();
+  s.buffer = list[(Math.random() * list.length) | 0];
+  s.playbackRate.value = FIXED[name] ? 1 : rnd(0.92, 1.08);
+  g.gain.value = gain * (FIXED[name] ? 1 : rnd(0.85, 1));
+  s.connect(g); out(g, rev);
+  voices++; s.onended = () => { voices--; }; s.start();
+  return true;
+}
+
 const GAP = { hit: 0.055, crit: 0.09, kill: 0.06, gem: 0.045, shot: 0.07, slash: 0.08, punch: 0.07, boom: 0.09, zap: 0.09, coin: 0.06, ehit: 0.12, heal: 0.15 };
 const LIGHT = { hit: 1, kill: 1, gem: 1, shot: 1, slash: 1, punch: 1, zap: 1, coin: 1 };      // 聲音太多時先捨棄這些
 
 export function sfx(name) {
-  if (!unlocked || vol <= 0 || !SFX[name]) return;      // 瀏覽器規定：使用者互動後才能出聲
+  if (!unlocked || vol <= 0 || !(SFX[name] || SAMPLES[name])) return;      // 瀏覽器規定：使用者互動後才能出聲
   const t = performance.now() / 1000;
   if (t - (last[name] || 0) < (GAP[name] || 0.03)) return;
   if (voices > (LIGHT[name] ? 22 : 40)) return;
   last[name] = t;
-  try { SFX[name](); } catch (e) { /* 音訊尚未解鎖時忽略 */ }
+  try { if (!ac()) return; if (!sample(name)) SFX[name](); } catch (e) { /* 音訊尚未解鎖時忽略 */ }
 }
 export function setVolume(v) { vol = v; if (sfxBus) sfxBus.gain.value = v * SFX_GAIN; }
 
 // ───── 背景音樂 ─────
 // TRACKS：情境 → assets/music/ 內的檔名。檔案不存在時安靜略過。換歌只要換檔案或改這張表。
-export const TRACKS = { menu: 'main', s1: 'main', s2: 'main', boss: 'main' };      // 目前全程同一首；兩個情境指到同一個檔案時不會重播
-const MUSIC_GAIN = 0.38, SFX_GAIN = 1.7;      // 音樂壓低、音效拉高，打擊聲才不會被蓋住
+export const TRACKS = { menu: 'menu', s1: 'series1', s2: 'series2', boss: 'boss' };      // 兩個情境指到同一個檔案時不會重播
+const MUSIC_GAIN = 0.38, SFX_GAIN = 1.5;      // 音樂壓低、音效拉高，打擊聲才不會被蓋住
 const players = {};
 let want = null, cur = null;
 function player(id) {
@@ -132,4 +161,4 @@ export function music(id) {
   p.el.play().then(() => fade(p, 1, 1.5)).catch(() => {});
 }
 export function setMusicVolume(v) { mvol = v; if (musicBus) musicBus.gain.value = v * MUSIC_GAIN; }
-export function unlockAudio() { const first = !unlocked; unlocked = true; ac(); if (first && want) { const w = want; cur = null; music(w); } }
+export function unlockAudio() { const first = !unlocked; unlocked = true; ac(); loadSamples(); if (first && want) { const w = want; cur = null; music(w); } }
