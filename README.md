@@ -92,6 +92,11 @@ tools/       serve.mjs（靜態伺服器）、simtest.mjs（無頭機器人模�
 - **場地機關（系列特色）**：章節的 `devices` 權重表決定該章會出現哪些機關（油罐 / 砲塔 / 能量塔）。位置由 seed 生成，狀態在 `World.updateDevices()`，玩家靠近待命中的機關站一下即可啟動，全隊共用、有冷卻。機關不進升級選項，所以不影響武器平衡。新機關：在 `updateDevices` 加一種 kind、在 `render/renderer.js` 的 `device()` 加外觀。
 - **天賦分頁**：`data/upgrades.js` 的 `TALENT_PAGES`，每個系列加一頁（`req` = 需先通關的關卡）。
 
+### 音訊（`core/audio.js`）
+- **音效**：WebAudio 即時合成，每個聲音由多層疊成並經壓縮與短殘響，改 `SFX` 表即可調整。
+- **背景音樂**：`assets/music/`（來源與授權見該資料夾的 `CREDITS.md`），依情境自動切換：主選單 / 各系列戰鬥 / 首領。換歌改 `TRACKS` 或直接換檔。
+- **LOGO 字體**：`assets/fonts/`（Google Fonts，SIL OFL 授權，只含 LUHAI 五個字母）。`css/style.css` 的 `--logo` 決定用哪一款，網址加 `?logo=A`～`H` 可預覽。
+
 ### 其他可擴充點
 - 目標類型：`src/sim/stagectl.js`（目前有 殲滅 / 生存 / 巢穴 / 菁英 / 首領 / 攔截）。
 - 被動與天賦：`src/data/upgrades.js` 直接往表裡加。
