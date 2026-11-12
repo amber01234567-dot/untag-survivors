@@ -81,10 +81,16 @@ tools/       serve.mjs（靜態伺服器）、simtest.mjs（無頭機器人模�
 4. 外觀：在 `src/render/chibi.js` 的 `LOOKS` 加同名函式（沒有的話會自動顯示剪影佔位，不影響遊玩）。畫的時候開 `http://localhost:8080/tools/chibi-preview.html` 可即時預覽各種姿勢。設定圖放 `assets/sheets/<id>.jpg` 並在角色資料加 `sheet: true`，圖鑑就會顯示。
 
 ### 新增敵人
-`src/data/enemies.js` 加一筆（**加在清單最後**，順序是網路同步索引），`ai` 選現有行為（`chase` / `swarm` / `shooter` / `charger` / `exploder` / `blink` / `flee`…），再到 `src/render/enemySprites.js` 的 `DRAW` 畫外觀。
+`src/data/enemies.js` 加一筆（**加在清單最後**，順序是網路同步索引），`ai` 選現有行為（`chase` / `swarm` / `shooter` / `charger` / `exploder` / `blink` / `burst` / `lobber` / `flee`…），再到 `src/render/enemySprites.js` 的 `DRAW` 畫外觀。
 
 ### 新增關卡 / 章節
 `src/data/chapters.js`：在章節的 `nodes` 加節點（選 `layout`、填 `objs` 目標與 `pool` 敵人池、`pos` 與 `next`）。新的拓樸加在 `LAYOUTS`；新主題的地面 / 牆面 / 障礙物畫法加在 `src/render/map.js` 的 `THEMES`。
+
+### 系列（每三章一個主題）
+章節以 `series` 分組（`data/chapters.js` 的 `SERIES`），大廳先選系列再選章節。目前：系列一「霓虹都市」（1–3 章，室內）、系列二「廢土荒野」（4–6 章，戶外）。
+- **戶外大地圖**：章節設 `outdoor: true`，`sim/levelgen.js` 的 `DIMS.outdoor` 會讓每區面積約 1.5 倍、通道加寬，出怪量同步提高。
+- **場地機關（系列特色）**：章節的 `devices` 權重表決定該章會出現哪些機關（油罐 / 砲塔 / 能量塔）。位置由 seed 生成，狀態在 `World.updateDevices()`，玩家靠近待命中的機關站一下即可啟動，全隊共用、有冷卻。機關不進升級選項，所以不影響武器平衡。新機關：在 `updateDevices` 加一種 kind、在 `render/renderer.js` 的 `device()` 加外觀。
+- **天賦分頁**：`data/upgrades.js` 的 `TALENT_PAGES`，每個系列加一頁（`req` = 需先通關的關卡）。
 
 ### 其他可擴充點
 - 目標類型：`src/sim/stagectl.js`（目前有 殲滅 / 生存 / 巢穴 / 菁英 / 首領 / 攔截）。

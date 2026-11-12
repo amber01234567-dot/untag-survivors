@@ -61,6 +61,11 @@ export class World {
     this.dmgMul = Math.sqrt(stage.diff) * this.diff.dmg;
     this.rateMul = this.diff.rate * (1 + 0.5 * (this.n - 1));
     players.forEach((p, i) => this.players.push(makePlayer(this, p, i)));
+    for (const p of this.players) this.lvQueue = Math.max(this.lvQueue, (stage.chapter - 1) * 2 + (p.bonus.startLv | 0));
+    // 場地機關：位置來自關卡生成，這裡只管狀態。st: 0 待命 1 啟動中 2 運作中 3 冷卻
+    const devB = Math.min(0.5, Math.max(0, ...this.players.map((p) => p.bonus.dev || 0)));
+    this.devPow = 1 + devB; this.devCd = 1 - devB;
+    this.devices = this.L.devices.map((d) => ({ idx: d.idx, kind: d.kind, x: d.x, y: d.y, zone: d.zone, st: 0, t: 0, tk: 0 }));
     this.ctl = new StageCtl(this);
     this.flow.compute(this.players);
   }
@@ -90,6 +95,7 @@ export class World {
     this.updateSummons(dt);
     for (const d of this.decoys) { d.t -= dt; if (d.follow) { d.x = d.follow.x; d.y = d.follow.y; if (d.follow.dead) d.gone = true; } if (d.t <= 0) d.gone = true; }
     this.updatePickups(dt);
+    if (this.devices.length) this.updateDevices(dt);
     this.ctl.update(dt);
     if (this.tickN % 20 === 0) {
       this.enemies = this.enemies.filter((e) => !e.dead);
@@ -158,6 +164,7 @@ export class World {
   // 由玩家造成的一次打擊：套用傷害加成與暴擊
   strike(p, e, base, o) {
     let d = base * (p ? p.st.dmg * bDmg(p) : 1), crit = false;
+    if (p && p.bonus.boss && (e.def.boss || e.elite)) d *= 1 + p.bonus.boss;
     if (p && (o && o.crit || this.rng.next() < p.st.crit + (o && o.critAdd || 0))) { d *= p.st.critDmg; crit = true; }
     this.damageEnemy(e, d, p, crit, o);
   }
@@ -215,6 +222,7 @@ export class World {
   }
   damagePlayer(p, amount, src) {
     if (p.down || p.gone || p.invuln > 0 || p.jump) return;
+    if (p.bonus.dodge && this.rng.next() < p.bonus.dodge) { this.emit('t', p.x | 0, (p.y - 60) | 0, '閃避', 1); return; }
     amount = Math.max(1, amount - p.st.armor);
     if (p.shield > 0) { const a = Math.min(p.shield, amount); p.shield -= a; amount -= a; }
     if (amount <= 0) return;
@@ -389,6 +397,44 @@ export class World {
     }
   }
 
+  // ───────── 場地機關 ─────────
+  // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
+  updateDevices(dt) {
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 } };
+    for (const d of this.devices) {
+      const c = DEV[d.kind];
+      if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
+      if (d.st === 0 || d.st === 1) {
+        let near = false;
+        if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
+        if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
+        d.st = 1; d.t += dt;
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！' }[d.kind], 1); if (d.kind === 'barrel') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        continue;
+      }
+      d.t -= dt; d.tk -= dt;
+      const pow = this.hpMul / (1 + 0.55 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
+      if (d.kind === 'turret' && d.tk <= 0) {
+        d.tk = 0.13;
+        const e = this.nearestEnemy(d.x, d.y, 540);
+        if (e) this.shoot(null, { kind: 'gatling', x: d.x, y: d.y - 30, a: Math.atan2(e.y - e.r * 0.5 - d.y + 30, e.x - d.x) + this.rng.range(-0.05, 0.05), speed: 900, dmg: 11 * pow, life: 0.7, pierce: 1, r: 8 });
+      } else if (d.kind === 'pylon' && d.tk <= 0) {
+        d.tk = 0.7;
+        this.playersIn(d.x, d.y, 300, (q) => addBuff(q, 'pylon', { t: 1.2, dmg: 0.3, haste: 0.2 }));
+        for (const e of this.randomEnemies(d.x, d.y, 420, 5)) { this.emit('l', d.x | 0, (d.y - 60) | 0, e.x | 0, e.y | 0, 0); this.damageEnemy(e, e.def.boss ? 60 * pow : 45 * pow, null, false, { stun: 0.4 }); }
+        this.emit('r', d.x | 0, d.y | 0, 300, 1);
+      }
+      if (d.t <= 0) {
+        if (d.kind === 'barrel') {
+          this.hash.query(d.x, d.y, 240, (e) => this.damageEnemy(e, e.def.boss ? 900 * pow : 130 * pow, null, false, { kb: 420, sx: d.x, sy: d.y, stun: 0.8, dot: 14 * pow, dotDur: 4 }));
+          this.emit('b', d.x | 0, d.y | 0, 240, 1); this.emit('sh', 10);
+          this.addZone({ kind: 'fire', x: d.x, y: d.y, r: 150, dur: 5, tick: 0.5, dmg: 14 * pow, owner: null });
+        }
+        d.st = 3; d.t = c.cd * this.devCd;
+      }
+    }
+  }
+
   // ───────── 掉落物 ─────────
   updatePickups(dt) {
     for (const g of this.pickups.values()) {
@@ -413,7 +459,7 @@ export class World {
     switch (g.type) {
       case 'g': this.giveXp(g.v * p.st.xp); break;
       case 'c': this.coins += g.v; this.emit('a', 'coin'); break;
-      case 'h': this.heal(p, g.v + p.st.maxHp * 0.12, null); this.emit('a', 'heal'); break;
+      case 'h': this.heal(p, (g.v + p.st.maxHp * 0.12) * (1 + (p.bonus.pick || 0)), null); this.emit('a', 'heal'); break;
       case 'k': this.heal(p, g.v, g.src || null); addBuff(p, 'food', { t: 7, haste: g.buff || 0.15, dmg: g.bdmg || 0 }); this.emit('a', 'heal'); break;
       case 'm': for (const o of this.pickups.values()) if (o.type === 'g' || o.type === 'c') this.attract(o, p); this.emit('t', p.x | 0, (p.y - 60) | 0, '磁力吸收！', 1); break;
       case 'x': this.coins += 8; this.startPicks('chest'); break;

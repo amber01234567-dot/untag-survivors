@@ -10,12 +10,16 @@ import { TILE, T_WALL, T_FLOOR, T_OBST, T_GATE } from './const.js';
 import { RNG } from '../core/util.js';
 import { LAYOUTS } from '../data/chapters.js';
 
-const CW = 48, CH = 38, COR = 6;
-const SIZES = { start: [20, 14], combat: [30, 22], treasure: [18, 14], final: [36, 26] };
+// 室內 / 戶外兩種尺度：戶外（第二系列起）每區面積約 1.5 倍、通道更寬
+const DIMS = {
+  indoor: { CW: 48, CH: 38, COR: 6, k: 1, SIZES: { start: [20, 14], combat: [30, 22], treasure: [18, 14], final: [36, 26] } },
+  outdoor: { CW: 60, CH: 48, COR: 10, k: 1.22, SIZES: { start: [24, 18], combat: [37, 27], treasure: [22, 18], final: [44, 32] } },
+};
 
 export function buildLevel(stage, seed) {
   const rng = new RNG(seed);
   const layout = LAYOUTS[stage.layout];
+  const out = !!stage.outdoor, { CW, CH, COR, SIZES, k: SK } = DIMS[out ? 'outdoor' : 'indoor'];
   let mx = 0, my = 0;
   for (const z of layout.zones) { mx = Math.max(mx, z.c[0]); my = Math.max(my, z.c[1]); }
   const W = (mx + 1) * CW, H = (my + 1) * CH;
@@ -26,7 +30,7 @@ export function buildLevel(stage, seed) {
   // ── 區域 ──
   const zones = layout.zones.map((z, i) => {
     const kind = z.kind || 'combat';
-    let [w, h] = z.size || SIZES[kind];
+    let [w, h] = z.size ? [Math.round(z.size[0] * SK / 2) * 2, Math.round(z.size[1] * SK / 2) * 2] : SIZES[kind];
     if (kind === 'combat' && !z.size) { w += rng.int(-1, 2) * 2; h += rng.int(-1, 1) * 2; }
     const x = z.c[0] * CW + ((CW - w) >> 1), y = z.c[1] * CH + ((CH - h) >> 1);
     return { idx: i, id: z.id, kind, c: z.c, x, y, w, h, cx: (x + w / 2) * TILE, cy: (y + h / 2) * TILE,
@@ -40,13 +44,13 @@ export function buildLevel(stage, seed) {
     // 切角，讓房間不是死板的矩形
     const corners = [[z.x, z.y, 1, 1], [z.x + z.w - 1, z.y, -1, 1], [z.x, z.y + z.h - 1, 1, -1], [z.x + z.w - 1, z.y + z.h - 1, -1, -1]];
     for (const [cx, cy, sx, sy] of corners) {
-      const k = rng.int(2, 5);
+      const k = out ? rng.int(4, 8) : rng.int(2, 5);
       for (let a = 0; a < k; a++) for (let b = 0; b < k - a; b++) tiles[idx(cx + a * sx, cy + b * sy)] = T_WALL;
     }
     // 邊緣凹凸（避開通道口）
     const midX = z.x + z.w / 2, midY = z.y + z.h / 2;
-    for (let n = 0; n < 6; n++) {
-      const side = rng.int(0, 3), len = rng.int(2, 5), dep = rng.int(1, 2);
+    for (let n = 0; n < (out ? 12 : 6); n++) {
+      const side = rng.int(0, 3), len = rng.int(2, out ? 7 : 5), dep = rng.int(1, out ? 3 : 2);
       if (side < 2) {
         const sx = rng.int(z.x + 5, z.x + z.w - 6 - len);
         if (Math.abs(sx + len / 2 - midX) < COR / 2 + len / 2 + 2) continue;
@@ -62,7 +66,7 @@ export function buildLevel(stage, seed) {
   // ── 通道與閘門 ──
   const links = layout.links.map(([a, b, req], i) => {
     const za = byId[a], zb = byId[b];
-    const link = { idx: i, a: za.idx, b: zb.idx, req: (req || [a]).map((id) => byId[id].idx), open: false, tiles: [], horiz: za.c[1] === zb.c[1] };
+    const link = { idx: i, a: za.idx, b: zb.idx, req: (req || [a]).map((id) => byId[id].idx), open: false, tiles: [], horiz: za.c[1] === zb.c[1], half: COR / 2 * TILE };
     if (link.horiz) {
       const l = za.c[0] < zb.c[0] ? za : zb, r = l === za ? zb : za;
       const y0 = l.c[1] * CH + CH / 2 - COR / 2, x0 = l.x + l.w - 3, x1 = r.x + 2;
@@ -106,6 +110,23 @@ export function buildLevel(stage, seed) {
     }
   }
 
+  // ── 場地機關（戶外系列）：戰鬥區各放幾座，位置由 seed 決定 ──
+  const devices = [];
+  if (stage.devices) for (const z of zones) {
+    if (z.kind !== 'combat' && z.kind !== 'final') continue;
+    const want = z.kind === 'final' ? 3 : 2;
+    for (let i = 0, tries = 0; i < want && tries < 80; tries++) {
+      const x = rng.int(z.x + 5, z.x + z.w - 6), y = rng.int(z.y + 5, z.y + z.h - 6);
+      if (Math.abs(x - (z.x + z.w / 2)) < 6 && Math.abs(y - (z.y + z.h / 2)) < 5) continue;
+      if (!clearAround(x, y, 1, 1, 2)) continue;
+      const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE;
+      if (devices.some((d) => (d.x - px) ** 2 + (d.y - py) ** 2 < 300 * 300)) continue;
+      tiles[idx(x, y)] = T_OBST;
+      devices.push({ idx: devices.length, kind: rng.weighted(stage.devices), x: px, y: py, zone: z.idx });
+      i++;
+    }
+  }
+
   // ── 區域歸屬與可走格清單 ──
   for (const z of zones) {
     const fl = [];
@@ -126,7 +147,7 @@ export function buildLevel(stage, seed) {
       else if (r < 0.15) deco.push({ t: 'sign', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
     } else if (t === T_FLOOR) {
       const r = rng.next();
-      if (r < 0.011) deco.push({ t: 'decal', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
+      if (r < 0.011 && tiles[idx(x - 1, y)] === T_FLOOR && tiles[idx(x + 1, y)] === T_FLOOR && tiles[idx(x, y - 1)] === T_FLOOR && tiles[idx(x, y + 1)] === T_FLOOR) deco.push({ t: 'decal', x: (x + 0.5) * TILE, y: (y + 0.5) * TILE, v: rng.int(0, 999) });
     }
   }
   for (const l of links) lights.push({ x: l.x, y: l.y, r: 170, v: 7, gate: l.idx });
@@ -142,7 +163,7 @@ export function buildLevel(stage, seed) {
   }
 
   const start = zones.find((z) => z.kind === 'start');
-  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, theme: stage.theme, seed,
+  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, outdoor: out, theme: stage.theme, seed,
     spawn: { x: start.cx, y: start.cy } };
 }
 

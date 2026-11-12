@@ -34,7 +34,7 @@ export function makePlayer(W, info, slot) {
 export function recalc(p) {
   const d = p.def, b = p.bonus, old = p.st ? p.st.maxHp : 0;
   const s = {
-    maxHp: d.hp * (1 + b.hp), speed: d.speed * (1 + b.speed), dmg: 1 + b.dmg, cd: 1 - b.cd, area: 1,
+    maxHp: d.hp * (1 + b.hp), speed: d.speed * (1 + b.speed), dmg: 1 + b.dmg, cd: 1 - b.cd, area: 1 + (b.area || 0),
     crit: 0.05 + b.crit, critDmg: 2, armor: d.armor + b.armor, regen: b.regen, magnet: 100 * (1 + b.magnet),
     xp: 1 + b.xp, heal: 1, ultRate: 1 + b.ult,
   };

@@ -1,13 +1,13 @@
 // 選單畫面：主選單、大廳（隊伍 + 世界節點圖 + 關卡資訊）、角色圖鑑、天賦。
 import { CHARS, CHAR_LIST, ROLES, MASTERY } from '../data/characters.js';
 import { WEAPONS } from '../data/weapons.js';
-import { TALENTS } from '../data/upgrades.js';
-import { CHAPTERS, STAGES, LAYOUTS, DIFFS, NODE_KINDS, nodeUnlocked } from '../data/chapters.js';
+import { TALENTS, TALENT_PAGES } from '../data/upgrades.js';
+import { CHAPTERS, STAGES, LAYOUTS, DIFFS, NODE_KINDS, SERIES, nodeUnlocked } from '../data/chapters.js';
 import { ENEMIES } from '../data/enemies.js';
 import { OBJ_TEXT } from '../sim/stagectl.js';
 import { portrait, hasLook } from '../render/chibi.js';
 import { SLOT_COLORS } from '../render/renderer.js';
-import { save } from '../core/save.js';
+import { save, DEV } from '../core/save.js';
 import { sfx } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
 import { icon } from './icons.js';
@@ -50,6 +50,8 @@ export class Screens {
         case 'back': this.show(this.back === 'lobby' && ses.lobby.players.length ? 'lobby' : 'home'); break;
         case 'leave': ses.leave(); ses.lobby.players = []; this.show('home'); break;
         case 'tab': this.tab = +v; this.show('lobby'); break;
+        case 'series': this.tab = CHAPTERS.find((c) => (c.series || 1) === +v).id; this.show('lobby'); break;
+        case 'tpage': this.tpage = +v; this.refresh(); break;
         case 'node': if (ses.isHost()) { const cl = ses.lobby.cleared[v] || 0; ses.select(v, Math.min(ses.lobby.sel.diff, cl)); } break;
         case 'diff': if (ses.isHost()) ses.select(ses.lobby.sel.stage, +v); break;
         case 'ready': ses.updateMe(!ses.me().ready); break;
@@ -99,7 +101,9 @@ export class Screens {
       return `<div class="slot" style="--c:${SLOT_COLORS[i]}">${P(c.id, 52)}<div><div class="nm">${esc(p.name)}${p.id === ses.myId ? '（你）' : ''}</div><div class="ch">${c.name}・${ROLES[c.role].name}　熟練 ${p.rank | 0}</div></div>
         <div class="st" style="color:${p.host ? 'var(--gold2)' : p.ready ? 'var(--green)' : 'var(--dim)'}">${p.host ? '房主' : p.ready ? '已準備' : '未準備'}</div></div>`;
     }).join('');
-    const tabs = CHAPTERS.map((c) => `<button class="chtab ${c.id === this.tab ? 'on' : ''}" data-a="tab" data-v="${c.id}" ${nodeUnlocked(c.nodes[0].id, cleared) ? '' : 'disabled'}>第 ${c.id} 章　${c.name}</button>`).join('');
+    const serId = ch.series || 1;
+    const sers = SERIES.map((sr) => { const c0 = CHAPTERS.find((c) => (c.series || 1) === sr.id); return `<button class="sertab ${sr.id === serId ? 'on' : ''}" data-a="series" data-v="${sr.id}" ${c0 && nodeUnlocked(c0.nodes[0].id, cleared) ? '' : 'disabled'}><b>系列 ${'一二三四五六'[sr.id - 1]}</b>　${sr.name}<i>${sr.sub}</i></button>`; }).join('');
+    const tabs = CHAPTERS.filter((c) => (c.series || 1) === serId).map((c) => `<button class="chtab ${c.id === this.tab ? 'on' : ''}" data-a="tab" data-v="${c.id}" ${nodeUnlocked(c.nodes[0].id, cleared) ? '' : 'disabled'}>第 ${c.id} 章　${c.name}</button>`).join('');
     const px = (n) => 9 + n.pos[0] * 20.5, py = (n) => 15 + n.pos[1] * 28;
     let lines = '';
     for (const n of ch.nodes) for (const id of n.next) { const m = STAGES[id], on = cleared[n.id]; lines += `<line x1="${px(n)}%" y1="${py(n)}%" x2="${px(m)}%" y2="${py(m)}%" stroke="${on ? '#e2b53e' : '#3a4356'}" stroke-width="2" stroke-dasharray="${on ? '' : '5 5'}"/>`; }
@@ -119,7 +123,7 @@ export class Screens {
       <div class="lobby-grid">
         <div class="panel party">${ses.mode !== 'solo' ? `<div class="roomcode"><div class="sub">ROOM CODE</div><b>${ses.code}</b><div><button class="btn small ghost" data-a="copy" style="margin-top:6px">複製邀請連結</button></div></div>` : ''}${slots}
           ${ses.mode !== 'solo' ? '<div class="dim" style="font-size:11px;line-height:1.6">把房號或邀請連結傳給朋友即可加入。房主的瀏覽器就是主機，請保持分頁開啟。</div>' : ''}</div>
-        <div class="panel mapwrap"><div class="chtabs">${tabs}</div>
+        <div class="panel mapwrap"><div class="sertabs">${sers}</div><div class="chtabs">${tabs}</div>
           <div class="wmap"><svg>${lines}</svg>${nodes}<div class="intro">${ch.intro}</div></div></div>
         <div class="panel info scroll">
           <div><span class="tag" style="--c:${KIND_COL[st.kind]}">${NODE_KINDS[st.kind].name}</span> <span class="sub">${st.id}</span></div>
@@ -190,12 +194,18 @@ export class Screens {
 
   // ───────── 天賦 ─────────
   talents() {
+    const cleared = save.data.cleared || {}, open = (pg) => DEV || !pg.req || !!cleared[pg.req];
+    let page = TALENT_PAGES.find((x) => x.id === (this.tpage || 1)) || TALENT_PAGES[0];
+    const tabs = TALENT_PAGES.map((pg) => `<button class="chtab ${pg.id === page.id ? 'on' : ''}" data-a="tpage" data-v="${pg.id}">${pg.name}${open(pg) ? '' : '　🔒'}</button>`).join('');
+    const locked = !open(page);
     return `<div class="page">
       <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">天賦強化</div><div class="dim" style="font-size:12px">永久生效，所有角色共用</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${save.data.coins}</div></div>
-      <div class="panel tgrid scroll">${TALENTS.map((t) => {
+      <div class="chtabs" style="padding:0 0 0 2px">${tabs}</div>
+      ${locked ? `<div class="panel" style="padding:10px 14px;color:var(--gold2);font-size:13px">🔒 ${page.hint}</div>` : ''}
+      <div class="panel tgrid scroll">${TALENTS.filter((t) => (t.page || 1) === page.id).map((t) => {
         const lv = save.talent(t.id), max = lv >= t.max, cost = max ? 0 : t.cost(lv);
-        return `<div class="tcard">${icon('icons/t_' + t.id, t.glyph, 'var(--gold2)')}<div class="mid"><div class="nm">${t.name}</div><div class="ds">${t.desc}／級</div><div class="pips">${Array.from({ length: t.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div></div>
-          <button class="btn small ${max ? 'ghost' : ''}" data-a="talent" data-v="${t.id}" ${max || save.data.coins < cost ? 'disabled' : ''}>${max ? 'MAX' : `<span class="coin">${cost}</span>`}</button></div>`;
+        return `<div class="tcard" ${locked ? 'style="opacity:.55"' : ''}>${icon('icons/t_' + t.id, t.glyph, page.id > 1 ? '#3df2d2' : 'var(--gold2)')}<div class="mid"><div class="nm">${t.name}</div><div class="ds">${t.desc}／級</div><div class="pips">${Array.from({ length: t.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div></div>
+          <button class="btn small ${max ? 'ghost' : ''}" data-a="talent" data-v="${t.id}" ${max || locked || save.data.coins < cost ? 'disabled' : ''}>${max ? 'MAX' : `<span class="coin">${cost}</span>`}</button></div>`;
       }).join('')}</div></div>`;
   }
 }

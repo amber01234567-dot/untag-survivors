@@ -82,7 +82,7 @@ export class View {
       if (q) out.summons.push({ id: m.id, k: m.k, x: lerp(q.x, m.x, al), y: lerp(q.y, m.y, al), face: m.face, st: m.st });
       else out.summons.push(m);
     }
-    out.zones = b.z;
+    out.zones = b.z; out.devs = b.dv || null;
     // 被吸走的掉落物：在本地飛向該玩家
     for (const g of this.pickups.values()) {
       if (g.to < 0) continue;

@@ -2,7 +2,7 @@
 export const FXS = {};
 const NAMES = ['pk_g1', 'pk_g2', 'pk_g3', 'pk_c', 'pk_h', 'pk_k', 'pk_m', 'pk_x', 'boom', 'slash', 'hit', 'circle', 'gate',
   'bullet', 'knife', 'cleaver', 'blade', 'rune', 'syringe', 'skewer', 'bead', 'ball', 'missile', 'molotov', 'grenade', 'orb', 'mine', 'drone', 'cat', 'lion', 'rat', 'tank', 'decoy',
-  'flame', 'fireground', 'coalground', 'dragonring', 'swordqi', 'whirl', 'crack', 'garbageground', 'blackhole', 'zerogrid', 'mandala', 'palm', 'kart'];
+  'flame', 'fireground', 'coalground', 'dragonring', 'swordqi', 'whirl', 'crack', 'garbageground', 'blackhole', 'zerogrid', 'mandala', 'palm', 'kart', 'dev_barrel', 'dev_turret', 'dev_pylon'];
 export function loadFxSprites() {
   return Promise.all(NAMES.map((n) => new Promise((res) => {
     const im = new Image(); im.onload = () => { FXS[n] = im; res(); }; im.onerror = () => res();

@@ -1,6 +1,6 @@
 // 局外成長存檔（localStorage）。SAVE_VERSION 升版時在 migrate() 補欄位即可，舊存檔不會壞。
 import { CHARS, CHAR_LIST, MASTERY } from '../data/characters.js';
-import { TALENTS, emptyBonus } from '../data/upgrades.js';
+import { TALENTS, TALENT_PAGES, emptyBonus } from '../data/upgrades.js';
 import { STAGES, DIFFS } from '../data/chapters.js';
 
 const KEY = 'untag_survivors_save';
@@ -56,6 +56,8 @@ export const save = {
   buyTalent(id) {
     const t = TALENTS.find((x) => x.id === id), lv = this.talent(id);
     if (!t || lv >= t.max) return false;
+    const pg = TALENT_PAGES.find((x) => x.id === (t.page || 1));
+    if (pg && pg.req && !DEV && !this.data.cleared[pg.req]) return false;
     const cost = t.cost(lv);
     if (this.data.coins < cost) return false;
     this.data.coins -= cost; this.data.talents[id] = lv + 1; this.write();

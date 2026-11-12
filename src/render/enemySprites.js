@@ -205,8 +205,9 @@ const DRAW = {
 // ── 圖片怪物 ──
 // assets/enemies/<id>.png 單張圖，走路的彈跳擠壓由程式做（4 格）。沒有圖的敵人退回上面的程式繪製。
 // VIS = 顯示高度相對碰撞半徑的倍率；巢穴依章節主題換圖。
-const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, nest: 2.6, golem: 2.9, champ: 3, warden: 3.1, conecrab: 3, vending: 3, sandbag: 3.1, brute: 2.9, signghost: 3, popup: 2.7 };
-const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3' };
+const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, nest: 2.6, golem: 2.9, champ: 3, warden: 3.1, conecrab: 3, vending: 3, sandbag: 3.1, brute: 2.9, signghost: 3, popup: 2.7,
+  tumble: 2.6, vulture: 2.8, dustling: 2.8, shard: 2.8, cactus: 3.1, bison: 2.8, crystal: 2.8, scrapbot: 3, mortar: 2.7, sandworm: 3, wreckdrone: 2.8, rig: 2.7, wormqueen: 3.2, colossus: 3.2 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6' };
 const IMG = {};
 let theme = 'slums';
 const cache = new Map();
@@ -222,7 +223,7 @@ export function enemySprite(idx, frame, flash) {
   const key = idx * 16 + frame * 2 + (flash ? 1 : 0);
   let s = cache.get(key);
   if (s) return s;
-  const def = ENEMY_LIST[idx], r = def.r, im = IMG[def.id === 'nest' ? NEST[theme] : def.id];
+  const def = ENEMY_LIST[idx], r = def.r, im = IMG[def.id === 'nest' ? (NEST[theme] || 'nest1') : def.id];
   const vh = r * (VIS[def.id] || VIS.default), vw = im ? vh * im.width / im.height : 0;
   const w = im ? Math.ceil(vw * 1.2 + 8) : Math.ceil(r * 5.2 + 20), h = im ? Math.ceil(vh * 1.14 + 10) : Math.ceil(r * 4.4 + 24);
   const c = document.createElement('canvas');

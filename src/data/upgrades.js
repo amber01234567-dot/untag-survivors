@@ -30,6 +30,20 @@ export const TALENTS = [
   { id: 'revive', name: '不死鳥', glyph: '甦', max: 2, desc: '每關可自動復活 +1 次', cost: (l) => 500 + l * 900, apply: (b, l) => { b.revives += l; } },
   { id: 'reroll', name: '命運重抽', glyph: '運', max: 3, desc: '每關升級重抽次數 +1', cost: (l) => 200 + l * 250, apply: (b, l) => { b.rerolls += l; } },
   { id: 'ult', name: '寶具共鳴', glyph: '寶', max: 5, desc: '寶具充能速度 +6%', cost: (l) => 130 + l * 100, apply: (b, l) => { b.ult += 0.06 * l; } },
+  // ── 進階天賦（第二頁）：通關第三章首領後開放。之後每個系列再往後加一頁（page: 3 …） ──
+  { id: 'hp2', page: 2, name: '鋼鐵意志', glyph: '鋼', max: 10, desc: '最大生命 +4%', cost: (l) => 400 + l * 220, apply: (b, l) => { b.hp += 0.04 * l; } },
+  { id: 'dmg2', page: 2, name: '極限火力', glyph: '極', max: 10, desc: '傷害 +3%', cost: (l) => 450 + l * 250, apply: (b, l) => { b.dmg += 0.03 * l; } },
+  { id: 'boss', page: 2, name: '獵王者', glyph: '王', max: 5, desc: '對首領與菁英的傷害 +5%', cost: (l) => 500 + l * 350, apply: (b, l) => { b.boss += 0.05 * l; } },
+  { id: 'area2', page: 2, name: '廣域打擊', glyph: '域', max: 5, desc: '攻擊範圍 +3%', cost: (l) => 450 + l * 300, apply: (b, l) => { b.area += 0.03 * l; } },
+  { id: 'startlv', page: 2, name: '先發制人', glyph: '先', max: 3, desc: '開場多一次升級強化', cost: (l) => 900 + l * 900, apply: (b, l) => { b.startLv += l; } },
+  { id: 'pick', page: 2, name: '野外急救', glyph: '救', max: 5, desc: '補血道具效果 +12%', cost: (l) => 350 + l * 250, apply: (b, l) => { b.pick += 0.12 * l; } },
+  { id: 'device', page: 2, name: '機關大師', glyph: '機', max: 5, desc: '場地機關冷卻 -8%、威力 +8%', cost: (l) => 400 + l * 280, apply: (b, l) => { b.dev += 0.08 * l; } },
+  { id: 'dodge', page: 2, name: '靈巧身法', glyph: '閃', max: 5, desc: '2% 機率閃避傷害', cost: (l) => 600 + l * 400, apply: (b, l) => { b.dodge += 0.02 * l; } },
+];
+// 天賦分頁：req 為需要先通關的關卡（null = 一開始就有）
+export const TALENT_PAGES = [
+  { id: 1, name: '基礎天賦', req: null },
+  { id: 2, name: '進階天賦', req: '3-B', hint: '通關第三章首領後開放' },
 ];
 
-export const emptyBonus = () => ({ hp: 0, dmg: 0, speed: 0, cd: 0, armor: 0, regen: 0, magnet: 0, xp: 0, coin: 0, crit: 0, revives: 0, rerolls: 0, ult: 0 });
+export const emptyBonus = () => ({ hp: 0, dmg: 0, speed: 0, cd: 0, armor: 0, regen: 0, magnet: 0, xp: 0, coin: 0, crit: 0, revives: 0, rerolls: 0, ult: 0, boss: 0, area: 0, startLv: 0, pick: 0, dev: 0, dodge: 0 });

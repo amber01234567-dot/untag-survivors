@@ -2,7 +2,7 @@
 // 房主自己也走同一個 snapOf → View 的路徑，所以房主與客戶端的畫面邏輯完全一致。
 import { buffBits, bHaste } from '../sim/player.js';
 
-export const PROTO = 6;
+export const PROTO = 7;
 const STATES = ['play', 'levelup', 'won', 'lost'];
 const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin'];
 
@@ -35,6 +35,7 @@ export function snapOf(W) {
     if (z.dead || z.kind === 'shadow') continue;
     s.z.push({ id: z.id, k: z.k, x: z.x, y: z.y, r: z.r, p: Math.min(1, z.t / z.dur), on: z.t >= z.delay ? 1 : 0, dp: z.delay ? Math.min(1, z.t / z.delay) : 1, a: z.a, len: z.len, w: z.w, aux: z.aux | 0 });
   }
+  if (W.devices.length) s.dv = W.devices.map((d) => [d.st, d.st === 1 ? Math.round(d.t / 0.7 * 100) : d.st === 3 ? Math.round(d.t) : 0]);
   for (const m of W.summons) if (!m.dead) s.s.push({ id: m.id, k: m.k, x: m.x, y: m.y, face: m.face, st: m.st | 0 });
   return s;
 }
@@ -52,7 +53,7 @@ const q8 = (v) => Math.max(0, Math.min(65535, Math.round(v * 8)));
 
 export function encode(s, events) {
   const w = new Writer();
-  const head = { t: Math.round(s.t * 1000) / 1000, st: s.st, lv: s.lv, xp: s.xp, xn: s.xn, co: s.co, ki: s.ki, pt: s.pt, L: s.L, e: events,
+  const head = { t: Math.round(s.t * 1000) / 1000, st: s.st, lv: s.lv, xp: s.xp, xn: s.xn, co: s.co, ki: s.ki, pt: s.pt, L: s.L, e: events, dv: s.dv,
     p: s.p.map((p) => PF.map((k) => p[k])),
     z: s.z.map((z) => [z.id, z.k, Math.round(z.x), Math.round(z.y), Math.round(z.r), Math.round(z.p * 100), z.on, Math.round(z.dp * 100), Math.round(z.a * 100), Math.round(z.len), Math.round(z.w), z.aux]),
     s: s.s.map((m) => [m.id, m.k, Math.round(m.x), Math.round(m.y), m.face, m.st]) };
@@ -70,7 +71,7 @@ export function decode(buf) {
   let o = 1;
   const hl = dv.getUint32(o, true); o += 4;
   const h = JSON.parse(td.decode(new Uint8Array(buf, o, hl))); o += hl;
-  const s = { t: h.t, st: h.st, lv: h.lv, xp: h.xp, xn: h.xn, co: h.co, ki: h.ki, pt: h.pt, L: h.L, e: h.e, en: [], pr: [] };
+  const s = { t: h.t, st: h.st, lv: h.lv, xp: h.xp, xn: h.xn, co: h.co, ki: h.ki, pt: h.pt, L: h.L, e: h.e, dv: h.dv, en: [], pr: [] };
   s.p = h.p.map((a) => { const p = {}; PF.forEach((k, i) => { p[k] = a[i]; }); return p; });
   s.z = h.z.map((a) => ({ id: a[0], k: a[1], x: a[2], y: a[3], r: a[4], p: a[5] / 100, on: a[6], dp: a[7] / 100, a: a[8] / 100, len: a[9], w: a[10], aux: a[11] }));
   s.s = h.s.map((a) => ({ id: a[0], k: a[1], x: a[2], y: a[3], face: a[4], st: a[5] }));

@@ -152,6 +152,36 @@ const AI = {
       }
     }
   },
+  // 追擊 + 定時向四周放一圈子彈
+  burst(W, e, dt, sp) {
+    if (!e.tgt) return wander(W, e, dt, sp);
+    const def = e.def, ai = e.ai;
+    if (ai.t === undefined) ai.t = W.rng.range(1.5, def.shotCd);
+    if (e.st === 1) {
+      ai.w -= dt;
+      if (ai.w <= 0) { e.st = 0; ai.t = def.shotCd; const n = def.shotCount + (e.elite ? 4 : 0), off = W.rng.range(0, TAU); for (let i = 0; i < n; i++) shootAt(W, e, def.proj, off + i * TAU / n, def.shotSpeed, e.dmg * 0.6); }
+      return;
+    }
+    const d = seek(W, e, dt, sp, e.tgt.x, e.tgt.y);
+    ai.t -= dt;
+    if (ai.t <= 0 && d < 330) { e.st = 1; ai.w = 0.6; }
+  },
+  // 保持距離，朝玩家腳下拋射（落點有預警圈）
+  lobber(W, e, dt, sp) {
+    if (!e.tgt) return wander(W, e, dt, sp);
+    const p = e.tgt, def = e.def, ai = e.ai, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.t === undefined) ai.t = W.rng.range(1, def.shotCd);
+    if (d > def.shotRange * 0.85) seek(W, e, dt, sp, p.x, p.y);
+    else if (d < def.shotRange * 0.4) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.6 * dt, (e.y - p.y) / d * sp * 0.6 * dt, e.r * 0.6);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.t -= dt;
+    if (ai.t <= 0 && d < def.shotRange * 1.15 && !p.isDecoy) {
+      ai.t = def.shotCd * W.rng.range(0.85, 1.15); e.st = 1; ai.w = 0.4;
+      const n = e.elite ? 3 : 1;
+      for (let i = 0; i < n; i++) warn(W, p.x + (i ? W.rng.range(-110, 110) : 0), p.y + (i ? W.rng.range(-110, 110) : 0), 78, 1.15 + i * 0.2, e.dmg);
+    }
+    if (e.st === 1) { ai.w -= dt; if (ai.w <= 0) e.st = 0; }
+  },
   flee(W, e, dt, sp) {
     const p = W.nearestPlayer(e.x, e.y, true);
     e.ai.life = (e.ai.life === undefined ? 16 : e.ai.life) - dt;
@@ -250,8 +280,108 @@ const AI = {
       for (const q of W.alive()) for (let i = 0; i < 3 + ph; i++) warn(W, q.x + (i ? W.rng.range(-140, 140) : 0), q.y + (i ? W.rng.range(-140, 140) : 0), 90, 0.9 + i * 0.3, e.dmg * 1.3);
     }
   },
+  // ── 首領：暴走聯結車（連續衝撞 + 沿路爆炸、廢氣彈幕、召喚） ──
+  boss_rig(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.55; ai.trail = 0; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1150 * dt, Math.sin(ai.a) * 1150 * dt, e.r * 0.6);
+      ai.w -= dt; ai.trail -= dt;
+      if (ai.trail <= 0) { ai.trail = 0.09; warn(W, e.x, e.y, 70, 0.75, e.dmg * 0.9); }
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 9); warn(W, e.x, e.y, 160, 0.4, e.dmg * 1.1); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.55); } }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.5 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.8; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1 || m === 3) { ai.chain = p2 ? 3 : m === 3 ? 2 : 1; startDash(W, e, 0.8); }
+    else if (m === 2) {
+      const volley = (off, sp2) => { for (let i = 0; i < 16; i++) shootAt(W, e, 'e_trash', off + i * TAU / 16, sp2, e.dmg * 0.55, { r: 10 }); W.emit('sh', 4); };
+      volley(0, 180); ai.q.push({ t: 0.5, fn: () => volley(0.2, 210) }); ai.q.push({ t: 0.5, fn: () => volley(0.4, 180) }); if (p2) ai.q.push({ t: 0.5, fn: () => volley(0.1, 240) });
+    } else {
+      for (let i = 0; i < (p2 ? 9 : 6); i++) summon(W, e, i % 3 === 2 ? 'barrelbug' : 'tumble', i * 1.1, 90);
+      for (const q of W.alive()) warn(W, q.x, q.y, 110, 1.0, e.dmg * 1.2);
+    }
+  },
+  // ── 首領：沙蟲女王（潛沙突襲、酸液轟炸、甩尾光束、召喚） ──
+  boss_wormqueen(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (ai.dig) {                                    // 剛從沙裡破土（潛沙期間由 spawnT 處理：不可被鎖定、不會動）
+      ai.dig = 0; W.emit('sh', 10); W.emit('r', e.x | 0, e.y | 0, 170, 3);
+      for (let i = 0; i < 14 + ph * 3; i++) shootAt(W, e, 'e_spore', i * TAU / (14 + ph * 3), 190, e.dmg * 0.5);
+      if (ai.digs > 0) { ai.digs--; ai.q.push({ t: 0.9, fn: () => dive(W, e) }); }
+      return;
+    }
+    seek(W, e, dt, sp, p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.5 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = 3.8 - ph * 0.45; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) { ai.digs = ph; dive(W, e); }
+    else if (m === 2) {
+      for (let k = 0; k < 3 + ph; k++) ai.q.push({ t: k ? 0.45 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x, q.y, 92, 0.95, e.dmg * 1.1); warn(W, q.x + W.rng.range(-190, 190), q.y + W.rng.range(-190, 190), 92, 1.15, e.dmg * 1.1); } } });
+    } else if (m === 3) {
+      const base = Math.atan2(p.y - e.y, p.x - e.x), n = 3 + ph;
+      for (let i = 0; i < n; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: base + (i - (n - 1) / 2) * 0.42, len: 820, w: 40, delay: 1.0 + i * 0.12, dur: 1.5 + i * 0.12, tick: 0.12, dmg: e.dmg * 0.9 });
+    } else {
+      for (let i = 0; i < 5 + ph * 2; i++) summon(W, e, i % 3 ? 'dustling' : 'sandworm', i * 1.3, 95);
+      for (let i = 0; i < 12; i++) shootAt(W, e, 'e_spore', i * TAU / 12, 170, e.dmg * 0.5);
+    }
+  },
+  // ── 首領：隕星機神（隕石雨、旋轉光束、衝擊波、三階段） ──
+  boss_colossus(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.3 ? 2 : hpP < 0.65 ? 1 : 0;
+    if (!e.tgt) return;
+    const p = e.tgt, z = W.L.zones[e.zone];
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (ai.ph !== ph) {                              // 換階段：全場隕石雨
+      ai.ph = ph;
+      if (ph > 0 && z) { W.emit('sh', 14); W.emit('bn', ph === 2 ? '機神暴走' : '核心過載', 'PHASE ' + (ph + 1), 3); ai.q = ai.q || []; for (let k = 0; k < 14 + ph * 6; k++) ai.q.push({ t: 0.16, fn: () => warn(W, z.cx + W.rng.range(-560, 560), z.cy + W.rng.range(-400, 400), 100, 1.1, e.dmg * 1.2) }); }
+    }
+    if (e.st === 1) { ai.w -= dt; if (ai.w <= 0) { e.st = 2; ai.w = 0.45; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1250 * dt, Math.sin(ai.a) * 1250 * dt, e.r * 0.6);
+      ai.w -= dt;
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 10); warn(W, e.x, e.y, 190, 0.4, e.dmg * 1.2); for (let i = 0; i < 12; i++) shootAt(W, e, 'e_orb', i * TAU / 12, 200, e.dmg * 0.5); }
+      return;
+    }
+    seek(W, e, dt, sp * (1 + ph * 0.15), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = 3.6 - ph * 0.5; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 5;
+    if (m === 1) {                                   // 追蹤隕石
+      for (let k = 0; k < 4 + ph * 2; k++) ai.q.push({ t: k ? 0.35 : 0, fn: () => { for (const q of W.alive()) warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 96, 0.9, e.dmg * 1.25); } });
+    } else if (m === 2) {                            // 十字光束，接著轉 45 度再一次
+      const base = W.rng.range(0, TAU), n = 4 + ph;
+      for (let v = 0; v <= (ph ? 2 : 1); v++) for (let i = 0; i < n; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: base + i * TAU / n + v * Math.PI / n, len: 1000, w: 38, delay: 1.1 + v * 0.75, dur: 1.9 + v * 0.75, tick: 0.12, dmg: e.dmg * 0.9 });
+    } else if (m === 3) {                            // 三層衝擊波
+      const ring = (n, spd, off) => { for (let i = 0; i < n; i++) shootAt(W, e, 'e_orb', off + i * TAU / n, spd, e.dmg * 0.5); W.emit('sh', 4); };
+      ring(18, 150, 0); ai.q.push({ t: 0.6, fn: () => ring(18, 185, 0.17) }); ai.q.push({ t: 0.6, fn: () => ring(20, 220, 0.05) }); if (ph) ai.q.push({ t: 0.6, fn: () => ring(22, 170, 0.11) });
+    } else if (m === 4) {
+      for (let i = 0; i < 6 + ph * 2; i++) summon(W, e, i % 4 === 3 ? 'radrat' : 'shard', i * 1.2, 100);
+    } else if (ph) startDash(W, e, 0.85);
+    else for (const q of W.alive()) warn(W, q.x, q.y, 130, 1.0, e.dmg * 1.3);
+  },
 };
 
+// 沙蟲女王：潛入沙中，在某位玩家腳下預警後破土
+function dive(W, e) {
+  const t = W.rng.pick(W.alive()) || e.tgt;
+  if (!t || e.dead) return;
+  W.emit('r', e.x | 0, e.y | 0, 120, 3);
+  e.x = t.x; e.y = t.y; e.spawnT = 1.25; e.ai.dig = 1;
+  W.emit('sp', e.x | 0, e.y | 0, e.r | 0);
+  warn(W, t.x, t.y, 165, 1.2, e.dmg * 1.4);
+}
 function warn(W, x, y, r, delay, dmg) { return W.addZone({ kind: 'e_warn', team: 1, x, y, r, delay, dur: delay + 0.2, tick: 9, dmg, once: true }); }
 function summon(W, e, id, a, d) { const x = e.x + Math.cos(a) * d, y = e.y + Math.sin(a) * d; if (!solidAt(W.L, x, y) && W.enemies.length < 260) spawnEnemy(W, id, x, y, { zone: e.zone, noDrop: false }); }
 function startDash(W, e, wind) {

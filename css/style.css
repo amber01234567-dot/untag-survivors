@@ -364,3 +364,11 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .home .menu { gap: 12px; }
 .result h1, .pausebox h2 { color: #f1e7cf; }
 #toast div { border-radius: 0; border-color: var(--gold-line); font-family: var(--serif); }
+
+/* 系列分頁（每三章一個系列） */
+.sertabs { display: flex; gap: 8px; padding: 10px 10px 0; flex-wrap: wrap; }
+.sertab { padding: 7px 14px 6px; border: 1px solid var(--line); background: rgba(8, 10, 16, .6); border-radius: 3px; font-size: 13px; color: var(--dim); text-align: left; }
+.sertab b { color: var(--gold2); font-weight: 800; }
+.sertab i { display: block; font-style: normal; font-size: 9px; letter-spacing: 2px; opacity: .6; }
+.sertab.on { color: var(--text); border-color: var(--cyan, #3df2d2); background: rgba(61, 242, 210, .08); box-shadow: 0 0 0 1px rgba(61, 242, 210, .25) inset; }
+.sertab:disabled { opacity: .35; }

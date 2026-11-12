@@ -92,8 +92,8 @@ export class StageCtl {
     const inZone = W.players.filter((p) => !p.down && !p.gone && zoneAt(this.L, p.x, p.y) === z.idx);
     if (!inZone.length) return;
     const ramp = 0.7 + Math.min(1.5, z.t / 60);        // 進區後前 20 秒較緩，讓玩家先升幾級
-    const rate = 2.5 * RATE[o.t] * W.rateMul * ramp * (0.7 + W.stage.diff * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1));
-    const cap = Math.min(260, 80 * (1 + 0.5 * (W.n - 1)) * (0.8 + RATE[o.t] * 0.4));
+    const rate = 2.5 * RATE[o.t] * W.rateMul * ramp * (0.7 + W.stage.diff * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1)) * (this.L.outdoor ? 1.25 : 1);   // 戶外場地大，怪也多一些
+    const cap = Math.min(280, 80 * (1 + 0.5 * (W.n - 1)) * (0.8 + RATE[o.t] * 0.4) * (this.L.outdoor ? 1.3 : 1));
     let alive = 0;
     for (const e of W.enemies) if (!e.dead && e.zone === z.idx) alive++;
     z.acc += rate * dt;

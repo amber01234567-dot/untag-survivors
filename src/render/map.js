@@ -133,12 +133,25 @@ export const THEMES = {
     },
   },
 };
+// 戶外主題（第二系列）：沒有圖片時的簡易備援畫法
+function outdoorTheme(o) {
+  return Object.assign({
+    outdoor: true,
+    floor(g, x, y, tx, ty) { const h = hash2(tx, ty, 1); g.fillStyle = h < 0.5 ? o.f1 : o.f2; g.fillRect(x, y, TILE, TILE); if (h > 0.9) { g.fillStyle = o.f3; g.fillRect(x + h * 18, y + 8, 6, 3); } },
+    wall(g, x, y) { g.fillStyle = o.w1; g.fillRect(x, y, TILE, TILE); g.fillStyle = o.w2; for (let i = 0; i < 4; i++) g.fillRect(x, y + i * 8 + 2, TILE, 3); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x, y + TILE - 6, TILE, 6); },
+    prop(g, x, y, w, h) { const W = w * TILE, H = h * TILE; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x + 3, y + H - 5, W - 2, 7); rr(g, x + 2, y - 8, W - 4, H + 4, 9, o.w2, o.w1); },
+    decal(g, x, y, v) { g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 14, y - 4); g.lineTo(x - 2, y + 3); g.lineTo(x + 5, y - 5 + v % 7); g.lineTo(x + 15, y + 4); g.stroke(); },
+  }, o);
+}
+THEMES.road = outdoorTheme({ void: '#3d2f22', roof: '#6b5236', roofEdge: '#3a2a1a', ambient: 'rgba(60,30,0,0.05)', roofDim: 0.12, neon: ['#ffb84d', '#ff7a3d', '#ffe08a', '#ffb84d'], lamp: '#ffc36b', gate: '#ff9a3d', gateHue: 200, f1: '#c9a878', f2: '#c2a070', f3: '#a98a5e', w1: '#8a5f3a', w2: '#a8774a' });
+THEMES.canyon = outdoorTheme({ void: '#2e1712', roof: '#5a2a1e', roofEdge: '#2e130c', ambient: 'rgba(70,20,10,0.13)', roofDim: 0.18, neon: ['#ff8a4d', '#ffcf6b', '#ff5a3d', '#ffb84d'], lamp: '#ffa24d', gate: '#ff6a3d', gateHue: 185, f1: '#c9764a', f2: '#c26f45', f3: '#a85a36', w1: '#7a3322', w2: '#a04a30' });
+THEMES.crater = outdoorTheme({ void: '#08070d', roof: '#15121c', roofEdge: '#1f4a4a', ambient: 'rgba(4,4,16,0.26)', roofDim: 0.25, neon: ['#3df2d2', '#7cfff2', '#b06bff', '#3df2d2'], lamp: '#6bffe6', gate: '#3df2d2', gateHue: 0, f1: '#3a3644', f2: '#3e3a49', f3: '#2c2935', w1: '#1c1a24', w2: '#2a2733' });
 function rr(g, x, y, w, h, r, fill, stroke) { g.beginPath(); g.roundRect(x, y, w, h, r); g.fillStyle = fill; g.fill(); if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1.5; g.stroke(); } }
 
 // ───── 圖片場景素材 ─────
 // assets/map/<主題>/ 內的圖：floor（地面貼圖）、wall（牆面橫條）、障礙物與地面貼花。
 // 某主題沒有圖時自動退回上面 THEMES 的程式繪製。新主題：放圖並在這裡登記即可。
-const MAP_THEMES = ['slums', 'arena', 'void'];
+const MAP_THEMES = ['slums', 'arena', 'void', 'road', 'canyon', 'crater'];
 const PROPS = { '1x1': ['p1a', 'p1b', 'p1c'], '2x2': ['p22'], '2x1': ['p21'], '3x1': ['p31'], '1x2': ['p12'] };
 const DECALS = [['d1', 30], ['d2', 74], ['d3', 40], ['d4', 56], ['d2', 58], ['d1', 30]];
 const TEX = {};
@@ -177,7 +190,7 @@ export class MapRenderer {
     this.chunks = new Map(); this.q = 1.25; this.use = 0;
     // 遮蔽層：每條通道上方掛兩組管線 / 布條
     this.over = [];
-    for (const l of L.links) for (const s of [-1, 1]) this.over.push({ x: l.x + (l.horiz ? s * 130 : 0), y: l.y + (l.horiz ? 0 : s * 130), horiz: l.horiz, v: l.idx * 2 + s });
+    if (!this.th.outdoor) for (const l of L.links) for (const s of [-1, 1]) this.over.push({ x: l.x + (l.horiz ? s * 130 : 0), y: l.y + (l.horiz ? 0 : s * 130), horiz: l.horiz, v: l.idx * 2 + s });
   }
   tile(tx, ty) { const L = this.L; return tx < 0 || ty < 0 || tx >= L.W || ty >= L.H ? T_WALL : L.tiles[ty * L.W + tx]; }
   bake(cx, cy) {
@@ -189,7 +202,7 @@ export class MapRenderer {
     g.fillStyle = th.void; g.fillRect(cx * px, cy * px, px, px);
     const isW = (x, y) => this.tile(x, y) === T_WALL;
     const tex = TEX[L.theme] || {}, fpat = tex.floor && pattern(g, tex.floor, 512), rpat = tex.roof && pattern(g, tex.roof, 512);
-    if (rpat) { g.fillStyle = rpat; g.fillRect(cx * px, cy * px, px, px); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(cx * px, cy * px, px, px); }
+    if (rpat) { g.fillStyle = rpat; g.fillRect(cx * px, cy * px, px, px); g.fillStyle = `rgba(0,0,0,${th.roofDim === undefined ? 0.35 : th.roofDim})`; g.fillRect(cx * px, cy * px, px, px); }
     for (let ty = cy * CH - 1; ty <= (cy + 1) * CH; ty++) for (let tx = cx * CH - 1; tx <= (cx + 1) * CH; tx++) {
       const x = tx * TILE, y = ty * TILE, t = this.tile(tx, ty);
       if (t !== T_WALL) {
@@ -260,7 +273,7 @@ export class MapRenderer {
         g.shadowColor = th.lamp; g.shadowBlur = 14; g.drawImage(tx2.lamp, d.x - w / 2, d.y - up - h / 2, w, h); g.shadowBlur = 0;
       } else if (d.t === 'sign' && tx2.signs && tx2.signs.length) {
         const im = tx2.signs[d.v % tx2.signs.length], w = 40 + (d.v % 3) * 5, h = w * im.height / im.width;
-        g.globalAlpha = Math.sin(t * 9 + d.v) > -0.93 ? 1 : 0.35; g.shadowColor = th.neon[d.v % th.neon.length]; g.shadowBlur = 12;
+        if (!th.outdoor || L.theme === 'crater') { g.globalAlpha = th.outdoor || Math.sin(t * 9 + d.v) > -0.93 ? 1 : 0.35; g.shadowColor = th.neon[d.v % th.neon.length]; g.shadowBlur = 12; }
         g.drawImage(im, d.x - w / 2, d.y - up - h / 2, w, h); g.shadowBlur = 0; g.globalAlpha = 1;
       } else if (d.t === 'lamp') {
         g.fillStyle = '#15171c'; g.fillRect(d.x - 5, d.y - 6, 10, 5);
@@ -277,11 +290,11 @@ export class MapRenderer {
     }
     for (const l of L.links) {
       if (l.open || l.x < cam.x - 150 || l.x > cam.x + vw + 150 || l.y < cam.y - 150 || l.y > cam.y + vh + 150) continue;
-      const half = 3 * TILE, col = th.gate;
+      const half = l.half || 3 * TILE, col = th.gate;
       if (FXS.gate) {                               // 圖片閘門：依主題換色
         const im = FXS.gate, len = half * 2 + 20, gh = len * im.height / im.width;
         g.save(); g.translate(l.x, l.y); g.rotate(l.horiz ? Math.PI / 2 : 0);
-        g.filter = `hue-rotate(${{ slums: 150, arena: 215, void: 0 }[L.theme] || 0}deg)`; g.globalAlpha = 0.85 + 0.15 * Math.sin(t * 6);
+        g.filter = `hue-rotate(${th.gateHue !== undefined ? th.gateHue : { slums: 150, arena: 215, void: 0 }[L.theme] || 0}deg)`; g.globalAlpha = 0.85 + 0.15 * Math.sin(t * 6);
         g.drawImage(im, -len / 2, -gh / 2, len, gh); g.filter = 'none'; g.globalAlpha = 1; g.restore();
         g.fillStyle = '#0a0b10'; g.beginPath(); g.arc(l.x, l.y, 11, 0, TAU); g.fill(); g.strokeStyle = col; g.lineWidth = 2; g.stroke();
         g.fillStyle = col; g.fillRect(l.x - 4.5, l.y - 1, 9, 7); g.beginPath(); g.arc(l.x, l.y - 2, 3.2, Math.PI, 0); g.stroke();
@@ -312,4 +325,4 @@ export class MapRenderer {
     }
   }
 }
-const SIGNS = { slums: ['酒', '麵', '當', '宿', '藥', '夜市', 'BAR', '24H'], arena: ['拳', '鬥', '賭', '勝', 'K.O', 'VS'], void: ['01', 'ᚱ', 'ᚠ', '◈', 'SYS', '∞'] };
+const SIGNS = { road: ['66', '油', '停'], canyon: ['危', '礦', '禁'], crater: ['◈', '☢', '∞'], slums: ['酒', '麵', '當', '宿', '藥', '夜市', 'BAR', '24H'], arena: ['拳', '鬥', '賭', '勝', 'K.O', 'VS'], void: ['01', 'ᚱ', 'ᚠ', '◈', 'SYS', '∞'] };

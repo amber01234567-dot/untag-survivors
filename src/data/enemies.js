@@ -41,3 +41,30 @@ E('tire', { name: '輪胎怪', hp: 48, speed: 90, dmg: 12, r: 15, xp: 4, ai: 'ch
 E('cursor', { name: '游標群', hp: 12, speed: 150, dmg: 6, r: 9, xp: 1, ai: 'swarm' });
 E('popup', { name: '彈出視窗怪', hp: 80, speed: 56, dmg: 11, r: 16, xp: 5, ai: 'shooter', fly: true, proj: 'e_orb', shotCd: 2.6, shotRange: 340, shotSpeed: 210, shotCount: 2 });
 E('trojan', { name: '木馬', hp: 130, speed: 54, dmg: 14, r: 18, xp: 6, ai: 'chase', split: 'bug', splitN: 4, kbRes: 0.4 });
+// ── 第二系列：廢土荒野（第四～六章） ──
+// 第四章：廢棄公路
+E('tumble', { name: '風滾草怪', hp: 18, speed: 150, dmg: 8, r: 10, xp: 2, ai: 'swarm' });
+E('lizard', { name: '變異蜥蜴', hp: 58, speed: 92, dmg: 13, r: 13, xp: 3, ai: 'chase' });
+E('vulture', { name: '禿鷹', hp: 46, speed: 96, dmg: 12, r: 13, xp: 4, ai: 'shooter', fly: true, proj: 'e_orb', shotCd: 2.8, shotRange: 360, shotSpeed: 220 });
+E('scrapbot', { name: '拾荒機器人', hp: 95, speed: 54, dmg: 13, r: 15, xp: 5, ai: 'shooter', proj: 'e_can', shotCd: 2.4, shotRange: 380, shotSpeed: 250, shotCount: 2 });
+E('barrelbug', { name: '油桶蟲', hp: 42, speed: 108, dmg: 20, r: 13, xp: 3, ai: 'exploder', boomR: 86 });
+E('cactus', { name: '仙人掌怪', hp: 300, speed: 46, dmg: 20, r: 19, xp: 10, ai: 'burst', kbRes: 0.85, proj: 'e_spore', shotCd: 4.2, shotSpeed: 170, shotCount: 8 });
+// 第五章：沙塵峽谷
+E('scorp', { name: '沙蠍', hp: 70, speed: 92, dmg: 15, r: 14, xp: 4, ai: 'charger' });
+E('raider', { name: '拾荒豺狼', hp: 74, speed: 98, dmg: 15, r: 13, xp: 3, ai: 'chase' });
+E('sandworm', { name: '沙蟲', hp: 90, speed: 84, dmg: 16, r: 15, xp: 5, ai: 'blink' });
+E('mortar', { name: '砲龜', hp: 150, speed: 40, dmg: 20, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.6, shotRange: 460 });
+E('dustling', { name: '沙塵精', hp: 20, speed: 158, dmg: 9, r: 10, xp: 2, ai: 'swarm', fly: true });
+E('bison', { name: '鐵甲野牛', hp: 400, speed: 62, dmg: 26, r: 22, xp: 13, ai: 'charger', kbRes: 0.9 });
+// 第六章：隕石坑
+E('shard', { name: '隕石碎塊', hp: 26, speed: 160, dmg: 10, r: 10, xp: 2, ai: 'swarm', fly: true });
+E('magma', { name: '熔岩史萊姆', hp: 120, speed: 66, dmg: 16, r: 17, xp: 5, ai: 'chase', split: 'magmalet', splitN: 3 });
+E('magmalet', { name: '小熔岩', hp: 30, speed: 110, dmg: 10, r: 10, xp: 1, ai: 'chase' });
+E('wreckdrone', { name: '殘骸無人機', hp: 100, speed: 78, dmg: 15, r: 14, xp: 6, ai: 'shooter', fly: true, proj: 'e_laser', shotCd: 2.3, shotRange: 400, shotSpeed: 340, shotCount: 2 });
+E('crystal', { name: '水晶甲蟲', hp: 460, speed: 48, dmg: 24, r: 21, xp: 14, ai: 'burst', kbRes: 0.9, proj: 'e_orb', shotCd: 3.8, shotSpeed: 180, shotCount: 10 });
+E('radrat', { name: '輻射鼠', hp: 55, speed: 128, dmg: 24, r: 12, xp: 4, ai: 'exploder', boomR: 92 });
+E('titanhand', { name: '機械殘肢', hp: 170, speed: 84, dmg: 20, r: 17, xp: 7, ai: 'charger', kbRes: 0.5 });
+// 首領
+E('rig', { name: '暴走聯結車', hp: 50000, speed: 70, dmg: 25, r: 48, xp: 600, ai: 'boss_rig', kbRes: 1, boss: true });
+E('wormqueen', { name: '沙蟲女王', hp: 60000, speed: 56, dmg: 25, r: 46, xp: 700, ai: 'boss_wormqueen', kbRes: 1, boss: true });
+E('colossus', { name: '隕星機神', hp: 72000, speed: 52, dmg: 26, r: 50, xp: 800, ai: 'boss_colossus', kbRes: 1, boss: true });

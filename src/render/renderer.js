@@ -19,6 +19,7 @@ const PSPR = {
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
+const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）" };
 
 export class Renderer {
   constructor(canvas, L, myId, roster) {
@@ -53,6 +54,7 @@ export class Renderer {
     }
     const cam = { x: this.cam.x + (Math.random() - 0.5) * fx.shake, y: this.cam.y + (Math.random() - 0.5) * fx.shake };
     const vw = this.vw, vh = this.vh, sc = this.sc;
+    this.camNow = cam;
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = this.map.th.void; g.fillRect(0, 0, this.cv.width, this.cv.height);
     g.setTransform(sc, 0, 0, sc, Math.round(-cam.x * sc), Math.round(-cam.y * sc));
@@ -68,8 +70,9 @@ export class Renderer {
     for (const e of f.enemies) if (vis(e.x, e.y, 120)) list.push(e);
     for (const p of f.players) if (!(p.fl & 32)) { p._p = 1; list.push(p); }
     for (const s of f.summons) { const k = SUMMON_KINDS[s.k]; if (k !== 'wisp' && k !== 'drone') { s._s = 1; list.push(s); } }
+    if (f.devs) for (const d of L.devices) if (vis(d.x, d.y, 160)) { this.deviceGround(g, d, f.devs[d.idx] || [0, 0], t); list.push({ _d: d, y: d.y + 10 }); }
     list.sort((a, b) => a.y - b.y);
-    for (const o of list) { if (o._p) this.player(g, o, t, dt); else if (o._s) this.summon(g, o, t); else this.enemy(g, o, t); }
+    for (const o of list) { if (o._d) this.device(g, o._d, f.devs[o._d.idx] || [0, 0], t); else if (o._p) this.player(g, o, t, dt); else if (o._s) this.summon(g, o, t); else this.enemy(g, o, t); }
     for (const s of f.summons) { const k = SUMMON_KINDS[s.k]; if (k === 'wisp' || k === 'drone') this.summon(g, s, t); }
 
     // 子彈與光束
@@ -445,6 +448,29 @@ export class Renderer {
       }
     }
     g.restore(); g.globalCompositeOperation = 'source-over';
+  }
+
+  // ───────── 場地機關 ─────────
+  deviceGround(g, d, [st, v], t) {
+    const col = DEV_COL[d.kind];
+    g.save(); g.translate(d.x, d.y + 10); g.scale(1, 0.55);
+    if (st === 0) { g.strokeStyle = col; g.lineWidth = 3; g.globalAlpha = 0.45 + 0.3 * Math.sin(t * 4); g.setLineDash([10, 8]); g.lineDashOffset = -t * 20; g.beginPath(); g.arc(0, 0, 74, 0, Math.PI * 2); g.stroke(); }
+    else if (st === 1) { g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 5; g.beginPath(); g.arc(0, 0, 74, 0, Math.PI * 2); g.stroke(); g.strokeStyle = col; g.lineWidth = 6; g.beginPath(); g.arc(0, 0, 74, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, v / 100)); g.stroke(); }
+    else if (st === 2 && d.kind === 'pylon') { g.fillStyle = col; g.globalAlpha = 0.1 + 0.04 * Math.sin(t * 6); g.beginPath(); g.arc(0, 0, 300, 0, Math.PI * 2); g.fill(); g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 3; g.stroke(); }
+    g.restore();
+  }
+  device(g, d, [st, v], t) {
+    const im = FXS['dev_' + d.kind], col = DEV_COL[d.kind], H = d.kind === 'pylon' ? 92 : 74;
+    g.save(); g.translate(d.x, d.y + 14);
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(0, 0, 30, 9, 0, 0, Math.PI * 2); g.fill();
+    if (st === 3) g.globalAlpha = 0.5;
+    if (st === 2) { g.shadowColor = col; g.shadowBlur = 18 + 8 * Math.sin(t * 14); const k = 1 + 0.04 * Math.sin(t * 30); g.scale(k, 2 - k); }
+    if (im) { const w = H * im.width / im.height; g.drawImage(im, -w / 2, -H, w, H); }
+    else { g.fillStyle = col; g.strokeStyle = '#06070a'; g.lineWidth = 2; g.beginPath(); g.roundRect(-18, -56, 36, 56, 8); g.fill(); g.stroke(); }
+    g.shadowBlur = 0; g.globalAlpha = 1; g.setTransform(this.sc, 0, 0, this.sc, Math.round(-this.camNow.x * this.sc), Math.round(-this.camNow.y * this.sc));
+    const label = st === 3 ? `冷卻 ${v}s` : st === 0 ? DEV_NAME[d.kind] : '';
+    if (label) { g.font = `700 11px ${FONT}`; g.textAlign = 'center'; g.strokeStyle = 'rgba(5,6,10,.85)'; g.lineWidth = 3; g.strokeText(label, d.x, d.y - H + 2); g.fillStyle = st === 3 ? '#9aa3b5' : col; g.fillText(label, d.x, d.y - H + 2); }
+    g.restore();
   }
 
   // ───────── 光照層 ─────────
