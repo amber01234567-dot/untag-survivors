@@ -12,7 +12,7 @@ import { openHost, connect, makeCode, NET_KIND } from './transport.js';
 import { save } from '../core/save.js';
 
 const now = () => performance.now() / 1000;
-const AWAY_MS = 150000;        // 玩家暫離 / 斷線後，位置保留多久
+const AWAY_MS = 300000;        // 玩家暫離 / 斷線後，位置保留多久
 const token = () => Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 function makeTicker(fn, hz = 60) {
