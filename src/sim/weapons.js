@@ -2,9 +2,9 @@
 // 新武器若能用既有行為 + 不同數值組合出來，就只需要改 data/weapons.js。
 import { TAU, angDiff, dist2 } from '../core/util.js';
 import { bHaste, addBuff, dash } from './player.js';
-import { solidAt } from './levelgen.js';
+import { solidAt, blocksShot } from './levelgen.js';
 
-const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5 };
+const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5, dragon: 7 };
 
 // 扇形揮砍
 export function swing(W, p, a, range, arc, dmg, o) {
@@ -68,7 +68,59 @@ const TICK = {
   },
 };
 
+// 進化：死神狙擊 —— 瞬間貫穿的光線（遇牆停止），暴擊在命中點爆炸
+function railShot(W, p, a, s) {
+  const x0 = p.x + Math.cos(a) * 18, y0 = p.y - 14 + Math.sin(a) * 18, ca = Math.cos(a), sa = Math.sin(a);
+  let len = 0;
+  const max = s.railLen * (p.st.area * 0.5 + 0.5);
+  while (len < max && !blocksShot(W.L, x0 + ca * (len + 16), y0 + sa * (len + 16))) len += 16;
+  W.lineHits(x0, y0, a, len, s.railW, (e) => {
+    const crit = W.rng.next() < p.st.crit + (s.critAdd || 0);
+    W.strike(p, e, s.dmg, { crit, critAdd: -9, kb: s.kb, sx: p.x, sy: p.y });
+    if (crit && s.railBoom) W.aoe(e.x, e.y, s.railBoom * p.st.area, s.dmg * 0.45, p, { fx: 1, critAdd: -9 });
+  });
+  W.emit('l', x0 | 0, y0 | 0, (x0 + ca * len) | 0, (y0 + sa * len) | 0, 4);
+}
+
 export const BEH = {
+  // 進化：金剛法輪 —— 一個大法輪繞行；定期飛向敵群再飛回來
+  wheel(W, p, w, dt) {
+    const s = w.s;
+    if (!w.orbs || !w.orbs.length || w.orbs[0].dead) w.orbs = [W.shoot(p, { kind: 'wheel', orbit: true, life: 1e9, speed: 0, dmg: 0 })];
+    const o = w.orbs[0], R = s.radius * p.st.area, hitR = s.wheelR * (p.st.area * 0.5 + 0.5);
+    w.rot = (w.rot || 0) + dt * s.rot * 0.75;
+    const hx = p.x + Math.cos(w.rot) * R, hy = p.y - 12 + Math.sin(w.rot) * R * 0.86;      // 軌道上的歸位點
+    if (w.fly) {
+      const f = w.fly; f.t += dt;
+      const k = f.t / f.dur, out = k < 0.5 ? k * 2 : 2 - k * 2, e = 1 - (1 - out) * (1 - out);
+      o.x = hx + (f.tx - hx) * e; o.y = hy + (f.ty - hy) * e;
+      if (k >= 1) { w.fly = null; w.tt = s.throwCd * p.st.cd; }
+    } else {
+      o.x = hx; o.y = hy;
+      w.tt = (w.tt === undefined ? 2.5 : w.tt) - dt * bHaste(p);
+      if (w.tt <= 0 && !p.down) {
+        const c = W.cluster(p.x, p.y, s.throwDist * 1.1, 110);
+        if (c) { const dx = c.x - p.x, dy = c.y - p.y, d = Math.hypot(dx, dy) || 1, L = Math.min(s.throwDist * p.st.area, d + 120); w.fly = { t: 0, dur: 1.5, tx: p.x + dx / d * L, ty: p.y + dy / d * L }; p.atkN++; p.atkA = Math.atan2(dy, dx); W.emit('a', 'slash'); }
+        else w.tt = 0.5;
+      }
+    }
+    o.a = (o.a || 0) + dt * (w.fly ? 16 : 7); o.aux = w.fly ? 1 : 0;
+    if (!p.down) W.hash.query(o.x, o.y, hitR, (e) => {
+      const ot = e.ot || (e.ot = {}), key = w.uid * 32;
+      if ((ot[key] || 0) > W.time) return;
+      ot[key] = W.time + s.hitCd;
+      W.strike(p, e, s.dmg * (w.fly ? s.throwDmg : 1), { slow: s.slow, slowDur: s.slowDur, kb: w.fly ? 160 : 50, sx: o.x, sy: o.y });
+    });
+    if (!s.pulseCd) return;                      // 定身波沿用佛珠的設定
+    w.pt = (w.pt === undefined ? 3 : w.pt) - dt * bHaste(p);
+    if (w.pt > 0) return;
+    const r = s.pulseR * p.st.area;
+    if (!W.nearestEnemy(p.x, p.y, r)) return;
+    w.pt = s.pulseCd * p.st.cd; p.atkN++;
+    W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg * 1.5, { stun: s.pulseStun, mark: s.pulseMark ? s.pulseStun + 1 : 0 }));
+    W.emit('r', p.x | 0, p.y | 0, r | 0, 5);
+  },
+
   melee(W, p, w, dt) {
     const s = w.s;
     if (w.pend) { w.pend.t -= dt; if (w.pend.t <= 0) { const q = w.pend; w.pend = null; swing(W, p, q.a, q.range, s.arc, s.dmg, q.o); p.atkN++; p.atkA = q.a; } }
@@ -89,6 +141,7 @@ export const BEH = {
       if (s.comboSpin) { swing(W, p, a, r, TAU, s.dmg * s.comboMul, Object.assign({}, o, { kb: s.kb * 1.2, stun: s.comboStun })); }
       else { const cx = p.x + Math.cos(a) * 40, cy = p.y + Math.sin(a) * 40; W.aoe(cx, cy, r, s.dmg * s.comboMul * (forceCombo && w.n % s.combo ? 0.6 : 1), p, { kb: s.kb * 3, stun: s.comboStun, fx: 5 }); }
     }
+    if (s.fireWave) W.shoot(p, { kind: 'firewave', a, speed: 620, dmg: s.dmg * s.fireWave, pierce: 99, life: 1.5, r: 64, kb: 90, dot: s.dot, dotDur: s.dotDur, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：龍牙巨劍
     if (s.waveEvery && w.n % s.waveEvery === 0) W.shoot(p, { kind: 'wave', a, speed: 540, dmg: s.dmg * s.waveDmg, pierce: 99, life: 0.75, r: 30, kb: 60 });
     if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotDur: s.dotDur }); }
     if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });
@@ -112,6 +165,7 @@ export const BEH = {
     p.atkA = a;
     let extra = sup ? { pierce: (s.pierce || 0) + 2, slow: 0.4, slowDur: 1 } : null;
     if (s.lastAoe && w.ammo === 1) extra = { aoe: s.lastAoe, pierce: 0 };
+    if (s.rail) railShot(W, p, a, s); else
     volley(W, p, w, a, s, extra);
     if (s.dual) { const t2 = W.nearestEnemy(p.x, p.y, s.range, tgt); if (t2) volley(W, p, w, Math.atan2(t2.y - p.y, t2.x - p.x), s, extra); }
     if (s.burst > 1) { w.burst = s.burst - 1; w.bt = 0.07; w.ba = a; w.bx = extra; }

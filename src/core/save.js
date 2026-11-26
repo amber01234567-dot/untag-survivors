@@ -5,7 +5,7 @@ import { STAGES, DIFFS } from '../data/chapters.js';
 
 const KEY = 'untag_survivors_save';
 export const SAVE_VERSION = 2;
-const DEV = new URLSearchParams(location.search).get('dev') === '1';
+const DEV = new URLSearchParams(location.search).get('dev') === '1' || (typeof window !== 'undefined' && !!window.__TEST);
 
 function fresh() {
   return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, unlocked: [], cleared: {}, char: 'tingge',

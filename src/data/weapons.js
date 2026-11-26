@@ -341,6 +341,35 @@ W('sub_nova', {
   ],
 });
 
+// ───────── 武器進化 ─────────
+// 條件：專屬武器升滿 + 指定被動達 EVO_NEED 級 → 下次升級保證出現金色「進化」卡。
+// EVO(原武器, 新武器 id, 對應被動, def)：新武器以原武器滿級數值為底，再套 mod（m 乘 / a 加 / s 設定）。
+// 進化是「形態改變」：用 beh 換行為，或在原行為裡以 s.xxx 旗標切換打法。
+export const EVO_NEED = 3;
+function EVO(from, id, passive, def) {
+  const src = WEAPONS[from], base = weaponStats(src, src.maxLv), mod = def.mod || {};
+  if (mod.m) for (const k in mod.m) base[k] = (base[k] || 0) * mod.m[k];
+  if (mod.a) for (const k in mod.a) base[k] = (base[k] || 0) + mod.a[k];
+  if (mod.s) for (const k in mod.s) base[k] = mod.s[k];
+  WEAPONS[id] = Object.assign({ beh: src.beh, proj: src.proj, fx: src.fx, extra: src.extra, skin: src.skin }, def, { id, base, lv: [], maxLv: 1, evoOf: from });
+  src.evo = { to: id, passive, need: EVO_NEED };
+}
+EVO('greatsword', 'dragonsword', 'power', {
+  name: '龍牙巨劍', glyph: '龍', fx: 'dragon',
+  evoDesc: '巨劍燃起龍炎：揮砍變成 360 度大迴旋並點燃敵人，每一擊放出橫掃全場的火焰劍波',
+  mod: { m: { dmg: 1.15, range: 1.45, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, fireWave: 0.4, dot: 10, dotDur: 3 } },
+});
+EVO('revolver', 'reapersniper', 'crit', {
+  name: '死神狙擊', glyph: '狙',
+  evoDesc: '子彈變成瞬間貫穿整個畫面的狙擊光線；暴擊時在命中點引發爆炸',
+  mod: { m: { dmg: 1.9, cd: 1.5 }, a: { critAdd: 0.1 }, s: { rail: 1, railLen: 1150, railW: 30, railBoom: 78, lastAoe: 0 } },
+});
+EVO('beads', 'dharmawheel', 'armor', {
+  name: '金剛法輪', glyph: '輪', beh: 'wheel', proj: 'wheel',
+  evoDesc: '佛珠合成一個巨大的金色法輪：環繞範圍更大、碾過的敵人被緩速，並定期飛出去輾過敵群再飛回來',
+  mod: { m: { dmg: 3.4, radius: 1.25 }, s: { count: 1, hitCd: 0.24, wheelR: 58, throwCd: 4.5, throwDist: 430, throwDmg: 1.6 } },
+});
+
 export const SUB_WEAPONS = Object.values(WEAPONS).filter((w) => w.sub).map((w) => w.id);
 
 export function weaponStats(def, level) {

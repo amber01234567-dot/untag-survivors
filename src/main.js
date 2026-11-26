@@ -62,6 +62,24 @@ addEventListener('resize', () => { if (app.renderer) app.renderer.resize(); });
 // 分頁切到背景時畫面迴圈會停：先把自己的輸入歸零，角色才不會一直往同方向走
 document.addEventListener('visibilitychange', () => { if (document.hidden && app.rt) { app.input.keys.clear(); app.input.btn = 0; app.rt.setInput(0, 0, 0); } });
 
+// 測試用（單人）：直接把專屬武器升滿、對應被動升到門檻，下一次升級就會出現進化卡。
+// 網址 ?quick=1-1,laoliu&evo=1；或遊戲中按 F9。
+async function grantEvoReady() {
+  const rt = app.rt, W = rt && rt.world;
+  if (!W) return;
+  const { applyOption } = await import('./sim/player.js');
+  const p = W.player(rt.myId), main = p.weapons[0];
+  while (main.level < main.def.maxLv) applyOption(W, p, { k: 'w', id: main.def.id, lv: 1 });
+  const evo = main.def.evo;
+  if (!evo) return app.toast(main.def.branch ? '這把武器要先選路線分支，升滿後再按一次 F9' : '這個角色的進化還沒做');
+  while ((p.passives[evo.passive] || 0) < evo.need) applyOption(W, p, { k: 'p', id: evo.passive });
+  app.hud.build = p.weapons.map((w) => ({ k: 'w', id: w.def.id, lv: w.level })).concat(Object.keys(p.passives).map((id) => ({ k: 'p', id, lv: p.passives[id] })));
+  app.hud.renderBuild(); W.lvQueue++;
+  app.toast('測試：進化條件已達成，選金色的進化卡');
+}
+app.grantEvoReady = grantEvoReady;
+addEventListener('keydown', (e) => { if (e.code === 'F9' && app.rt && app.session.mode === 'solo') { e.preventDefault(); grantEvoReady(); } });
+
 let last = performance.now();
 function loop(t) {
   requestAnimationFrame(loop);
@@ -88,5 +106,6 @@ if (qs.get('quick')) {
   if (STAGES[stage]) app.session.lobby.sel = { stage, diff: +(qs.get('diff') || 0) };
   if (qs.get('fastult')) app.session.lobby.players[0].bonus.ult = 40;        // 測試用：寶具幾乎隨時可放
   app.session.launch();
+  if (qs.get('evo')) grantEvoReady();
 } else app.screens.show('home');
 if (DEV) app.toast('開發模式：全角色解鎖，進度不會存檔');

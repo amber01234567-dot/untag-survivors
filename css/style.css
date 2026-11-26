@@ -399,3 +399,13 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .logo.fire span { position: relative; z-index: 1; display: inline-block; background: linear-gradient(180deg, #fff6c8 0%, #ffd34d 30%, #ff8a1f 62%, #d8320f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 2px #1a0703; paint-order: stroke fill; filter: drop-shadow(0 4px 0 #120402) drop-shadow(0 0 22px rgba(255, 110, 20, .55)); animation: ember 2.4s ease-in-out infinite; }
 .logo.fire small { position: relative; z-index: 1; }
 @keyframes ember { 50% { filter: drop-shadow(0 4px 0 #120402) drop-shadow(0 0 34px rgba(255, 150, 40, .8)); } }
+
+/* ───── 武器進化 ───── */
+.upc.evo { border-color: #ffd23c; background: linear-gradient(180deg, rgba(74, 52, 10, .96), rgba(18, 12, 4, .98)); box-shadow: 0 0 0 1px rgba(255, 210, 60, .5) inset, 0 0 34px rgba(255, 190, 40, .45); animation: evoglow 1.4s ease-in-out infinite; }
+.upc.evo .nm { color: #ffe27a; font-size: 19px; }
+@keyframes evoglow { 50% { box-shadow: 0 0 0 1px rgba(255, 210, 60, .8) inset, 0 0 54px rgba(255, 200, 60, .75); } }
+.upc .mat { font-size: 11.5px; font-weight: 700; color: #ffd23c; background: rgba(255, 210, 60, .1); border: 1px solid rgba(255, 210, 60, .35); border-radius: 3px; padding: 3px 7px; }
+.glyph.evo { box-shadow: 0 0 0 1.5px #ffd23c, 0 0 10px rgba(255, 210, 60, .7); }
+.kit.evo { border: 1px solid rgba(255, 210, 60, .4); background: rgba(255, 210, 60, .06); border-radius: 4px; padding: 8px; }
+.kit.evo .recipe { margin-top: 6px; font-size: 12.5px; line-height: 1.7; }
+.kit.evo .recipe .glyph { width: 20px; height: 20px; font-size: 11px; vertical-align: -5px; margin: 0 3px 0 2px; }

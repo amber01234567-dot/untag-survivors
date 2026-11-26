@@ -1,6 +1,7 @@
 // 選單畫面：主選單、大廳（隊伍 + 世界節點圖 + 關卡資訊）、角色圖鑑、天賦。
 import { CHARS, CHAR_LIST, ROLES, MASTERY } from '../data/characters.js';
-import { WEAPONS } from '../data/weapons.js';
+import { WEAPONS, EVO_NEED } from '../data/weapons.js';
+import { PASSIVES } from '../data/upgrades.js';
 import { TALENTS, TALENT_PAGES } from '../data/upgrades.js';
 import { CHAPTERS, STAGES, LAYOUTS, DIFFS, NODE_KINDS, SERIES, nodeUnlocked } from '../data/chapters.js';
 import { ENEMIES } from '../data/enemies.js';
@@ -15,6 +16,13 @@ import { startLogoFire } from './logofire.js';
 
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// 角色頁：武器進化的配方與效果（還沒做進化的武器不顯示）
+function evoKit(w) {
+  if (!w.evo) return '';
+  const e = WEAPONS[w.evo.to], ps = PASSIVES[w.evo.passive];
+  return `<div class="kit evo">${icon('icons/w_' + e.id, e.glyph, '#ffd23c')}<div><b>${e.name}</b>　<span class="tag" style="--c:#ffd23c">武器進化</span><br>${e.evoDesc}
+    <div class="recipe">進化條件：<b>${w.name}</b> 升到滿級 ＋ 被動 ${icon('icons/p_' + w.evo.passive, ps.glyph, '#2de2e6')}<b>${ps.name}</b>（${ps.desc}）達到 ${EVO_NEED} 級<br><span class="dim">達成後，下一次升級一定會出現金色的「進化」卡。</span></div></div></div>`;
+}
 const P = (id, size) => `<i data-p="${id}" data-s="${size}"></i>`;
 function mount(root) { root.querySelectorAll('i[data-p]').forEach((el) => el.replaceWith(portrait(el.dataset.p, +el.dataset.s))); }
 const objLine = (o) => (o.t === 'kill' ? `殲滅 ${Math.round(o.n * 1.8)} 名敵人` : o.t === 'survive' ? `撐過 ${o.s} 秒` : o.t === 'nests' ? `摧毀 ${o.n} 個巢穴` : o.t === 'elite' ? `擊敗菁英「${ENEMIES[o.who].name}」` : o.t === 'boss' ? `擊敗首領「${ENEMIES[o.who].name}」` : o.t === 'goblins' ? `${o.s} 秒內盡量攔截運鈔鼠` : '寶藏');
@@ -188,7 +196,8 @@ export class Screens {
           <div class="stats"><div><b>${sel.hp}</b>生命</div><div><b>${sel.speed}</b>移速</div><div><b>${sel.armor}</b>護甲</div></div>
           <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>熟練度 <b style="color:var(--teal)">Rank ${rank}</b>　<span class="dim">每階 生命 / 傷害 +3%</span></span><span class="dim">${rank >= MASTERY.maxRank ? 'MAX' : xp + ' / ' + need}</span></div><div class="bar"><i style="width:${rank >= MASTERY.maxRank ? 100 : xp / need * 100}%"></i></div></div>
           <div class="kit">${icon('icons/w_' + w.id, w.glyph, col)}<div><b>${w.name}</b>　<span class="dim">專屬武器・自動攻擊</span><ul class="lvlist">${w.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>
-          ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>`; }).join('')}
+          ${evoKit(w)}
+          ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>${evoKit(bw)}`; }).join('')}
           <div class="kit">${icon('skills/' + sel.skill.id, '技', '#2de2e6')}<div><b>${sel.skill.name}</b>　<span class="dim">冷卻 ${sel.skill.cd} 秒</span><br>${sel.skill.desc}</div></div>
           <div class="kit">${icon('skills/' + sel.ult.id, '寶', 'var(--gold2)')}<div><b>${sel.ult.name}</b>　<span class="dim">寶具・擊殺充能</span><br>${sel.ult.desc}</div></div>
           ${sel.sheet ? `<img class="sheet-thumb" src="assets/sheets/${sel.id}.jpg" data-a="sheet" data-v="${sel.id}" alt="${sel.name} 設定圖">` : ''}

@@ -1,6 +1,6 @@
 // 遊戲內介面：血條、經驗、目標、隊友、技能鈕、升級三選一、暫停、結算。
 import { CHARS, ROLES } from '../data/characters.js';
-import { WEAPONS } from '../data/weapons.js';
+import { WEAPONS, EVO_NEED } from '../data/weapons.js';
 import { PASSIVES } from '../data/upgrades.js';
 import { ENEMY_LIST } from '../data/enemies.js';
 import { DIFFS, STAGES } from '../data/chapters.js';
@@ -14,7 +14,7 @@ import { icon, optIcon } from './icons.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ICON = (id) => new URL(`../../assets/ui/skills/${id}.png`, import.meta.url).href;
-const CAT_COL = { 路線分支: '#ff8a5a', 專屬武器: '#ffd76b', 副武器: '#ff8fd0', 被動: '#2de2e6', 補給: '#5dff9d' };
+const CAT_COL = { 武器進化: '#ffd23c', 路線分支: '#ff8a5a', 專屬武器: '#ffd76b', 副武器: '#ff8fd0', 被動: '#2de2e6', 補給: '#5dff9d' };
 
 export class Hud {
   constructor(app) {
@@ -85,7 +85,7 @@ export class Hud {
     }
   }
   renderBuild() {
-    this.r.build.innerHTML = this.build.map((b) => { const d = b.k === 'w' ? WEAPONS[b.id] : PASSIVES[b.id]; return icon(optIcon(b), d.glyph, b.k === 'w' ? '#ffd76b' : '#2de2e6', '', `<em>${b.lv}</em>`); }).join('');
+    this.r.build.innerHTML = this.build.map((b) => { const d = b.k === 'w' ? WEAPONS[b.id] : PASSIVES[b.id]; return icon(optIcon(b), d.glyph, b.k === 'w' ? '#ffd76b' : '#2de2e6', d.evoOf ? 'evo' : '', d.evoOf ? '<em>★</em>' : `<em>${b.lv}</em>`); }).join('');
   }
 
   // ───────── 升級三選一 ─────────
@@ -97,9 +97,9 @@ export class Hud {
       this.showModal(`<div class="lvup"><h2>${m.reason === 'chest' ? '寶箱' : '升級'}</h2><div class="wait">等待其他隊友選擇…</div></div>`);
       return;
     }
-    const cards = m.opts.map((o, i) => `<button class="upc panel" data-a="opt" data-v="${i}" style="--c:${CAT_COL[o.cat] || '#2de2e6'}">
+    const cards = m.opts.map((o, i) => `<button class="upc panel ${o.evo ? 'evo' : ''}" data-a="opt" data-v="${i}" style="--c:${CAT_COL[o.cat] || '#2de2e6'}">
       <span class="tag" style="--c:${CAT_COL[o.cat]}">${o.cat}</span>${icon(optIcon(o), o.glyph, CAT_COL[o.cat], 'big')}
-      <div class="nm">${o.name}${o.lv ? ` <span class="dim" style="font-size:12px">Lv ${o.lv}</span>` : ''}</div>${o.isNew ? '<div class="new">NEW</div>' : ''}<div class="ds">${o.desc}</div><div class="dim" style="font-size:11px;margin-top:auto">按 ${i + 1}</div></button>`).join('');
+      <div class="nm">${o.name}${o.lv ? ` <span class="dim" style="font-size:12px">Lv ${o.lv}</span>` : ''}</div>${o.isNew ? '<div class="new">NEW</div>' : ''}<div class="ds">${o.desc}</div>${o.mat ? `<div class="mat">★ 進化素材 → ${o.mat}${o.k === 'p' ? `（需 ${EVO_NEED} 級）` : '（需升滿）'}</div>` : ''}<div class="dim" style="font-size:11px;margin-top:auto">按 ${i + 1}</div></button>`).join('');
     this.showModal(`<div class="lvup"><div class="sub">${m.reason === 'chest' ? 'TREASURE' : m.reason === 'supply' ? 'SUPPLY' : 'LEVEL UP'}</div><h2>${m.reason === 'chest' ? '開啟寶箱' : m.reason === 'supply' ? '戰前補給' : '選擇強化'}</h2>
       <div class="cards3">${cards}</div>
       <button class="btn small" data-a="reroll" ${m.rerolls > 0 ? '' : 'disabled'}>重抽（剩 ${m.rerolls} 次）R</button></div>`);
@@ -108,6 +108,7 @@ export class Hud {
     if (a === 'opt' && this.choices && !this.choices.done) { this.rt.pick(+v); sfx('skill'); }
     else if (a === 'reroll' && this.choices && this.choices.rerolls > 0) this.rt.reroll();
     else if (a === 'resume') this.togglePause();
+    else if (a === 'evotest') { this.togglePause(); this.app.grantEvoReady(); }
     else if (a === 'quit') { this.closeModal(); this.app.quitGame(); }
     else if (a === 'lobby') { this.closeModal(); this.app.endGame(); }
   }
@@ -123,6 +124,7 @@ export class Hud {
     this.showModal(`<div class="panel pausebox"><h2>${solo ? '暫停' : '選單'}</h2>
       <div class="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻擊全自動）<br><kbd>空白鍵</kbd> 技能：${this.def.skill.name}<br><kbd>Q</kbd> 寶具：${this.def.ult.name}<br>倒地的隊友：靠近 3 秒即可救起</div>
       ${solo ? '' : '<div class="dim" style="font-size:11px">連線遊戲不會暫停</div>'}
+      ${solo && window.__TEST ? '<button class="btn" data-a="evotest" style="border-color:#ffd23c;color:#ffd23c">測試：直接達成進化條件</button>' : ''}
       <button class="btn primary" data-a="resume">繼續</button><button class="btn danger" data-a="quit">${this.app.session.mode === 'client' ? '離開房間' : '放棄關卡'}</button></div>`);
   }
 

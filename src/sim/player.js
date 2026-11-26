@@ -142,8 +142,11 @@ export function updatePlayer(W, p, dt) {
 export function rollOptions(W, p, n) {
   const pool = [];
   const main = p.weapons[0];
-  if (main.level < main.def.maxLv) pool.push([{ k: 'w', id: main.def.id, lv: main.level + 1, main: true }, 3.4]);
+  if (main.level < main.def.maxLv) pool.push([{ k: 'w', id: main.def.id, lv: main.level + 1, main: true, mat: main.def.evo ? WEAPONS[main.def.evo.to].name : undefined }, 3.4]);
   const forced = main.level >= main.def.maxLv && main.def.branch ? main.def.branch.map((id) => describe({ k: 'w', id, lv: 1, main: true, branch: true, replace: main.def.id })) : [];
+  // 武器進化：專屬武器滿級 + 對應被動達標 → 保證出現進化卡。對應被動不受「最多 6 種」限制，出現機率也較高
+  const evo = evoOf(p), evoPas = evo && evo.passive;
+  if (evo && main.level >= main.def.maxLv && (p.passives[evo.passive] || 0) >= evo.need) forced.push(describe({ k: 'w', id: evo.to, lv: 1, main: true, evo: true, replace: main.def.id }));
   const subs = p.weapons.slice(1);
   for (const w of subs) if (w.level < w.def.maxLv) pool.push([{ k: 'w', id: w.def.id, lv: w.level + 1 }, 1.7]);
   if (subs.length < 2) for (const id of SUB_WEAPONS) if (!subs.some((w) => w.def.id === id)) pool.push([{ k: 'w', id, lv: 1, isNew: true }, 0.8]);
@@ -152,8 +155,9 @@ export function rollOptions(W, p, n) {
     const ps = PASSIVES[id], lv = p.passives[id] || 0;
     if (ps.roles && !ps.roles.includes(p.def.role)) continue;
     if (lv >= ps.max) continue;
-    if (!lv && owned.length >= 6) continue;
-    pool.push([{ k: 'p', id, lv: lv + 1, isNew: !lv }, lv ? 1.5 : 1]);
+    if (!lv && owned.length >= 6 && id !== evoPas) continue;
+    const mat = id === evoPas && lv < evo.need;
+    pool.push([{ k: 'p', id, lv: lv + 1, isNew: !lv, mat: mat ? WEAPONS[evo.to].name : undefined }, (lv ? 1.5 : 1) * (mat ? 2.2 : 1)]);
   }
   const out = forced.slice();           // 路線分支：兩條路線一定同時出現
   while (out.length < n && pool.length) {
@@ -164,8 +168,13 @@ export function rollOptions(W, p, n) {
   while (out.length < n) out.push(describe(out.some((o) => o.k === 'heal') ? { k: 'coin' } : { k: 'heal' }));
   return out;
 }
+// 這個角色（目前的專屬武器或其分支）可以進化成什麼
+export function evoOf(p) { const d = p.weapons[0].def; return d.evo || null; }
 function describe(o) {
-  if (o.k === 'w') {
+  if (o.k === 'w' && o.evo) {
+    const d = WEAPONS[o.id];
+    o.name = d.name; o.glyph = d.glyph; o.cat = '武器進化'; o.desc = d.evoDesc;
+  } else if (o.k === 'w') {
     const d = WEAPONS[o.id];
     o.name = d.name; o.glyph = d.glyph; o.cat = o.main ? '專屬武器' : '副武器';
     o.desc = o.branch ? d.branchDesc : o.lv === 1 ? '獲得新的副武器' : d.lv[o.lv - 2][0];
@@ -179,6 +188,7 @@ function describe(o) {
 }
 export function applyOption(W, p, o) {
   if (o.k === 'w') {
+    if (o.evo) W.emit('evo', p.id, WEAPONS[o.id].name);
     let w = p.weapons.find((x) => x.def.id === o.id);
     if (o.replace && !w) {                     // 路線分支：換掉基礎武器
       const i = p.weapons.findIndex((x) => x.def.id === o.replace);
