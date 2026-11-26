@@ -104,7 +104,7 @@ export class Screens {
       if (!p) return `<div class="slot empty">${ses.mode === 'solo' ? '' : '等待玩家加入…'}</div>`;
       const c = CHARS[p.charId] || CHARS.tingge;
       return `<div class="slot" style="--c:${SLOT_COLORS[i]}">${P(c.id, 52)}<div><div class="nm">${esc(p.name)}${p.id === ses.myId ? '（你）' : ''}</div><div class="ch">${c.name}・${ROLES[c.role].name}　熟練 ${p.rank | 0}</div></div>
-        <div class="st" style="color:${p.host ? 'var(--gold2)' : p.ready ? 'var(--green)' : 'var(--dim)'}">${p.host ? '房主' : p.ready ? '已準備' : '未準備'}</div></div>`;
+        <div class="st" style="color:${p.away ? '#ff9a5a' : p.host ? 'var(--gold2)' : p.ready ? 'var(--green)' : 'var(--dim)'}">${p.away ? '暫離中' : p.host ? '房主' : p.ready ? '已準備' : '未準備'}</div></div>`;
     }).join('');
     const serId = ch.series || 1;
     const sers = SERIES.map((sr) => { const c0 = CHAPTERS.find((c) => (c.series || 1) === sr.id); return `<button class="sertab ${sr.id === serId ? 'on' : ''}" data-a="series" data-v="${sr.id}" ${c0 && nodeUnlocked(c0.nodes[0].id, cleared) ? '' : 'disabled'}><b>系列 ${'一二三四五六'[sr.id - 1]}</b>　${sr.name}<i>${sr.sub}</i></button>`; }).join('');

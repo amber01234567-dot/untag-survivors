@@ -53,6 +53,7 @@ export class Hud {
     q('#btn-pause').addEventListener('click', () => this.togglePause());
     rt.onChoices = (m) => this.onChoices(m);
     rt.onPicked = (o) => { if (o.k !== 'w' && o.k !== 'p') return; if (o.replace) this.build = this.build.filter((x) => !(x.k === 'w' && x.id === o.replace)); const b = this.build.find((x) => x.k === o.k && x.id === o.id); if (b) b.lv = o.lv; else this.build.push({ k: o.k, id: o.id, lv: o.lv }); this.renderBuild(); };
+    rt.onSync = (b) => { this.build = b; this.renderBuild(); this.choices = null; if (this.mode === 'lvup') this.closeModal(); };
     this.renderBuild(); this.objKey = '';
   }
   stop() { this.el.classList.add('hidden'); this.el.innerHTML = ''; document.getElementById('touch').classList.add('hidden'); this.closeModal(); this.rt = null; }

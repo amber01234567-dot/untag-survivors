@@ -18,25 +18,35 @@ function peerOpts() {
 // WebRTC 偵測對方離線很慢（可能 30 秒以上），所以傳輸層自己做心跳：
 // 每 1.5 秒送一個 ping，超過 10 秒完全沒收到任何資料就視為斷線。
 // 心跳用 Web Worker 計時：分頁切到背景時主執行緒的計時器會被瀏覽器降速，Worker 不會，才不會誤判斷線。
+// 手機把瀏覽器切到背景時整個頁面（連 Worker）會被凍結：
+//   · 回來時先偵測「剛解凍」(thaw)，重新起算逾時，不要因為凍結期間沒收到資料就自己斷線
+//   · conn.grace(ms)：對方說它要暫離時，這段時間內不判定斷線
+//   · conn.probe()：回到前景後 4 秒內沒收到任何資料才判定真的斷了（比等 10 秒快）
 const PING = '\u0001';
 const beats = new Set();
-let beatStarted = false;
+let beatStarted = false, lastBeat = 0, thaw = 0;
 function onBeat(fn) {
   beats.add(fn);
   if (beatStarted) return;
-  beatStarted = true;
-  const tick = () => { for (const f of beats) f(); };
+  beatStarted = true; lastBeat = performance.now();
+  const tick = () => { const t = performance.now(); if (t - lastBeat > 4500) thaw = t; lastBeat = t; for (const f of beats) f(); };
   try { const w = new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),1500);'], { type: 'text/javascript' }))); w.onmessage = tick; }
   catch (e) { setInterval(tick, 1500); }
 }
 function wrapPeerConn(c) {
-  let lastRecv = performance.now();
+  let lastRecv = performance.now(), graceUntil = 0, probeAt = 0, probeFrom = 0;
   const conn = { onData: null, onClose: null, open: true,
+    grace(ms) { graceUntil = ms ? performance.now() + ms : 0; if (!ms) lastRecv = performance.now(); },
+    probe() { probeFrom = performance.now(); probeAt = probeFrom + 4000; },
     send(d) { if (c.open) { try { c.send(d); } catch (e) { /* 連線中斷時丟棄 */ } } },
     close() { closed(true); try { c.close(); } catch (e) { /* noop */ } } };
   function closed(silent) { if (!conn.open) return; conn.open = false; beats.delete(hb); removeEventListener('pagehide', bye); if (!silent && conn.onClose) conn.onClose(); }
   const bye = () => { try { c.close(); } catch (e) { /* noop */ } };
-  const hb = () => { if (performance.now() - lastRecv > 10000) { closed(); bye(); } else conn.send(PING); };
+  const hb = () => {
+    const t = performance.now();
+    if (probeAt && t > probeAt) { probeAt = 0; if (lastRecv < probeFrom) { closed(); bye(); return; } }
+    if (t > graceUntil && t - Math.max(lastRecv, thaw) > 10000) { closed(); bye(); } else conn.send(PING);
+  };
   onBeat(hb);
   addEventListener('pagehide', bye);
   c.on('data', (d) => {
@@ -77,7 +87,7 @@ function peerJoin(code) {
 
 // ── BroadcastChannel（同機多分頁） ──
 function bcConn(ch, me, other) {
-  const conn = { onData: null, onClose: null, open: true,
+  const conn = { onData: null, onClose: null, open: true, grace() {}, probe() {},
     send(d) { if (conn.open) ch.postMessage({ to: other, from: me, d }); },
     close() { if (conn.open) { ch.postMessage({ to: other, from: me, bye: 1 }); conn.open = false; } } };
   return conn;

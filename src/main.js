@@ -55,6 +55,7 @@ window.__app = app;                       // 方便除錯 / 自動化測試
 
 app.session.on('lobby', () => { if (app.rt && app.session.rt) return; if (app.rt) app.stopGame(); if (app.screens.cur === 'lobby' || !app.screens.cur) { app.screens.tabFromSel(); app.screens.show('lobby'); } });
 app.session.on('start', (rt, msg) => app.startGame(rt, msg));
+app.session.on('note', (s) => app.toast(s));
 app.session.on('dropped', (why) => { app.stopGame(); app.session.lobby.players = []; app.screens.show('home'); app.toast(why); });
 
 addEventListener('resize', () => { if (app.renderer) app.renderer.resize(); });
