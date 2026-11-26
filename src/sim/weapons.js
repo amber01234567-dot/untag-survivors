@@ -4,7 +4,7 @@ import { TAU, angDiff, dist2 } from '../core/util.js';
 import { bHaste, addBuff, dash } from './player.js';
 import { solidAt, blocksShot } from './levelgen.js';
 
-const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5, dragon: 7 };
+const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5, star: 7 };
 
 // 扇形揮砍
 export function swing(W, p, a, range, arc, dmg, o) {
@@ -141,7 +141,7 @@ export const BEH = {
       if (s.comboSpin) { swing(W, p, a, r, TAU, s.dmg * s.comboMul, Object.assign({}, o, { kb: s.kb * 1.2, stun: s.comboStun })); }
       else { const cx = p.x + Math.cos(a) * 40, cy = p.y + Math.sin(a) * 40; W.aoe(cx, cy, r, s.dmg * s.comboMul * (forceCombo && w.n % s.combo ? 0.6 : 1), p, { kb: s.kb * 3, stun: s.comboStun, fx: 5 }); }
     }
-    if (s.fireWave) W.shoot(p, { kind: 'firewave', a, speed: 620, dmg: s.dmg * s.fireWave, pierce: 99, life: 1.5, r: 64, kb: 90, dot: s.dot, dotDur: s.dotDur, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：龍牙巨劍
+    if (s.starWave) W.shoot(p, { kind: 'starwave', a, speed: 680, dmg: s.dmg * s.starWave, pierce: 99, life: 1.4, r: 64, kb: 90, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：星穹光刃
     if (s.waveEvery && w.n % s.waveEvery === 0) W.shoot(p, { kind: 'wave', a, speed: 540, dmg: s.dmg * s.waveDmg, pierce: 99, life: 0.75, r: 30, kb: 60 });
     if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotDur: s.dotDur }); }
     if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });

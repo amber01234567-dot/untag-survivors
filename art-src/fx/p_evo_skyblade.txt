@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as evo_skyblade.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a 2D game visual effect sprite: a gigantic ENERGY SWORD BLADE of teal-white light, perfectly straight and VERTICAL, pointing DOWN, like a huge blade of light descending from the sky: bright white core, teal edges, with small star sparkles around it. Blade only, no hilt, no character. NO fire. Very tall and narrow portrait image 1:3.
+Art style: 2D ANIME / cartoon animation VFX style: bold shapes, clean dark or coloured outlines, CEL SHADING with 2-3 flat tones, hand-drawn anime effect look. NOT 3D, NOT photorealistic, no soft airbrush glow. Two references are attached for the game's style. The background MUST be fully transparent (alpha 0): no backdrop, no panel, no ground plane, no text.
+After saving, print the file path.

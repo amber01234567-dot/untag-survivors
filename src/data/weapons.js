@@ -345,29 +345,34 @@ W('sub_nova', {
 // 條件：專屬武器升滿 + 指定被動達 EVO_NEED 級 → 下次升級保證出現金色「進化」卡。
 // EVO(原武器, 新武器 id, 對應被動, def)：新武器以原武器滿級數值為底，再套 mod（m 乘 / a 加 / s 設定）。
 // 進化是「形態改變」：用 beh 換行為，或在原行為裡以 s.xxx 旗標切換打法。
+// def.ult = 覺醒寶具（武器進化的同時，寶具也換成新形態）。
 export const EVO_NEED = 3;
 function EVO(from, id, passive, def) {
   const src = WEAPONS[from], base = weaponStats(src, src.maxLv), mod = def.mod || {};
   if (mod.m) for (const k in mod.m) base[k] = (base[k] || 0) * mod.m[k];
   if (mod.a) for (const k in mod.a) base[k] = (base[k] || 0) + mod.a[k];
   if (mod.s) for (const k in mod.s) base[k] = mod.s[k];
-  WEAPONS[id] = Object.assign({ beh: src.beh, proj: src.proj, fx: src.fx, extra: src.extra, skin: src.skin }, def, { id, base, lv: [], maxLv: 1, evoOf: from });
+  // 造型：進化後換成「拿著新武器」的動作圖（assets/sprites/<角色>_evo_*.png；還沒畫的會自動沿用原造型）
+  WEAPONS[id] = Object.assign({ beh: src.beh, proj: src.proj, fx: src.fx, extra: src.extra }, def, { id, base, lv: [], maxLv: 1, evoOf: from, skin: src.skin ? src.skin + '_evo' : 'evo' });
   src.evo = { to: id, passive, need: EVO_NEED };
 }
-EVO('greatsword', 'dragonsword', 'power', {
-  name: '龍牙巨劍', glyph: '龍', fx: 'dragon',
-  evoDesc: '巨劍燃起龍炎：揮砍變成 360 度大迴旋並點燃敵人，每一擊放出橫掃全場的火焰劍波',
-  mod: { m: { dmg: 1.15, range: 1.45, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, fireWave: 0.4, dot: 10, dotDur: 3 } },
+EVO('greatsword', 'starblade', 'power', {
+  name: '星穹光刃', glyph: '星', fx: 'star',
+  evoDesc: '大劍展開成一道比人還長的能量光刃：揮砍變成 360 度的光刃橫掃，每一擊往前射出月牙形光波',
+  ult: { id: 'll_cross', name: '天穹十字斬', desc: '巨大的光刃從天而降縱劈整個畫面，緊接著再橫劈一刀形成十字。' },
+  mod: { m: { dmg: 1.3, range: 1.45, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, starWave: 0.35 } },
 });
 EVO('revolver', 'reapersniper', 'crit', {
   name: '死神狙擊', glyph: '狙',
-  evoDesc: '子彈變成瞬間貫穿整個畫面的狙擊光線；暴擊時在命中點引發爆炸',
-  mod: { m: { dmg: 1.9, cd: 1.5 }, a: { critAdd: 0.1 }, s: { rail: 1, railLen: 1150, railW: 30, railBoom: 78, lastAoe: 0 } },
+  evoDesc: '左輪換成長管狙擊槍：子彈變成瞬間貫穿整個畫面的狙擊光線；暴擊時在命中點引發爆炸',
+  ult: { id: 'fj_judge', name: '死神審判', desc: '時間凝結，鎖定全場敵人，接著一槍同時貫穿所有目標。' },
+  mod: { m: { dmg: 1.65, cd: 1.5 }, a: { critAdd: 0.1 }, s: { rail: 1, railLen: 1150, railW: 30, railBoom: 78, lastAoe: 0 } },
 });
 EVO('beads', 'dharmawheel', 'armor', {
   name: '金剛法輪', glyph: '輪', beh: 'wheel', proj: 'wheel',
   evoDesc: '佛珠合成一個巨大的金色法輪：環繞範圍更大、碾過的敵人被緩速，並定期飛出去輾過敵群再飛回來',
-  mod: { m: { dmg: 3.4, radius: 1.25 }, s: { count: 1, hitCd: 0.24, wheelR: 58, throwCd: 4.5, throwDist: 430, throwDmg: 1.6 } },
+  ult: { id: 'al_wheel', name: '法輪常轉', desc: '巨大法輪從天而降碾壓戰場並持續轉動，全場敵人定身，隊友獲得護盾。' },
+  mod: { m: { dmg: 4.2, radius: 1.25 }, s: { count: 1, hitCd: 0.24, wheelR: 58, throwCd: 4.5, throwDist: 430, throwDmg: 1.6 } },
 });
 
 export const SUB_WEAPONS = Object.values(WEAPONS).filter((w) => w.sub).map((w) => w.id);

@@ -9,7 +9,7 @@ const BOOM = [
   ['#b9fffb', '#2de2e6'], ['#a8ffd0', '#1fbf7a'], ['#ff6bd6', '#ffd76b'],
 ];
 const RING = ['#aab2c2', '#ffc53d', '#5dff9d', '#ffd76b', '#ff8fd0', '#9fe8ff', '#b56bff', '#2de2e6'];
-const SLASH = [['#ffffff', '#9fd0ff'], ['#ffd9b0', '#ff5a2f'], ['#d8ff9a', '#63d12f'], ['#fff3c4', '#ffb52f'], ['#fff6e0', '#c99755'], ['#b9fffb', '#2de2e6'], ['#ffffff', '#ffd0d0'], ['#fff1a8', '#ff6a1f']];
+const SLASH = [['#ffffff', '#9fd0ff'], ['#ffd9b0', '#ff5a2f'], ['#d8ff9a', '#63d12f'], ['#fff3c4', '#ffb52f'], ['#fff6e0', '#c99755'], ['#b9fffb', '#2de2e6'], ['#ffffff', '#ffd0d0'], ['#e8ffff', '#2de2e6']];
 const KILL_COL = { slime: '#7c9a45', bat: '#c43fb4', bag: '#9dff3c', vending: '#b33346', dog: '#6b7686', thug: '#8f8a84', chip: '#c7283a', brute: '#8e3a33', shroom: '#7a3fb3', ooze: '#5b46b8', oozelet: '#6f5ad0', glitch: '#2de2e6', bug: '#2de2e6', sentry: '#2de2e6', eye: '#0fb9c0', virus: '#ff3b5c', nest: '#c84dff', golem: '#5f6d45', champ: '#b3242e', warden: '#2de2e6', goblin: '#c9a23a' };
 
 export class Fx {
@@ -37,7 +37,7 @@ export class Fx {
         else if (this.opts.dmgNum) this.text(ev[1], ev[2], String(ev[3]), f === 1 ? '#ffd23c' : '#f4f6fa', f === 1 ? 18 : 12, f === 1 ? 0.8 : 0.55);
         break;
       }
-      case 's': this.slashes.push({ x: ev[1], y: ev[2], a: ev[3] / 100, r: ev[4], arc: ev[5] / 100, st: ev[6], life: ev[6] === 7 ? 0.32 : 0.2, max: ev[6] === 7 ? 0.32 : 0.2 }); if (ev[6] === 7) { this.light(ev[1], ev[2], ev[4] * 2.4, 0.3); this.spark(ev[1], ev[2], 6, '#ff8a2f', 260, 0.4, 3); } this.sfx(ev[6] === 3 ? 'punch' : ev[6] === 6 ? null : 'slash'); break;
+      case 's': this.slashes.push({ x: ev[1], y: ev[2], a: ev[3] / 100, r: ev[4], arc: ev[5] / 100, st: ev[6], life: ev[6] === 7 ? 0.32 : 0.2, max: ev[6] === 7 ? 0.32 : 0.2 }); if (ev[6] === 7) { this.light(ev[1], ev[2], ev[4] * 2.4, 0.3); this.spark(ev[1], ev[2], 6, '#9ff6ff', 260, 0.4, 3); } this.sfx(ev[6] === 3 ? 'punch' : ev[6] === 6 ? null : 'slash'); break;
       case 'b': {
         const [c1, c2] = BOOM[ev[4]] || BOOM[0], r = ev[3];
         if (FXS.boom && this.booms.length < 40) this.booms.push({ x: ev[1], y: ev[2], r, life: 0.34, max: 0.34 });
@@ -68,6 +68,7 @@ export class Fx {
       case 'bn': this.banner = { title: ev[1], sub: ev[2], st: ev[3], life: 2.4, max: 2.4 }; break;
       case 'sk': { const p = players && players.find((x) => x.id === ev[1]); if (p) { this.casts.push({ id: ev[1], name: ev[3], ult: ev[2], life: 1.4, max: 1.4 }); this.ring(p.x, p.y, ev[2] ? 150 : 70, ev[2] ? '#ffd23c' : '#9fe8ff', 0.5, ev[2] ? 7 : 4); if (ev[2]) { this.spark(p.x, p.y - 20, 30, '#ffd23c', 320, 0.7, 4); this.light(p.x, p.y, 500, 0.5); this.addShake(6); } } this.sfx(ev[2] ? 'ult' : 'skill'); break; }
       case 'gate': this.sfx('gate'); break;
+      case 'tint': this.tint = { life: ev[1], max: ev[1] }; this.sfx('gate'); break;      // 死神審判：時間凝結的畫面染色
       case 'evo': {                              // 武器進化的瞬間
         const p = players && players.find((x) => x.id === ev[1]);
         if (p) { this.ring(p.x, p.y, 260, '#ffd23c', 0.8, 9); this.ring(p.x, p.y, 150, '#fff3b0', 0.55, 6); this.spark(p.x, p.y - 20, 40, '#ffd23c', 380, 0.9, 4); this.light(p.x, p.y, 600, 0.7); this.addShake(8); this.casts.push({ id: ev[1], name: '進化 ‧ ' + ev[2], ult: 1, life: 2.4, max: 2.4 }); }
@@ -87,6 +88,7 @@ export class Fx {
     for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 1 - 3 * dt; p.vy = p.vy * (1 - 3 * dt) + p.grav * dt; }
     for (const t of this.texts) { t.y += t.vy * dt; t.vy *= 1 - 2.5 * dt; }
     upd(this.parts); upd(this.booms); upd(this.hits); upd(this.rings); upd(this.slashes); upd(this.texts); upd(this.lines); upd(this.lights); upd(this.casts);
+    if (this.tint) { this.tint.life -= dt; if (this.tint.life <= 0) this.tint = null; }
     if (this.banner) { this.banner.life -= dt; if (this.banner.life <= 0) this.banner = null; }
   }
 
@@ -103,8 +105,8 @@ export class Fx {
     g.globalCompositeOperation = 'lighter';
     for (const s of this.slashes) {
       const k = 1 - s.life / s.max, [c1, c2] = SLASH[s.st] || SLASH[0];
-      if (s.st === 7 && FXS.evo_dragonslash) {       // 進化：龍牙巨劍的火焰大迴旋
-        const im = FXS.evo_dragonslash, d = s.r * 2.3 * (0.8 + k * 0.3);
+      if (s.st === 7 && FXS.evo_starslash) {          // 進化：星穹光刃的光刃橫掃
+        const im = FXS.evo_starslash, d = s.r * 2.3 * (0.8 + k * 0.3);
         g.save(); g.translate(s.x, s.y); g.scale(1, 0.86); g.rotate(s.a + k * 2.6);
         g.globalCompositeOperation = 'source-over'; g.globalAlpha = Math.min(1, (1 - k) * 1.7);
         g.drawImage(im, -d / 2, -d / 2, d, d); g.restore(); g.globalCompositeOperation = 'lighter';

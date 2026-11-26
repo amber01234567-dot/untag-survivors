@@ -1,5 +1,16 @@
 // 由 tools/build_sprites.py 產生，請勿手改。px = 圖集內角色身高；walk / attack = [單格寬, 高]
 export const SPRITE_SHEETS = {
+ "allen_evo": {
+  "px": 250,
+  "walk": [
+   187,
+   254
+  ],
+  "attack": [
+   275,
+   255
+  ]
+ },
  "allen": {
   "px": 250,
   "walk": [
@@ -20,6 +31,17 @@ export const SPRITE_SHEETS = {
   "attack": [
    291,
    254
+  ]
+ },
+ "feijie_evo": {
+  "px": 250,
+  "walk": [
+   213,
+   256
+  ],
+  "attack": [
+   269,
+   255
   ]
  },
  "feijie": {
@@ -75,6 +97,17 @@ export const SPRITE_SHEETS = {
   "attack": [
    273,
    254
+  ]
+ },
+ "laoliu_evo": {
+  "px": 250,
+  "walk": [
+   227,
+   255
+  ],
+  "attack": [
+   297,
+   226
   ]
  },
  "laoliu": {

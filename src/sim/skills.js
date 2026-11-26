@@ -13,6 +13,32 @@ const clusterOrAhead = (W, p, r, d = 160) => { const c = W.cluster(p.x, p.y, r);
 const channel = (W, p, dur, every, fn, onEnd) => W.addZone({ kind: 'shadow', owner: p, follow: p, r: 0, dur, tick: every, tk: every, upd(W2, z, dt) { if (p.down) { z.dead = true; return; } z.tk -= dt; if (z.tk <= 0) { z.tk += every; fn(W2, z); } }, onEnd });
 
 export const SKILLS = {
+  // ═════ 覺醒寶具（武器進化後取代原寶具） ═════
+  // 老劉・天穹十字斬：兩道巨大光刃，先縱劈再橫劈，交會在敵人最密集處
+  ll_cross(W, p) {
+    const c = W.cluster(p.x, p.y, 420, 160) || p, L = 1500, d = wdmg(p) * 11;
+    [Math.PI / 2, 0].forEach((a, i) => W.addZone({ kind: 'skyblade', owner: p, x: c.x - Math.cos(a) * L / 2, y: c.y - Math.sin(a) * L / 2, a, len: L, w: 190, delay: 0.55 + i * 0.6, dur: 1.25 + i * 0.6, tick: 9, dmg: d, hitOpt: { kb: 260, stun: 1.2 },
+      onStart: (W2) => { W2.emit('sh', 14); W2.emit('a', 'boom'); } }));
+  },
+  // 飛姐・死神審判：凝結時間並鎖定全場，接著一槍同時貫穿所有目標
+  fj_judge(W, p) {
+    const ts = W.enemiesIn(p.x, p.y, 820).slice(0, 48);
+    W.emit('tint', 1.5);
+    for (const e of ts) { e.mark = 4; e.stunT = Math.max(e.stunT, e.def.boss ? 0 : 1.6); e.slowF = 0.8; e.slowT = 1.8; W.addZone({ kind: 'reticle', owner: p, follow: e, x: e.x, y: e.y, r: e.r + 14, dur: 1.5, tick: 9 }); }
+    channel(W, p, 1.4, 9, () => {}, (W2) => {
+      if (p.down) return;
+      for (const e of ts) { if (e.dead) continue; W2.emit('l', p.x | 0, (p.y - 16) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 4); W2.strike(p, e, wdmg(p) * 7.5, { crit: true }); W2.aoe(e.x, e.y, 70, wdmg(p) * 1.2, p, { fx: 1, noFx: ts.length > 16 }); }
+      W2.emit('sh', 16); p.atkN++;
+    });
+  },
+  // ALLEN・法輪常轉：巨大法輪從天而降，落地後持續轉動碾壓；全場定身、隊友護盾
+  al_wheel(W, p) {
+    const c = W.cluster(p.x, p.y, 380, 200) || p, R = 300 * p.st.area;
+    W.addZone({ kind: 'bigwheel', owner: p, x: c.x, y: c.y, r: R, delay: 0.7, dur: 4.7, tick: 0.3, dmg: wdmg(p) * 0.55, hitOpt: { slow: 0.6, slowDur: 0.6, kb: 20, quiet: true },
+      onStart: (W2, z) => { W2.hash.query(z.x, z.y, 820, (e) => W2.strike(p, e, wdmg(p) * (Math.hypot(e.x - z.x, e.y - z.y) < z.r + e.r ? 4.5 : 1.6), { stun: 4.5, mark: 5 })); W2.emit('sh', 18); W2.emit('r', z.x | 0, z.y | 0, 820, 3); W2.emit('a', 'boom'); } });
+    allies(W, p, 0, (q) => { q.shield = Math.max(q.shield, 40 + q.st.maxHp * 0.3 * p.st.heal); addBuff(q, 'buddha', { t: 6, regen: 4 }); W.emit('r', q.x | 0, q.y | 0, 80, 3); });
+  },
+  // ═════ 一般技能與寶具 ═════
   // ── 老劉 ──
   ll_charge(W, p) {
     const a = moveDir(p);

@@ -409,3 +409,7 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .kit.evo { border: 1px solid rgba(255, 210, 60, .4); background: rgba(255, 210, 60, .06); border-radius: 4px; padding: 8px; }
 .kit.evo .recipe { margin-top: 6px; font-size: 12.5px; line-height: 1.7; }
 .kit.evo .recipe .glyph { width: 20px; height: 20px; font-size: 11px; vertical-align: -5px; margin: 0 3px 0 2px; }
+
+.kit.evo .recipe.awk { display: flex; gap: 8px; align-items: flex-start; border-top: 1px dashed rgba(255, 210, 60, .3); padding-top: 6px; }
+.kit.evo .recipe.awk .glyph { width: 34px; height: 34px; flex: none; margin: 2px 0 0; vertical-align: 0; }
+.skbtn.ult.awake { box-shadow: 0 0 0 2px #ffd23c, 0 0 18px rgba(255, 210, 60, .7); }

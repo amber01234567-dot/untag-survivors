@@ -78,6 +78,7 @@ for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png'))):
     ready_h = af[-1][2]                              # 攻擊最後一格是預備姿勢，拿來對齊大小
     ws = TARGET / walk_h
     ratio = min(1.3, max(0.8, walk_h / ready_h))
+    if cid.endswith('_evo'): ratio = 1.0          # 進化造型的武器很長，包圍框高度不可靠；走路與攻擊圖是用同樣大小生成的，直接沿用
     wsheet, wcw, wch = atlas(wf, ws); asheet, acw, ach = atlas(af, ws * ratio)
     wsheet.save(os.path.join(OUT, cid + '_walk.png'), optimize=True); asheet.save(os.path.join(OUT, cid + '_attack.png'), optimize=True)
     manifest[cid] = {'px': TARGET, 'walk': [wcw, wch], 'attack': [acw, ach]}

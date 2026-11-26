@@ -133,8 +133,9 @@ export function updatePlayer(W, p, dt) {
   }
   if ((p.in.k & 2) && p.ult >= p.ultMax && !p.jump && !p.dash) {
     p.ult = 0; p.castN++;
-    W.emit('sk', p.id, 1, p.def.ult.name);
-    SKILLS[p.def.ult.id](W, p);
+    const u = ultOf(p);                         // 武器進化後改用覺醒寶具
+    W.emit('sk', p.id, 1, u.name);
+    SKILLS[u.id](W, p);
   }
 }
 
@@ -168,6 +169,7 @@ export function rollOptions(W, p, n) {
   while (out.length < n) out.push(describe(out.some((o) => o.k === 'heal') ? { k: 'coin' } : { k: 'heal' }));
   return out;
 }
+export function ultOf(p) { return p.weapons[0].def.ult || p.def.ult; }
 // 這個角色（目前的專屬武器或其分支）可以進化成什麼
 export function evoOf(p) { const d = p.weapons[0].def; return d.evo || null; }
 function describe(o) {

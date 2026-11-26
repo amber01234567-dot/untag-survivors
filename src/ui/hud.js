@@ -31,7 +31,7 @@ export class Hud {
   start(rt, msg) {
     this.rt = rt; this.roster = msg.players; this.myId = rt.myId; this.choices = null; this.mode = null;
     const mi = Math.max(0, msg.players.findIndex((p) => p.id === rt.myId)), me = msg.players[mi], def = CHARS[me.charId], st = STAGES[msg.stage];
-    this.def = def; this.build = [{ k: 'w', id: def.weapon, lv: 1 }];
+    this.def = def; this.build = [{ k: 'w', id: def.weapon, lv: 1 }]; this.ultDef = null;
     const mates = msg.players.map((p, i) => (p.id === rt.myId ? '' : `<div class="mate" id="mate${p.id}" style="--c:${SLOT_COLORS[i]}"><span>${esc(p.name)}</span><div class="mb"><i></i></div></div>`)).join('');
     this.el.innerHTML = `<div class="vig"></div><div class="lowhp"></div>
       <div class="xp"><i></i></div><div class="lv"></div>
@@ -52,8 +52,8 @@ export class Hud {
     this.app.input.bindButton(this.r.sk, 1); this.app.input.bindButton(this.r.ult, 2);
     q('#btn-pause').addEventListener('click', () => this.togglePause());
     rt.onChoices = (m) => this.onChoices(m);
-    rt.onPicked = (o) => { if (o.k !== 'w' && o.k !== 'p') return; if (o.replace) this.build = this.build.filter((x) => !(x.k === 'w' && x.id === o.replace)); const b = this.build.find((x) => x.k === o.k && x.id === o.id); if (b) b.lv = o.lv; else this.build.push({ k: o.k, id: o.id, lv: o.lv }); this.renderBuild(); };
-    rt.onSync = (b) => { this.build = b; this.renderBuild(); this.choices = null; if (this.mode === 'lvup') this.closeModal(); };
+    rt.onPicked = (o) => { if (o.k !== 'w' && o.k !== 'p') return; if (o.k === 'w') this.setUlt(WEAPONS[o.id]); if (o.replace) this.build = this.build.filter((x) => !(x.k === 'w' && x.id === o.replace)); const b = this.build.find((x) => x.k === o.k && x.id === o.id); if (b) b.lv = o.lv; else this.build.push({ k: o.k, id: o.id, lv: o.lv }); this.renderBuild(); };
+    rt.onSync = (b) => { this.build = b; for (const x of b) if (x.k === 'w') this.setUlt(WEAPONS[x.id]); this.renderBuild(); this.choices = null; if (this.mode === 'lvup') this.closeModal(); };
     this.renderBuild(); this.objKey = '';
   }
   stop() { this.el.classList.add('hidden'); this.el.innerHTML = ''; document.getElementById('touch').classList.add('hidden'); this.closeModal(); this.rt = null; }
@@ -83,6 +83,16 @@ export class Hud {
       if (!h.L.o.length && !h.L.b && h.st === 0) html = '<div class="objv" style="text-align:center;font-weight:700;border-left-color:var(--teal)">跟著箭頭前往下一個區域</div>';
       r.objs.innerHTML = html;
     }
+  }
+  // 武器進化後寶具換成覺醒寶具：更新按鈕的名稱與圖示
+  setUlt(wdef) {
+    if (!wdef || !wdef.ult || this.ultDef === wdef.ult || !this.r) return;
+    this.ultDef = wdef.ult;
+    const b = this.r.ult, nm = b.querySelector('.nm'), old = b.querySelector('img.ic');
+    if (nm) nm.textContent = wdef.ult.name;
+    if (old) old.remove();
+    const im = document.createElement('img'); im.className = 'ic'; im.alt = ''; im.onerror = () => im.remove(); im.src = ICON(wdef.ult.id); b.prepend(im);
+    b.classList.add('awake');
   }
   renderBuild() {
     this.r.build.innerHTML = this.build.map((b) => { const d = b.k === 'w' ? WEAPONS[b.id] : PASSIVES[b.id]; return icon(optIcon(b), d.glyph, b.k === 'w' ? '#ffd76b' : '#2de2e6', d.evoOf ? 'evo' : '', d.evoOf ? '<em>★</em>' : `<em>${b.lv}</em>`); }).join('');
@@ -122,7 +132,7 @@ export class Hud {
     this.mode = 'pause'; this.rt.setPaused(true);
     const solo = this.app.session.mode === 'solo';
     this.showModal(`<div class="panel pausebox"><h2>${solo ? '暫停' : '選單'}</h2>
-      <div class="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻擊全自動）<br><kbd>空白鍵</kbd> 技能：${this.def.skill.name}<br><kbd>Q</kbd> 寶具：${this.def.ult.name}<br>倒地的隊友：靠近 3 秒即可救起</div>
+      <div class="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻擊全自動）<br><kbd>空白鍵</kbd> 技能：${this.def.skill.name}<br><kbd>Q</kbd> 寶具：${(this.ultDef || this.def.ult).name}<br>倒地的隊友：靠近 3 秒即可救起</div>
       ${solo ? '' : '<div class="dim" style="font-size:11px">連線遊戲不會暫停</div>'}
       ${solo && window.__TEST ? '<button class="btn" data-a="evotest" style="border-color:#ffd23c;color:#ffd23c">測試：直接達成進化條件</button>' : ''}
       <button class="btn primary" data-a="resume">繼續</button><button class="btn danger" data-a="quit">${this.app.session.mode === 'client' ? '離開房間' : '放棄關卡'}</button></div>`);

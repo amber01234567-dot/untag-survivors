@@ -22,7 +22,7 @@ function dps(charId, evolve, branch) {
   for (let t = 0; t < 60 * 30; t++) {
     if (W.state === 'levelup') W.choose(0, 0);
     p.hp = p.st.maxHp; p.invuln = 1; p.x = z.cx; p.y = z.cy; p.in.mx = p.in.my = 0; p.in.k = 0;
-    while (W.enemies.filter((e) => !e.dead).length < N) { const a = Math.random() * 6.28, d = N < 3 ? 70 : 60 + Math.random() * 200; const e = spawnEnemy(W, 'sentry', z.cx + Math.cos(a) * d, z.cy + Math.sin(a) * d, { instant: true, noDrop: true }); e.speed = 0; e.dmg = 0; e.hp = e.maxHp = 1e7; }
+    while (W.enemies.filter((e) => !e.dead).length < N) { const i = W.enemies.length, a = i * 2.399963, d = N < 3 ? 70 : 60 + ((i * 53) % 200); const e = spawnEnemy(W, 'sentry', z.cx + Math.cos(a) * d, z.cy + Math.sin(a) * d, { instant: true, noDrop: true }); e.speed = 0; e.dmg = 0; e.hp = e.maxHp = 1e7; }
     const before = p.stats.dmg; W.step(1 / 60); total += p.stats.dmg - before; W.ev.length = 0;
   }
   return { dps: Math.round(total / 30), card, name: p.weapons[0].def.name };

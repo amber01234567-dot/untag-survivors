@@ -2,6 +2,7 @@
 // 新增角色外觀：在 LOOKS 加一個同名函式即可；沒有外觀的角色會畫成剪影佔位。
 //
 // pose = { t 時間, moving 是否移動, atk 攻擊動畫進度 0..1 (0=無), aim 相對朝向的瞄準角, down 倒地, cast 施法閃光 0..1 }
+import { SKINS } from '../sim/const.js';
 import { ROLES, CHARS } from '../data/characters.js';
 import { SPRITE_SHEETS } from '../data/sprites.js';
 
@@ -250,7 +251,8 @@ function placeholder(g, p, def) {
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
 const H_DEFAULT = 82;
-const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
+// 進化造型：武器或光環超出頭頂，包圍框比身體高，所以顯示高度要對應放大，身體才會和原造型一樣大
+const H = { laoliu_evo: 90, allen_evo: 87, qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 function loadImg(name) {
   if (IMG[name]) return IMG[name].p;
@@ -291,7 +293,9 @@ export function drawChar(g, charId, pose) {
   if (pose.down) { g.translate(0, -5); g.rotate(-1.45); g.globalAlpha *= 0.75; }
   if (sc !== 1 && !hasSprite(charId)) g.scale(sc, sc);
   g.lineJoin = 'round';
-  const sid = pose.skin && hasSprite(charId + '_siege') ? charId + '_siege' : charId;      // 路線造型
+  // 造型：路線分支 / 武器進化。該造型還沒畫的話逐步退回（siege_evo → siege → 原造型）
+  let sid = charId;
+  if (pose.skin) { const sk = SKINS[pose.skin] || ''; for (const c of [sk, sk.replace('_evo', '')]) if (c && hasSprite(charId + '_' + c)) { sid = charId + '_' + c; break; } }
   if (hasSprite(sid)) spriteLook(g, pose, sid); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
   g.restore();
 }

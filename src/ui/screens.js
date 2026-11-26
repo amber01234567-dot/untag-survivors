@@ -21,7 +21,8 @@ function evoKit(w) {
   if (!w.evo) return '';
   const e = WEAPONS[w.evo.to], ps = PASSIVES[w.evo.passive];
   return `<div class="kit evo">${icon('icons/w_' + e.id, e.glyph, '#ffd23c')}<div><b>${e.name}</b>　<span class="tag" style="--c:#ffd23c">武器進化</span><br>${e.evoDesc}
-    <div class="recipe">進化條件：<b>${w.name}</b> 升到滿級 ＋ 被動 ${icon('icons/p_' + w.evo.passive, ps.glyph, '#2de2e6')}<b>${ps.name}</b>（${ps.desc}）達到 ${EVO_NEED} 級<br><span class="dim">達成後，下一次升級一定會出現金色的「進化」卡。</span></div></div></div>`;
+    <div class="recipe">進化條件：<b>${w.name}</b> 升到滿級 ＋ 被動 ${icon('icons/p_' + w.evo.passive, ps.glyph, '#2de2e6')}<b>${ps.name}</b>（${ps.desc}）達到 ${EVO_NEED} 級<br><span class="dim">達成後，下一次升級一定會出現金色的「進化」卡。</span></div>
+    ${e.ult ? `<div class="recipe awk">${icon('skills/' + e.ult.id, '寶', '#ffd23c')}<span>寶具同時覺醒為 <b>${e.ult.name}</b>：${e.ult.desc}</span></div>` : ''}</div></div>`;
 }
 const P = (id, size) => `<i data-p="${id}" data-s="${size}"></i>`;
 function mount(root) { root.querySelectorAll('i[data-p]').forEach((el) => el.replaceWith(portrait(el.dataset.p, +el.dataset.s))); }

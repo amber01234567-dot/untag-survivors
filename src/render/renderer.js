@@ -13,7 +13,7 @@ import { FXS, tinted } from './fxsprites.js';
 const PSPR = {
   bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
   knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
-  firewave: ['evo_firewave', 150, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
+  starwave: ['evo_starwave', 150, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
   e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
@@ -90,6 +90,7 @@ export class Renderer {
     g.setTransform(sc, 0, 0, sc, Math.round(-cam.x * sc), Math.round(-cam.y * sc));
     for (const e of f.enemies) if (vis(e.x, e.y)) this.enemyOverlay(g, e, t);
     for (const p of f.players) if (!(p.fl & 32)) this.playerLabel(g, p, t);
+    if (fx.tint) { const k = fx.tint.life / fx.tint.max, a = Math.min(1, k * 5, (1 - k) * 8) * 0.5; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(20,0,40,${a})`; g.fillRect(0, 0, this.cv.width, this.cv.height); g.fillStyle = `rgba(255,30,60,${a * 0.18})`; g.fillRect(0, 0, this.cv.width, this.cv.height); g.setTransform(sc, 0, 0, sc, Math.round(-cam.x * sc), Math.round(-cam.y * sc)); }
     fx.drawTexts(g);
     for (const c of fx.casts) { const p = f.players.find((x) => x.id === c.id); if (!p) continue; const k = c.life / c.max; g.globalAlpha = Math.min(1, k * 3); g.font = `900 ${c.ult ? 17 : 13}px ${FONT}`; g.textAlign = 'center'; g.strokeStyle = 'rgba(5,6,10,.9)'; g.lineWidth = 4; g.strokeText(c.name, p.x, p.y - 96 - (1 - k) * 16); g.fillStyle = c.ult ? '#ffd23c' : '#9fe8ff'; g.fillText(c.name, p.x, p.y - 96 - (1 - k) * 16); g.globalAlpha = 1; }
 
@@ -253,6 +254,19 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
+      case 'reticle': {                               // 死神審判：鎖定標記
+        const s2 = (r + 18) * (1.6 - 0.6 * Math.min(1, z.p * 5)), a2 = Math.min(1, z.p * 6);
+        if (FXS.evo_reticle) { g.save(); g.translate(x, y - r * 0.5); g.rotate(t * 2 + z.id); g.globalAlpha = a2; g.drawImage(FXS.evo_reticle, -s2, -s2, s2 * 2, s2 * 2); g.restore(); g.globalAlpha = 1; }
+        else { g.strokeStyle = '#ff2a4a'; g.lineWidth = 2.5; g.globalAlpha = a2; g.beginPath(); g.arc(x, y - r * 0.5, s2, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+        break;
+      }
+      case 'bigwheel': {                              // 法輪常轉：落地前是放大的影子，落地後金色法輪持續轉動
+        const fade = Math.min(1, (1 - z.p) * 6);
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = '#ffd76b'; g.globalAlpha = (z.on ? 0.13 : 0.08 + 0.2 * z.dp) * fade; g.beginPath(); g.ellipse(x, y, r * (z.on ? 1 : z.dp), r * 0.86 * (z.on ? 1 : z.dp), 0, 0, TAU); g.fill();
+        g.strokeStyle = '#ffd76b'; g.lineWidth = 4; g.globalAlpha = 0.6 * fade; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+        if (FXS.evo_wheel) { if (z.on) disc(g, FXS.evo_wheel, x, y, r * 0.92, t * 3.2, fade * 0.78); else { const d = r * 0.92 * (1.5 - 0.5 * z.dp); g.globalAlpha = z.dp; g.save(); g.translate(x, y - (1 - z.dp) * 520); g.rotate(t * 6); g.drawImage(FXS.evo_wheel, -d, -d, d * 2, d * 2); g.restore(); g.globalAlpha = 1; } }
+        break;
+      }
       case 'crack': if (FXS.crack) { const pop = Math.min(1, z.p * 22); disc(g, FXS.crack, x, y, r * (0.5 + 0.5 * pop), z.id, Math.min(0.9, (1 - z.p) * 2.2)); } break;
       case 'zero': {                                  // 歸零：駭客 HUD 圈 + 大倒數
         const fade = Math.min(1, z.p * 10, (1 - z.p) * 8), n = Math.max(0, 3 - Math.floor(z.p * 3.2 / 1.0667));
@@ -372,6 +386,19 @@ export class Renderer {
   }
   beam(g, z, t) {
     const k = ZONE_KINDS[z.k], ca = Math.cos(z.a), sa = Math.sin(z.a);
+    if (k === 'skyblade') {                       // 天穹十字斬：先預警，再一道巨大光刃劈下
+      g.save(); g.translate(z.x, z.y); g.rotate(z.a);
+      if (!z.on) { g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(120,240,255,${0.10 + 0.25 * z.dp})`; g.fillRect(0, -z.w / 2 * z.dp, z.len, z.w * z.dp); g.fillStyle = 'rgba(230,255,255,.8)'; g.fillRect(0, -1.5, z.len, 3); }
+      else {
+        const k2 = Math.min(1, (z.p - z.dp * 0 ) ), fade = Math.min(1, (1 - z.p) * 3.2), im = FXS.evo_skyblade, slam = Math.min(1, (1 - fade) * 6 + 0.25);
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = fade;
+        g.fillStyle = 'rgba(80,230,255,.14)'; g.fillRect(0, -z.w * 0.6, z.len, z.w * 1.2); if (fade > 0.8) { g.fillStyle = `rgba(255,255,255,${(fade - 0.8) * 3})`; g.fillRect(0, -z.w * 0.5, z.len, z.w); }
+        if (im) { g.rotate(-Math.PI / 2); g.globalCompositeOperation = 'source-over'; g.drawImage(im, -z.w * 0.75, 0, z.w * 1.5, z.len * slam); }
+        else { g.fillStyle = '#e8ffff'; g.fillRect(0, -z.w / 4, z.len, z.w / 2); }
+      }
+      g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+      return;
+    }
     if (k === 'e_beam') {
       g.save(); g.translate(z.x, z.y); g.rotate(z.a);
       if (!z.on) { g.fillStyle = 'rgba(255,60,60,.13)'; g.fillRect(0, -z.w / 2, z.len, z.w); g.strokeStyle = 'rgba(255,60,60,.8)'; g.lineWidth = 1.5; g.setLineDash([10, 8]); g.strokeRect(0, -z.w / 2, z.len, z.w); g.setLineDash([]); g.fillStyle = 'rgba(255,60,60,.35)'; g.fillRect(0, -z.w / 2 * z.dp, z.len, z.w * z.dp); }
