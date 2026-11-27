@@ -53,6 +53,7 @@ export const LAYOUTS = {
 export const SERIES = [
   { id: 1, name: '霓虹都市', sub: 'NEON CITY' },
   { id: 2, name: '廢土荒野', sub: 'WASTELAND' },
+  { id: 3, name: '永凍冰原', sub: 'FROZEN TUNDRA', el: 'ice' },      // 系列三起：一個系列一種屬性，掉該屬性的套裝
 ];
 
 export const DIFFS = [
@@ -192,10 +193,32 @@ export const CHAPTERS = [
         pool: [['shard', 5], ['magma', 3], ['radrat', 2], ['wreckdrone', 2], ['titanhand', 1]], objs: [kill(130), boss('colossus')] },
     ],
   },
+  // ───── 第三系列：永凍冰原（冰屬性：怪物打到會緩速；掉落騎士冰甲）─────
+  {
+    id: 7, series: 3, name: '冰封港口', sub: 'FROZEN HARBOUR', theme: 'harbor', outdoor: true, hazard: 'icicle',
+    intro: '海結冰了，船也是。碼頭上的東西沒有一個歡迎活人——連企鵝都不例外。',
+    devices: [['icebomb', 4], ['brazier', 3]],
+    nodes: [
+      { id: '7-1', name: '結冰的棧橋', kind: 'normal', layout: 'snake', diff: 3.75, pos: [0, 1], next: ['7-2', '7-3'], coins: 820,
+        pool: [['snowling', 6], ['frostwolf', 4], ['icecrab', 2]], objs: [kill(80), survive(50), kill(110)] },
+      { id: '7-2', name: '貨櫃場', kind: 'normal', layout: 'ring', diff: 3.82, pos: [1, 0.3], next: ['7-4'], coins: 860,
+        pool: [['snowling', 5], ['frostwolf', 4], ['pengu', 2], ['icecrab', 2]], objs: [kill(70), nests(3), survive(55), elite('pengu')] },
+      { id: '7-3', name: '漁獲倉庫', kind: 'normal', layout: 'hub', diff: 3.86, pos: [1, 1.7], next: ['7-4', '7-5'], coins: 880,
+        pool: [['snowling', 5], ['frostwolf', 4], ['icecrab', 3], ['snowman', 1]], objs: [kill(70), survive(55), nests(3), kill(110)] },
+      { id: '7-4', name: '破冰船甲板', kind: 'normal', layout: 'trident', diff: 3.95, pos: [2, 0.7], next: ['7-6'], coins: 940,
+        pool: [['snowling', 4], ['frostwolf', 4], ['pengu', 3], ['icecrab', 2], ['snowman', 1]], objs: [kill(70), nests(3), survive(55), elite('snowman'), kill(120)] },
+      { id: '7-5', name: '走私冷凍庫', kind: 'bonus', layout: 'arena', diff: 3.9, pos: [2, 2], next: ['7-6'], coins: 620,
+        pool: [['snowling', 6], ['frostwolf', 3], ['pengu', 2]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '7-6', name: '燈塔底層', kind: 'elite', layout: 'cross', diff: 4.05, pos: [3, 1.2], next: ['7-B'], coins: 1080,
+        pool: [['snowling', 4], ['frostwolf', 4], ['pengu', 3], ['icecrab', 2], ['snowman', 2]], objs: [nests(3), elite('snowman'), survive(60), kill(120)] },
+      { id: '7-B', name: '船長的錨地', kind: 'boss', layout: 'gauntlet', diff: 4.2, pos: [4, 1], next: [], coins: 1700,
+        pool: [['snowling', 5], ['frostwolf', 4], ['pengu', 2], ['icecrab', 2], ['snowman', 1]], objs: [kill(120), boss('captain')] },
+    ],
+  },
 ];
 
 export const STAGES = {};
-for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.series = ch.series || 1; STAGES[n.id] = n; }
+for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.series = ch.series || 1; STAGES[n.id] = n; }
 
 export const NODE_KINDS = {
   normal: { name: '戰鬥', glyph: '戰' }, elite: { name: '菁英', glyph: '菁' },

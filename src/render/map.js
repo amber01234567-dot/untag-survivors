@@ -151,7 +151,8 @@ function rr(g, x, y, w, h, r, fill, stroke) { g.beginPath(); g.roundRect(x, y, w
 // ───── 圖片場景素材 ─────
 // assets/map/<主題>/ 內的圖：floor（地面貼圖）、wall（牆面橫條）、障礙物與地面貼花。
 // 某主題沒有圖時自動退回上面 THEMES 的程式繪製。新主題：放圖並在這裡登記即可。
-const MAP_THEMES = ['slums', 'arena', 'void', 'road', 'canyon', 'crater'];
+THEMES.harbor = outdoorTheme({ void: '#1b2a3a', roof: '#31506a', roofEdge: '#16283a', ambient: 'rgba(20,45,80,0.10)', roofDim: 0.14, neon: ['#7fd8ff', '#bfefff', '#ffc36b', '#7fd8ff'], lamp: '#ffc36b', gate: '#7fd8ff', gateHue: 0, f1: '#9db4c4', f2: '#a6bccb', f3: '#8aa2b3', w1: '#5d86a3', w2: '#7aa4be' });
+const MAP_THEMES = ['slums', 'arena', 'void', 'road', 'canyon', 'crater', 'harbor'];
 const PROPS = { '1x1': ['p1a', 'p1b', 'p1c'], '2x2': ['p22'], '2x1': ['p21'], '3x1': ['p31'], '1x2': ['p12'] };
 const DECALS = [['d1', 30], ['d2', 74], ['d3', 40], ['d4', 56], ['d2', 58], ['d1', 30]];
 const TEX = {};

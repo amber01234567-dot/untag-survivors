@@ -82,7 +82,9 @@ export function advMul(sum, foeEl) {
   return m;
 }
 // 章節屬性：系列三（第 7–13 章）每章一種。TEST_EL = 測試用：讓現有第 1–6 章暫時帶屬性
-export const CHAPTER_EL = { 7: 'ice', 8: 'fire', 9: 'poison', 10: 'gold', 11: 'wind', 12: 'earth', 13: 'thunder' };
+// 章節屬性：系列三起一個系列一種屬性（每系列 3 章）：第 7–9 章冰、10–12 火、13–15 毒、16–18 金、19–21 風、22–24 土、25–27 雷
+export const CHAPTER_EL = {};
+RING.forEach((el, i) => { for (let k = 0; k < 3; k++) CHAPTER_EL[7 + i * 3 + k] = el; });
 export const TEST_EL = { 1: 'ice', 2: 'fire', 3: 'poison', 4: 'gold', 5: 'wind', 6: 'earth' };
 // 掉落：防具在該章機率掉；武器配件只有首領機率掉
 export const DROP = { armor: 0.3, armorBoss: 1, acc: 0.35 };

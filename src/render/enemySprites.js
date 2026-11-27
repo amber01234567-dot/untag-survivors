@@ -206,8 +206,9 @@ const DRAW = {
 // assets/enemies/<id>.png 單張圖，走路的彈跳擠壓由程式做（4 格）。沒有圖的敵人退回上面的程式繪製。
 // VIS = 顯示高度相對碰撞半徑的倍率；巢穴依章節主題換圖。
 const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, nest: 2.6, golem: 2.9, champ: 3, warden: 3.1, conecrab: 3, vending: 3, sandbag: 3.1, brute: 2.9, signghost: 3, popup: 2.7,
-  tumble: 2.6, vulture: 2.8, dustling: 2.8, shard: 2.8, cactus: 3.1, bison: 2.8, crystal: 2.8, scrapbot: 3, mortar: 2.7, sandworm: 3, wreckdrone: 2.8, rig: 2.7, wormqueen: 3.2, colossus: 3.2 };
-const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6' };
+  tumble: 2.6, vulture: 2.8, dustling: 2.8, shard: 2.8, cactus: 3.1, bison: 2.8, crystal: 2.8, scrapbot: 3, mortar: 2.7, sandworm: 3, wreckdrone: 2.8, rig: 2.7, wormqueen: 3.2, colossus: 3.2,
+  snowling: 2.6, frostwolf: 2.7, pengu: 2.8, icecrab: 2.7, snowman: 3, captain: 3.1 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7' };
 const IMG = {};
 let theme = 'slums';
 const cache = new Map();

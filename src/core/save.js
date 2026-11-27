@@ -109,7 +109,7 @@ export const save = {
     const d = this.data, st = STAGES[res.stage], diff = DIFFS[res.diff], won = res.state === 'won';
     const first = won && !((d.cleared[res.stage] || 0) > res.diff);
     const b = this.bonusFor(res.myChar);
-    let coins = res.coins + (won ? st.coins * diff.reward * (first ? 2 : 1) : st.coins * 0.12 * res.zones);
+    let coins = res.coins + (won ? st.coins * diff.reward * (first ? 2 : 1) : st.coins * 0.12 * Math.max(0, res.zones));
     coins = Math.round(coins * (1 + b.coin));
     const xp = Math.round((won ? 60 + st.diff * 40 : 15 + res.zones * 10) * diff.reward);
     d.coins += coins;

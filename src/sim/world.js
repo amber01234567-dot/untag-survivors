@@ -5,7 +5,7 @@ import { buildLevel, moveBody, blocksShot, solidAt, FlowField } from './levelgen
 import { DIFFS } from '../data/chapters.js';
 import { ENEMIES } from '../data/enemies.js';
 import { makePlayer, updatePlayer, rollOptions, applyOption, bDmg, addBuff, recalc } from './player.js';
-import { spawnEnemy, updateEnemy } from './enemy.js';
+import { spawnEnemy, updateEnemy, warn } from './enemy.js';
 import { StageCtl } from './stagectl.js';
 import { ACC, FOE, CHAPTER_EL, advMul } from '../data/gear.js';
 
@@ -41,7 +41,7 @@ class Hash {
 
 export class World {
   constructor({ stage, diff = 0, seed, players, el }) {
-    this.el = el || CHAPTER_EL[stage.chapter] || null; this.foe = this.el ? FOE[this.el] : null;      // 章節屬性：這一關所有怪物的屬性
+    this.el = el === 'none' ? null : el || CHAPTER_EL[stage.chapter] || null; this.foe = this.el ? FOE[this.el] : null;      // 章節屬性：這一關所有怪物的屬性
     this.stage = stage; this.diffIdx = diff; this.diff = DIFFS[diff]; this.seed = seed;
     this.L = buildLevel(stage, seed);
     this.rng = new RNG(seed * 7 + 13);
@@ -86,6 +86,13 @@ export class World {
     }
     if (this.state !== 'play') return;
     this.time += dt; this.tickN++;
+    if (this.stage.hazard === 'icicle') {                       // 場地危險：冰柱不定時砸向玩家附近（有預警圈）
+      this.hazT = (this.hazT === undefined ? 8 : this.hazT) - dt;
+      if (this.hazT <= 0) {
+        this.hazT = this.rng.range(5, 8);
+        if (this.L.zones.some((z) => z.state === 'active')) for (const p of this.players) if (!p.down && !p.gone) for (let i = 0; i < 2; i++) warn(this, p.x + this.rng.range(-150, 150), p.y + this.rng.range(-150, 150), 78, 1.3 + i * 0.25, 13 * this.dmgMul);
+      }
+    }
     this._dmgEv = Math.max(0, this._dmgEv - 0.5);
     if (this.tickN % 12 === 0) this.flow.compute(this.players);
     this.hash.clear();
@@ -436,7 +443,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -445,7 +452,7 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！' }[d.kind], 1); if (d.kind === 'barrel') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
@@ -459,8 +466,17 @@ export class World {
         this.playersIn(d.x, d.y, 300, (q) => addBuff(q, 'pylon', { t: 1.2, dmg: 0.3, haste: 0.2 }));
         for (const e of this.randomEnemies(d.x, d.y, 420, 5)) { this.emit('l', d.x | 0, (d.y - 60) | 0, e.x | 0, e.y | 0, 0); this.damageEnemy(e, e.def.boss ? 60 * pow : 45 * pow, null, false, { stun: 0.4 }); }
         this.emit('r', d.x | 0, d.y | 0, 300, 1);
+      } else if (d.kind === 'brazier' && d.tk <= 0) {          // 火盆：取暖（解除緩速、回血、增傷），並灼燒靠近的敵人
+        d.tk = 0.5;
+        this.playersIn(d.x, d.y, 280, (q) => { delete q.buffs.el_slow; addBuff(q, 'brazier', { t: 1.0, dmg: 0.2, regen: q.st.maxHp * 0.02 }); });
+        this.hash.query(d.x, d.y, 220, (e) => this.damageEnemy(e, e.def.boss ? 40 * pow : 16 * pow, null, false, { dot: 10 * pow, dotDur: 3, quiet: true }));
+        this.emit('r', d.x | 0, d.y | 0, 280, 1);
       }
       if (d.t <= 0) {
+        if (d.kind === 'icebomb') {                             // 冷凍彈：大範圍傷害並凍結
+          this.hash.query(d.x, d.y, 270, (e) => this.damageEnemy(e, e.def.boss ? 700 * pow : 100 * pow, null, false, { stun: 3, slow: 0.5, slowDur: 6 }));
+          this.emit('b', d.x | 0, d.y | 0, 270, 1); this.emit('sh', 9);
+        }
         if (d.kind === 'barrel') {
           this.hash.query(d.x, d.y, 240, (e) => this.damageEnemy(e, e.def.boss ? 900 * pow : 130 * pow, null, false, { kb: 420, sx: d.x, sy: d.y, stun: 0.8, dot: 14 * pow, dotDur: 4 }));
           this.emit('b', d.x | 0, d.y | 0, 240, 1); this.emit('sh', 10);

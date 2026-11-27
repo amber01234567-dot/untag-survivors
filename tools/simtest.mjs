@@ -11,6 +11,7 @@ const M = +meta, BONUS = { hp: 0.8 * M, dmg: 0.7 * M, speed: 0.1 * M, cd: 0.1 * 
 
 // 屬性測試：EL=fire GEAR=ice:5 node tools/simtest.mjs 1-1 laoliu  → 火屬性關、穿冰全套 5 星
 const ENV_EL = process.env.EL || undefined;
+if (process.env.NOHAZ) for (const k in STAGES) STAGES[k].hazard = null;
 if (process.env.GEAR) { const [g, st = '1'] = process.env.GEAR.split(':'); BONUS.gear = { acc: [g, +st], top: [g, +st], pants: [g, +st], shoes: [g, +st] }; }
 function bfs(L, gx, gy) {
   const d = new Uint16Array(L.W * L.H).fill(65535), q = new Int32Array(L.W * L.H);

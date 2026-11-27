@@ -68,3 +68,10 @@ E('titanhand', { name: '機械殘肢', hp: 170, speed: 84, dmg: 20, r: 17, xp: 7
 E('rig', { name: '暴走聯結車', hp: 50000, speed: 70, dmg: 25, r: 48, xp: 600, ai: 'boss_rig', kbRes: 1, boss: true });
 E('wormqueen', { name: '沙蟲女王', hp: 60000, speed: 56, dmg: 25, r: 46, xp: 700, ai: 'boss_wormqueen', kbRes: 1, boss: true });
 E('colossus', { name: '隕星機神', hp: 72000, speed: 52, dmg: 26, r: 50, xp: 800, ai: 'boss_colossus', kbRes: 1, boss: true });
+// ───── 第三系列：永凍冰原（冰屬性）─────
+E('snowling', { name: '雪球怪', hp: 19, speed: 142, dmg: 8, r: 10, xp: 2, ai: 'swarm' });
+E('frostwolf', { name: '雪狼', hp: 60, speed: 104, dmg: 13, r: 13, xp: 3, ai: 'chase' });
+E('pengu', { name: '企鵝水兵', hp: 90, speed: 78, dmg: 18, r: 13, xp: 5, ai: 'charger', kbRes: 0.3 });
+E('icecrab', { name: '冰晶蟹', hp: 72, speed: 58, dmg: 13, r: 14, xp: 4, ai: 'shooter', proj: 'e_ice', shotCd: 2.6, shotRange: 370, shotSpeed: 230 });
+E('snowman', { name: '擲彈雪人', hp: 165, speed: 42, dmg: 20, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 450 });
+E('captain', { name: '冰霜船長', hp: 74000, speed: 56, dmg: 27, r: 48, xp: 900, ai: 'boss_captain', kbRes: 1, boss: true });

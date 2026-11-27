@@ -311,6 +311,36 @@ const AI = {
     }
   },
   // ── 首領：沙蟲女王（潛沙突襲、酸液轟炸、甩尾光束、召喚） ──
+  // 冰霜船長：船錨三連砸、肚皮滑行衝撞、冰錐彈幕、召喚企鵝＋冰柱
+  boss_captain(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.6; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 980 * dt, Math.sin(ai.a) * 980 * dt, e.r * 0.6);
+      ai.w -= dt;
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 8); warn(W, e.x, e.y, 150, 0.4, e.dmg * 1.1); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.6); } }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.5 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.9 : 3.9; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 船錨三連砸：朝玩家方向一路砸過去
+      const a = Math.atan2(p.y - e.y, p.x - e.x), n = p2 ? 5 : 3;
+      for (let i = 0; i < n; i++) { const d = 130 + i * 150; ai.q.push({ t: i ? 0.28 : 0, fn: () => { warn(W, e.x + Math.cos(a) * d, e.y + Math.sin(a) * d, 115, 0.85, e.dmg * 1.3); W.emit('sh', 5); } }); }
+    } else if (m === 2) { ai.chain = p2 ? 2 : 1; startDash(W, e, 0.8); }          // 肚皮滑行
+    else if (m === 3) {                          // 冰錐彈幕
+      const volley = (off, sp2) => { for (let i = 0; i < 14; i++) shootAt(W, e, 'e_ice', off + i * TAU / 14, sp2, e.dmg * 0.55, { r: 10 }); W.emit('sh', 4); };
+      volley(0, 190); ai.q.push({ t: 0.55, fn: () => volley(0.22, 220) }); if (p2) ai.q.push({ t: 0.55, fn: () => volley(0.44, 200) });
+    } else {                                     // 召喚企鵝 + 冰柱砸向每個玩家
+      for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'pengu' : 'snowling', i * 1.2, 90);
+      for (const q of W.alive()) { warn(W, q.x, q.y, 105, 1.0, e.dmg * 1.2); if (p2) warn(W, q.x + W.rng.range(-140, 140), q.y + W.rng.range(-140, 140), 105, 1.3, e.dmg * 1.2); }
+    }
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;
@@ -384,7 +414,7 @@ function dive(W, e) {
   W.emit('sp', e.x | 0, e.y | 0, e.r | 0);
   warn(W, t.x, t.y, 165, 1.2, e.dmg * 1.4);
 }
-function warn(W, x, y, r, delay, dmg) { return W.addZone({ kind: 'e_warn', team: 1, x, y, r, delay, dur: delay + 0.2, tick: 9, dmg, once: true }); }
+export function warn(W, x, y, r, delay, dmg) { return W.addZone({ kind: 'e_warn', team: 1, x, y, r, delay, dur: delay + 0.2, tick: 9, dmg, once: true }); }
 function summon(W, e, id, a, d) { const x = e.x + Math.cos(a) * d, y = e.y + Math.sin(a) * d; if (!solidAt(W.L, x, y) && W.enemies.length < 260) spawnEnemy(W, id, x, y, { zone: e.zone, noDrop: false }); }
 function startDash(W, e, wind) {
   const p = e.tgt || W.nearestPlayer(e.x, e.y, true);
