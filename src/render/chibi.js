@@ -306,7 +306,7 @@ export function drawChar(g, charId, pose) {
   // 造型：路線分支 / 武器進化。該造型還沒畫的話逐步退回（siege_evo → siege → 原造型）
   let sid = charId;
   if (pose.skin) { const sk = SKINS[pose.skin] || ''; for (const c of [sk, sk.replace('_evo', '')]) if (c && hasSprite(charId + '_' + c)) { sid = charId + '_' + c; break; } }
-  const set = pose.set || (typeof window !== 'undefined' && window.__SET) || '';      // 套裝外觀優先（目前只有測試開關；之後由裝備系統帶入）
+  const set = pose.set === '-' ? '' : pose.set || (typeof window !== 'undefined' && window.__SET) || '';      // 套裝外觀優先（目前只有測試開關；之後由裝備系統帶入）
   if (set) { const q = setSprite(charId, set); if (q) sid = q; }
   if (hasSprite(sid)) spriteLook(g, pose, sid); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
   g.restore();
@@ -314,8 +314,10 @@ export function drawChar(g, charId, pose) {
 
 // UI 用立繪：每次回傳一張新的 canvas（內容從快取複製），可以同時放在畫面多處
 const portraitCache = new Map();
-export function portrait(charId, size = 160) {
-  const key = charId + ':' + size, dpr = Math.min(2, window.devicePixelRatio || 1);
+export function loadSet(charId, set) { const id = charId + '_' + set; return SPRITE_SHEETS[id] ? loadImg(id) : Promise.resolve(); }
+export function portrait(charId, size = 160, set = '') {
+  if (set && !setSprite(charId, set)) set = '';        // 套裝圖還沒載入：先畫原造型（呼叫端可等 loadSet 後重畫）
+  const key = charId + ':' + size + ':' + set, dpr = Math.min(2, window.devicePixelRatio || 1);
   let m = portraitCache.get(key);
   if (!m) {
     m = document.createElement('canvas');
@@ -324,7 +326,7 @@ export function portrait(charId, size = 160) {
     g.scale(dpr, dpr);
     const sp = hasSprite(charId), s = size / (sp ? charHeight(charId) + 8 : 78);       // 圖片立繪比較高，縮一點才不會切到頭
     g.translate(size / 2 - (sp ? 0 : 2 * s), size * (sp ? 0.96 : 0.9)); g.scale(s, s);
-    drawChar(g, charId, { t: 0.6, moving: false, atk: 0, aim: 0.15, down: false });
+    drawChar(g, charId, { t: 0.6, moving: false, atk: 0, aim: 0.15, down: false, set: set || '-' });
     portraitCache.set(key, m);
   }
   const c = document.createElement('canvas');

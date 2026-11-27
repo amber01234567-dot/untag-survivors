@@ -9,6 +9,9 @@ import { zoneAt } from '../src/sim/levelgen.js';
 const [stageId = '1-1', who = 'all', nP = '1', diff = '0', meta = '0', pickAlt = '0'] = process.argv.slice(2);
 const M = +meta, BONUS = { hp: 0.8 * M, dmg: 0.7 * M, speed: 0.1 * M, cd: 0.1 * M, armor: 4 * M, regen: 1 * M, magnet: 0.6 * M, xp: 0.25 * M, crit: 0.1 * M, revives: Math.round(2 * M), rerolls: 0, ult: 0.3 * M, coin: 0 };
 
+// 屬性測試：EL=fire GEAR=ice:5 node tools/simtest.mjs 1-1 laoliu  → 火屬性關、穿冰全套 5 星
+const ENV_EL = process.env.EL || undefined;
+if (process.env.GEAR) { const [g, st = '1'] = process.env.GEAR.split(':'); BONUS.gear = { acc: [g, +st], top: [g, +st], pants: [g, +st], shoes: [g, +st] }; }
 function bfs(L, gx, gy) {
   const d = new Uint16Array(L.W * L.H).fill(65535), q = new Int32Array(L.W * L.H);
   let h = 0, t = 0; const s = Math.floor(gy / TILE) * L.W + Math.floor(gx / TILE);
@@ -17,7 +20,7 @@ function bfs(L, gx, gy) {
   return d;
 }
 function run(stage, chars, diffI, seed) {
-  const W = new World({ stage, diff: diffI, seed, players: chars.map((c, i) => ({ id: i, name: 'bot' + i, charId: c, bonus: BONUS })) });
+  const W = new World({ stage, diff: diffI, seed, el: ENV_EL, players: chars.map((c, i) => ({ id: i, name: 'bot' + i, charId: c, bonus: BONUS })) });
   const L = W.L; let nav = null, navKey = '', minHp = 1, lvlAt = [];
   const maxT = 60 * 60 * 14;
   for (let tick = 0; tick < maxT && (W.state === 'play' || W.state === 'levelup'); tick++) {

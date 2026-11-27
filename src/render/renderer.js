@@ -1,4 +1,5 @@
 // 主繪製：鏡頭 → 地面層 → 地面效果 → 依 Y 排序的角色與敵人 → 子彈 / 特效 → 遮蔽層 → 光照 → 文字。
+import { EL_IDS } from '../data/gear.js';
 import { PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, BUFF_BITS, VIEW_H } from '../sim/const.js';
 import { ENEMY_LIST } from '../data/enemies.js';
 import { TAU, clamp } from '../core/util.js';
@@ -135,7 +136,7 @@ export class Renderer {
     if (p.buffs & BUFF_BITS.stealth) g.globalAlpha = 0.4;
     else if ((p.buffs & BUFF_BITS.invuln) && !down && Math.sin(t * 30) > 0.3) g.globalAlpha = 0.6;
     if (p.fl & 4) g.translate((Math.random() - 0.5) * 3, 0);
-    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin });
+    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin, set: p.set ? EL_IDS[p.set - 1] : '' });
     g.restore();
     if (p.shield > 0) { g.strokeStyle = 'rgba(160,220,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(p.x, p.y - 26 - p.jz, 24, 34, 0, 0, TAU); g.stroke(); g.fillStyle = 'rgba(160,220,255,.08)'; g.fill(); }
     if (p.buffs & (BUFF_BITS.dmg | BUFF_BITS.haste)) { const c = p.buffs & BUFF_BITS.dmg ? '#ff7a5a' : '#ffe06b'; g.fillStyle = c; for (let i = 0; i < 3; i++) { const yy = ((t * 50 + i * 21 + p.id * 9) % 60); g.globalAlpha = 1 - yy / 60; g.fillRect(p.x - 16 + i * 14, p.y - 6 - yy, 2, 7); } g.globalAlpha = 1; }

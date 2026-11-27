@@ -11,6 +11,7 @@ import { fmt } from '../core/util.js';
 import { save } from '../core/save.js';
 import { sfx } from '../core/audio.js';
 import { icon, optIcon, U } from './icons.js';
+import { EL, FOE, SLOTS, BEATS, gearSummary, advMul, gearName } from '../data/gear.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ICON = (id) => U('skills/' + id);
@@ -45,6 +46,14 @@ export class Hud {
         <button class="skbtn ult" id="btn-ult" style="--c:#ffd76b"><img class="ic" alt="" src="${ICON(def.ult.id)}" onerror="this.remove()"><div class="g">寶</div><div class="fill"></div><div class="key">Q</div><div class="nm">${def.ult.name}</div></button>
       </div>`;
     this.el.querySelector('#hp-port').replaceWith(portrait(def.id, 62));
+    // 章節屬性提示：這一關怪物的屬性、對我的影響、我的克制狀況
+    this.stageEl = msg.el || null;
+    if (this.stageEl) {
+      const e = EL[this.stageEl], gs = gearSummary(save.gearFor(def.id)), m = advMul(gs, this.stageEl), d = Math.round((m - 1) * 100);
+      const chip = document.createElement('div'); chip.className = 'elchip'; chip.style.setProperty('--c', e.color);
+      chip.innerHTML = `${e.name}屬性關卡：怪物${FOE[this.stageEl].text}${d ? `　｜　你的傷害 <b>${d > 0 ? '+' : ''}${d}%</b>` : ''}`;
+      this.el.appendChild(chip);
+    }
     this.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
     const q = (s) => this.el.querySelector(s);
@@ -150,6 +159,7 @@ export class Hud {
     this.showModal(`<div class="panel result ${won ? 'won' : 'lost'} scroll"><div class="sub">${won ? 'STAGE CLEAR' : 'DEFEATED'}</div><h1>${won ? '關卡完成' : '作戰失敗'}</h1>
       <div class="dim" style="margin-top:4px">${res.stage} ${STAGES[res.stage].name}・${DIFFS[res.diff].name}　時間 ${Math.floor(res.time / 60)}:${String(res.time % 60).padStart(2, '0')}　隊伍等級 ${res.level}　擊殺 ${res.kills}</div>
       <table><tr><th>隊員</th><th>傷害</th><th>擊殺</th><th>治療</th><th>承傷</th><th>倒地</th></tr>${rows}</table>
+      ${rw.drops && rw.drops.length ? `<div class="drops">${rw.drops.map((d) => `<div style="--c:${EL[d.el].color}">${d.maxed ? '（已滿星）' : d.isNew ? '獲得' : '升星'}　${gearName(d.el, d.slot)}　${'★'.repeat(d.star)}</div>`).join('')}</div>` : ''}
       <div class="rewards"><div><b>+${rw.coins}</b>金幣${rw.first ? '（首次通關 ×2）' : ''}</div><div><b>+${rw.xp}</b>${CHARS[me.charId].name} 熟練經驗</div><div><b style="color:var(--teal)">Rank ${rw.rank}</b>${rw.ranksUp ? '熟練度提升！' : '目前熟練度'}</div></div>
       <button class="btn primary" data-a="lobby">${host ? '返回大廳' : '返回大廳（等待房主）'}</button></div>`);
     sfx(won ? 'chest' : 'down');

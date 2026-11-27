@@ -6,6 +6,7 @@ import { dist2 } from '../core/util.js';
 import { BEH } from './weapons.js';
 import { SKILLS } from './skills.js';
 import { BUFF_BITS } from './const.js';
+import { ACC, gearSummary } from '../data/gear.js';
 
 export function makePlayer(W, info, slot) {
   const def = CHARS[info.charId] || CHARS.tingge;
@@ -23,6 +24,7 @@ export function makePlayer(W, info, slot) {
     atkN: 0, atkA: 0, castN: 0, dash: null, jump: null, jumpZ: 0,
     stats: { dmg: 0, kills: 0, heal: 0, taken: 0, downs: 0 },
   };
+  p.gs = gearSummary(p.bonus.gear);      // 裝備摘要：武器屬性、克制加成、抗性、套裝
   p.revives = p.bonus.revives | 0; p.rerolls = p.bonus.rerolls | 0;
   recalc(p);
   p.hp = p.st.maxHp;
@@ -39,6 +41,10 @@ export function recalc(p) {
     xp: 1 + b.xp, heal: 1, ultRate: 1 + b.ult,
   };
   for (const id in p.passives) PASSIVES[id].apply(s, p.passives[id]);
+  const gs = p.gs;
+  if (gs && gs.acc === 'gold') s.dmg += ACC.gold.dmg * gs.accMul;
+  if (gs && gs.acc === 'wind') s.speed *= 1 + ACC.wind.speed * gs.accMul;
+  if (gs && gs.acc === 'earth') s.armor += Math.round(ACC.earth.armor * gs.accMul);
   for (const w of p.weapons) { if (w.s.armorAdd) s.armor += w.s.armorAdd; if (w.s.hpMul) s.maxHp *= w.s.hpMul; }
   s.maxHp = Math.round(s.maxHp);
   p.st = s;
@@ -89,6 +95,8 @@ export function updatePlayer(W, p, dt) {
     if (p.reviveP >= 1) { W.revive(p, 0.4); W.emit('t', p.x | 0, (p.y - 60) | 0, '復活！', 2); W.emit('a', 'revive'); }
     return;
   }
+  if (p.shockCd > 0) p.shockCd -= dt;
+  if (p.burnT > 0) { p.burnT -= dt; if (p.hp > 1) { p.hp = Math.max(1, p.hp - p.burn * dt); p.hurt = Math.max(p.hurt, 0.05); } }      // 燃燒 / 中毒：不會直接致死
   p.invuln -= dt; p.hurt -= dt; if (p.stealth > 0) p.stealth -= dt;
   let regen = p.st.regen;
   for (const k in p.buffs) { const b = p.buffs[k]; b.t -= dt; if (b.regen) regen += b.regen; if (b.t <= 0) { const end = b.onEnd; delete p.buffs[k]; if (end) end(W, p); } }

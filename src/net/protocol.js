@@ -2,10 +2,11 @@
 // 房主自己也走同一個 snapOf → View 的路徑，所以房主與客戶端的畫面邏輯完全一致。
 import { buffBits, bHaste } from '../sim/player.js';
 import { SKINS } from '../sim/const.js';
+import { EL_IDS } from '../data/gear.js';
 
-export const PROTO = 9;
+export const PROTO = 10;
 const STATES = ['play', 'levelup', 'won', 'lost'];
-const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin'];
+const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set'];
 
 export function snapOf(W) {
   const s = {
@@ -23,6 +24,7 @@ export function snapOf(W) {
       rev: Math.round(p.reviveP * 100), atkN: p.atkN & 1023, atkA: Math.round(p.atkA * 100) / 100,
       cdP: Math.max(0, Math.round(p.skillCd / (p.def.skill.cd * p.st.cd) * 100)), ult: Math.floor(p.ult / p.ultMax * 100),
       buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd), skin: Math.max(0, SKINS.indexOf((p.weapons[0] && p.weapons[0].def.skin) || '')),
+      set: p.gs && p.gs.set ? EL_IDS.indexOf(p.gs.set) + 1 : 0,
     });
   }
   for (const e of W.enemies) {

@@ -9,7 +9,10 @@ import { STAGES } from '../data/chapters.js';
 import { snapOf, encode, decode, PROTO } from './protocol.js';
 import { View } from './view.js';
 import { openHost, connect, makeCode, NET_KIND } from './transport.js';
-import { save } from '../core/save.js';
+import { save, DEV } from '../core/save.js';
+import { CHAPTER_EL, TEST_EL } from '../data/gear.js';
+// 關卡屬性：系列三每章一種；測試模式下讓現有第 1–6 章暫時帶屬性
+const stageEl = (id) => { const ch = STAGES[id].chapter; return CHAPTER_EL[ch] || (DEV ? TEST_EL[ch] : null) || null; };
 
 const now = () => performance.now() / 1000;
 const AWAY_MS = 300000;        // 玩家暫離 / 斷線後，位置保留多久
@@ -206,7 +209,7 @@ export class Session {
   canLaunch() { return this.isHost() && this.lobby.players.every((p) => p.host || (p.ready && !p.away)); }
   launch() {
     if (!this.canLaunch() || this.rt) return;
-    const msg = { t: 'start', stage: this.lobby.sel.stage, diff: this.lobby.sel.diff, seed: (Math.random() * 2e9) | 0,
+    const msg = { t: 'start', stage: this.lobby.sel.stage, diff: this.lobby.sel.diff, seed: (Math.random() * 2e9) | 0, el: stageEl(this.lobby.sel.stage),
       players: this.lobby.players.map((p) => ({ id: p.id, name: p.name, charId: p.charId })) };
     this.broadcast(JSON.stringify(msg));
     const full = Object.assign({}, msg, { players: this.lobby.players.map((p) => ({ id: p.id, name: p.name, charId: p.charId, bonus: p.bonus })) });
@@ -240,7 +243,7 @@ export class Session {
 export class HostRuntime {
   constructor(session, msg) {
     this.session = session; this.myId = session.myId; this.info = msg; this.stage = STAGES[msg.stage];
-    this.world = new World({ stage: this.stage, diff: msg.diff, seed: msg.seed, players: msg.players });
+    this.world = new World({ stage: this.stage, diff: msg.diff, seed: msg.seed, players: msg.players, el: msg.el });
     this.view = new View(buildLevel(this.stage, msg.seed), this.myId, 0.028);
     this.acc = 0; this.n = 0; this.evAcc = []; this.sent = {}; this.paused = false; this.ended = false;
     this.onChoices = null; this.onEnd = null; this.onPicked = null; this.lastState = 'play';
@@ -321,7 +324,7 @@ export class HostRuntime {
   finish() {
     this.ended = true;
     const W = this.world;
-    const res = { state: W.state, stage: this.info.stage, diff: this.info.diff, time: Math.round(W.time), kills: W.kills, level: W.level, coins: Math.round(W.coins), zones: W.ctl.cleared - 1,
+    const res = { state: W.state, stage: this.info.stage, diff: this.info.diff, time: Math.round(W.time), kills: W.kills, level: W.level, coins: Math.round(W.coins), zones: W.ctl.cleared - 1, el: W.el,
       players: W.players.map((p) => ({ id: p.id, name: p.name, charId: p.charId, dmg: Math.round(p.stats.dmg), kills: p.stats.kills, heal: Math.round(p.stats.heal), taken: Math.round(p.stats.taken), downs: p.stats.downs, gone: p.gone })) };
     this.endRes = res;
     this.session.broadcast(JSON.stringify({ t: 'end', res }));

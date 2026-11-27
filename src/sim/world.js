@@ -7,6 +7,7 @@ import { ENEMIES } from '../data/enemies.js';
 import { makePlayer, updatePlayer, rollOptions, applyOption, bDmg, addBuff, recalc } from './player.js';
 import { spawnEnemy, updateEnemy } from './enemy.js';
 import { StageCtl } from './stagectl.js';
+import { ACC, FOE, CHAPTER_EL, advMul } from '../data/gear.js';
 
 class Hash {
   constructor(w, h, cs) {
@@ -39,7 +40,8 @@ class Hash {
 }
 
 export class World {
-  constructor({ stage, diff = 0, seed, players }) {
+  constructor({ stage, diff = 0, seed, players, el }) {
+    this.el = el || CHAPTER_EL[stage.chapter] || null; this.foe = this.el ? FOE[this.el] : null;      // 章節屬性：這一關所有怪物的屬性
     this.stage = stage; this.diffIdx = diff; this.diff = DIFFS[diff]; this.seed = seed;
     this.L = buildLevel(stage, seed);
     this.rng = new RNG(seed * 7 + 13);
@@ -166,11 +168,35 @@ export class World {
     let d = base * (p ? p.st.dmg * bDmg(p) : 1), crit = false;
     if (p && p.bonus.boss && (e.def.boss || e.elite)) d *= 1 + p.bonus.boss;
     if (p && (o && o.crit || this.rng.next() < p.st.crit + (o && o.critAdd || 0))) { d *= p.st.critDmg; crit = true; }
+    if (this.el) { if (p && p.gs) d *= advMul(p.gs, this.el); if (this.foe.tough) d *= 1 - this.foe.tough; }      // 屬性克制 / 土屬性怪較耐打
     this.damageEnemy(e, d, p, crit, o);
+    if (p && p.gs && p.gs.acc && !e.dead && !(o && o.noEl)) this.accProc(p, e, d);
+  }
+  // 武器配件的屬性效果（每次打擊觸發；連鎖閃電自己不會再觸發）
+  accProc(p, e, d) {
+    const el = p.gs.acc, a = ACC[el], m = p.gs.accMul;
+    if (el === 'fire') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; }
+    else if (el === 'ice') {
+      e.slowF = Math.max(e.slowT > 0 ? e.slowF : 0, Math.min(0.6, a.slow * m)); e.slowT = Math.max(e.slowT, a.slowDur);
+      if (!e.def.boss && !(e.chillCd > 0) && ++e.chill >= a.hits) { e.chill = 0; e.chillCd = a.freezeCd; e.stunT = Math.max(e.stunT, a.freeze * (e.elite ? 0.5 : 1)); this.emit('t', e.x | 0, (e.y - e.r - 8) | 0, '凍結', 1); }
+    } else if (el === 'poison') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; e.corr = a.dur; e.corrV = a.vuln * m; }
+    else if (el === 'earth') { if (this.rng.next() < a.kbChance * m) { const dx = e.x - p.x, dy = e.y - p.y, l = Math.hypot(dx, dy) || 1, k = a.kb * (1 - (e.def.kbRes || 0)) * (e.elite ? 0.5 : 1); e.kx += dx / l * k; e.ky += dy / l * k; } }
+    else if (el === 'thunder') {
+      if (this.rng.next() < a.chance * m) {
+        let n = 0, px = e.x, py = e.y;
+        this.hash.query(e.x, e.y, a.range, (q) => {
+          if (q === e || q.dead || n >= a.targets) return;
+          n++; this.emit('l', px | 0, py | 0, q.x | 0, q.y | 0, 0);
+          this.damageEnemy(q, d * a.frac, p, false, { stun: a.stun, quiet: false });
+        });
+        if (!e.def.boss) e.stunT = Math.max(e.stunT, a.stun * (e.elite ? 0.5 : 1));
+      }
+    }
   }
   damageEnemy(e, amount, p, crit, o) {
     if (e.dead) return;
     if (e.mark > 0) amount *= 1.3;
+    if (e.corr > 0) amount *= 1 + e.corrV;
     e.hp -= amount; e.flash = 0.1;
     if (e.def.boss && e.hp > 0) {            // 首領每掉 25% 血噴出補給，讓長時間的首領戰撐得下去
       const q = Math.floor((1 - e.hp / e.maxHp) * 4);
@@ -223,7 +249,10 @@ export class World {
   damagePlayer(p, amount, src) {
     if (p.down || p.gone || p.invuln > 0 || p.jump) return;
     if (p.bonus.dodge && this.rng.next() < p.bonus.dodge) { this.emit('t', p.x | 0, (p.y - 60) | 0, '閃避', 1); return; }
+    let foeRes = 0;
+    if (this.foe) { foeRes = Math.min(0.75, (p.gs && p.gs.resist[this.el]) || 0); amount *= (1 + (this.foe.dmg || 0)) * (1 - foeRes); }      // 屬性怪：金屬性較痛；同屬性防具減傷
     amount = Math.max(1, amount - p.st.armor);
+    if (this.foe) this.foeDebuff(p, amount, 1 - foeRes);
     if (p.shield > 0) { const a = Math.min(p.shield, amount); p.shield -= a; amount -= a; }
     if (amount <= 0) return;
     p.hp -= amount; p.stats.taken += amount; p.hurt = 0.2;
@@ -233,6 +262,13 @@ export class World {
       if (p.revives > 0) { p.revives--; this.revive(p, 0.5, true); this.emit('t', p.x | 0, (p.y - 60) | 0, '不死鳥！', 3); }
       else { p.down = true; p.reviveP = 0; p.stats.downs++; this.emit('t', p.x | 0, (p.y - 60) | 0, '倒地', 3); this.emit('a', 'down'); }
     }
+  }
+  // 被屬性怪打到的負面效果（同屬性防具會縮短 / 減弱）
+  foeDebuff(p, amount, k) {
+    const f = this.foe;
+    if (f.slow) addBuff(p, 'el_slow', { t: f.dur * k, speed: -f.slow });
+    if (f.burn) { p.burn = Math.max(p.burnT > 0 ? p.burn : 0, amount * f.burn * k); p.burnT = f.dur; }
+    if (f.shock && !(p.shockCd > 0)) { p.shockCd = f.cd; addBuff(p, 'el_shock', { t: f.dur * k, speed: -f.shock }); this.emit('t', p.x | 0, (p.y - 60) | 0, '麻痺', 3); }
   }
   revive(p, frac, blast) {
     p.down = false; p.hp = Math.max(p.hp, p.st.maxHp * frac); p.invuln = 2.5; p.reviveP = 0;

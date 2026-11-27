@@ -9,8 +9,8 @@ export function spawnEnemy(W, id, x, y, o = {}) {
   const hp = def.hp * W.hpMul * (el ? 10 : 1) * (o.hpMul || 1) * (def.boss ? (1 + 0.38 * (W.n - 1)) / (1 + 0.55 * (W.n - 1)) : 1 + W.ctl.cleared * 0.12);   // 首領血量隨人數的加成較緩
   const e = {
     id: (W.eid = (W.eid % 65000) + 1), def, x, y, r: def.r * (el ? 1.45 : 1), hp, maxHp: hp,
-    speed: def.speed * (el ? 1.12 : 1) * W.rng.range(0.92, 1.08), dmg: def.dmg * W.dmgMul * (el ? 1.3 : 1), elite: !!el,
-    kx: 0, ky: 0, slowT: 0, slowF: 0, stunT: 0, dot: 0, dotT: 0, dotAcc: 0, dotP: null, mark: 0, flash: 0, hitCd: 0.4,
+    speed: def.speed * (el ? 1.12 : 1) * W.rng.range(0.92, 1.08) * (1 + ((W.foe && W.foe.speed) || 0)), dmg: def.dmg * W.dmgMul * (el ? 1.3 : 1), elite: !!el,
+    chill: 0, chillCd: 0, corr: 0, corrV: 0, kx: 0, ky: 0, slowT: 0, slowF: 0, stunT: 0, dot: 0, dotT: 0, dotAcc: 0, dotP: null, mark: 0, flash: 0, hitCd: 0.4,
     spawnT: o.instant ? 0 : 0.55, st: 0, t: W.rng.range(0, 10), fdx: 0, fdy: 0, zone: o.zone === undefined ? -1 : o.zone,
     face: 1, tgt: null, ai: {}, dead: false, noDrop: !!o.noDrop,
   };
@@ -32,6 +32,8 @@ export function updateEnemy(W, e, dt) {
     const f = Math.pow(0.0015, dt); e.kx *= f; e.ky *= f;
     if (Math.abs(e.kx) + Math.abs(e.ky) < 4) e.kx = e.ky = 0;
   }
+  if (e.chillCd > 0) e.chillCd -= dt;
+  if (e.corr > 0) e.corr -= dt;
   if (e.stunT > 0) { e.stunT -= dt; return; }
   let speed = e.speed;
   if (e.slowT > 0) { e.slowT -= dt; speed *= 1 - e.slowF; }

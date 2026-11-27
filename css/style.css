@@ -417,3 +417,28 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .settest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin: 4px 0; font-size: 13px; color: #9fb2c8; }
 .settest .btn.sm { min-width: 0; padding: 5px 10px; font-size: 13px; }
 .settest .btn.on { border-color: #7fd8ff; color: #7fd8ff; }
+
+/* 裝備頁 */
+.gearpage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(250px, 320px) 1fr; gap: 12px; }
+.gleft { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.gport { display: grid; place-items: center; min-height: 150px; }
+.gslots { display: grid; gap: 6px; }
+.gslot { display: flex; gap: 10px; align-items: center; border: 1px solid var(--c); border-radius: 3px; padding: 6px 10px; background: rgba(8, 10, 16, .6); font-size: 13px; }
+.gg { font-family: var(--serif); font-weight: 900; font-size: 17px; width: 28px; height: 28px; line-height: 26px; text-align: center; flex: none; border: 1px solid var(--c, var(--line)); border-radius: 50%; color: var(--c, var(--text)); }
+.gst { color: var(--gold2); font-size: 12px; letter-spacing: 1px; }
+.gst.dim { color: var(--dim); letter-spacing: 0; }
+.gfx { font-size: 12.5px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px; }
+.gright { padding: 14px; overflow-y: auto; }
+.ghead, .grow { display: grid; grid-template-columns: 110px repeat(4, 1fr); gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.ghead span { font-size: 12px; color: var(--dim); text-align: center; }
+.gel { border: 1px solid var(--c); border-radius: 3px; background: color-mix(in srgb, var(--c) 14%, rgba(8, 10, 16, .8)); color: var(--c); display: grid; place-items: center; padding: 6px 4px; cursor: pointer; }
+.gel b { font-family: var(--serif); font-size: 22px; } .gel span { font-size: 11px; color: var(--text); opacity: .8; }
+.gitem { position: relative; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); border-radius: 3px; background: rgba(8, 10, 16, .6); color: var(--text); display: grid; justify-items: center; gap: 2px; padding: 8px 4px; cursor: pointer; }
+.gitem .gn { font-size: 12px; }
+.gitem.none { opacity: .35; border-style: dashed; cursor: default; }
+.gitem.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 22%, rgba(8, 10, 16, .8)); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 40%, transparent); }
+.gitem i { position: absolute; top: 3px; right: 5px; font-style: normal; font-size: 10px; color: var(--c); font-weight: 700; }
+.drops { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; }
+.drops div { border: 1px solid var(--c); color: var(--c); border-radius: 3px; padding: 6px 12px; font-size: 13px; font-weight: 700; background: color-mix(in srgb, var(--c) 14%, transparent); }
+.elchip { position: absolute; top: 92px; left: 50%; transform: translateX(-50%); font-size: 12px; padding: 3px 10px; border: 1px solid var(--c); color: var(--c); border-radius: 12px; background: rgba(8, 10, 16, .7); white-space: nowrap; pointer-events: none; }
+@media (max-width: 760px) { .gearpage { grid-template-columns: 1fr; overflow-y: auto; } .ghead, .grow { grid-template-columns: 62px repeat(4, 1fr); gap: 5px; } .gel span { display: none; } }
