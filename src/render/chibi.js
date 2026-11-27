@@ -250,7 +250,9 @@ function placeholder(g, p, def) {
 // 每個角色兩張圖集：走路 4 格、攻擊 4 格（最後一格同時當待機姿勢），由 tools/build_sprites.py 產生。
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
-const H_DEFAULT = 82, SET_SCALE = 1.08;
+const H_DEFAULT = 82;
+// 套裝體型倍率：背飾（旗、鼓環、砲、羽扇）會把圖撐高，身體要補回來才會和其他套一樣大
+const SET_SCALE = { ice: 1.08, fire: 1.08, poison: 1.08, gold: 1.22, wind: 1.16, earth: 1.16, thunder: 1.26 };
 const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 // 套裝造型（<角色>_<套裝>）：圖片用到才載入，載入完成前先畫原造型
@@ -283,7 +285,7 @@ function spriteLook(g, p, id) {
   const m = SPRITE_SHEETS[id], atk = p.atk > 0, useAtk = atk || !p.moving;
   const sheet = IMG[m.one ? id : id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk, sy = m.one && useAtk ? m.walk[1] : 0;
   const i = atk ? Math.min(3, Math.floor(p.atk * 4)) : p.moving ? Math.floor(p.t * 9) % 4 : 3;
-  const sc = (H[id] || H[id.replace(/_evo$/, '')] || (SET_RE.test(id) && (H[id.replace(SET_RE, '')] || H_DEFAULT) * SET_SCALE) || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
+  const sc = (H[id] || H[id.replace(/_evo$/, '')] || (SET_RE.test(id) && (H[id.replace(SET_RE, '')] || H_DEFAULT) * (SET_SCALE[id.slice(id.lastIndexOf('_') + 1)] || 1.08)) || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
   g.save(); g.scale(1 / (1 + breathe), 1 + breathe); g.imageSmoothingQuality = 'high';
   g.drawImage(sheet, i * cw, sy, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
   g.restore();
