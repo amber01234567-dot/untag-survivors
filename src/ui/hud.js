@@ -118,7 +118,7 @@ export class Hud {
     if (a === 'opt' && this.choices && !this.choices.done) { this.rt.pick(+v); sfx('skill'); }
     else if (a === 'reroll' && this.choices && this.choices.rerolls > 0) this.rt.reroll();
     else if (a === 'resume') this.togglePause();
-    else if (a === 'settest') { window.__SET = window.__SET ? '' : 'ice'; this.togglePause(); }
+    else if (a === 'settest') { window.__SET = v || ''; this.togglePause(); }
     else if (a === 'evotest') { this.togglePause(); this.app.grantEvoReady(); }
     else if (a === 'quit') { this.closeModal(); this.app.quitGame(); }
     else if (a === 'lobby') { this.closeModal(); this.app.endGame(); }
@@ -135,7 +135,7 @@ export class Hud {
     this.showModal(`<div class="panel pausebox"><h2>${solo ? '暫停' : '選單'}</h2>
       <div class="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻擊全自動）<br><kbd>空白鍵</kbd> 技能：${this.def.skill.name}<br><kbd>Q</kbd> 寶具：${(this.ultDef || this.def.ult).name}<br>倒地的隊友：靠近 3 秒即可救起</div>
       ${solo ? '' : '<div class="dim" style="font-size:11px">連線遊戲不會暫停</div>'}
-      ${window.__TEST ? `<button class="btn" data-a="settest" style="border-color:#7fd8ff;color:#7fd8ff">測試：${window.__SET ? '脫下' : '穿上'}冰套裝</button>` : ''}
+      ${window.__TEST ? `<div class="settest"><span>測試套裝：</span>${[['', '無'], ['ice', '冰'], ['fire', '火'], ['poison', '毒'], ['gold', '金'], ['wind', '風'], ['earth', '土'], ['thunder', '雷']].map(([v, n]) => `<button class="btn sm${(window.__SET || '') === v ? ' on' : ''}" data-a="settest" data-v="${v}">${n}</button>`).join('')}</div>` : ''}
       ${solo && window.__TEST ? '<button class="btn" data-a="evotest" style="border-color:#ffd23c;color:#ffd23c">測試：直接達成進化條件</button>' : ''}
       <button class="btn primary" data-a="resume">繼續</button><button class="btn danger" data-a="quit">${this.app.session.mode === 'client' ? '離開房間' : '放棄關卡'}</button></div>`);
   }

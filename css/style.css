@@ -413,3 +413,7 @@ body.touch .skbtn .nm { bottom: -17px; padding: 0; }
 .kit.evo .recipe.awk { display: flex; gap: 8px; align-items: flex-start; border-top: 1px dashed rgba(255, 210, 60, .3); padding-top: 6px; }
 .kit.evo .recipe.awk .glyph { width: 34px; height: 34px; flex: none; margin: 2px 0 0; vertical-align: 0; }
 .skbtn.ult.awake { box-shadow: 0 0 0 2px #ffd23c, 0 0 18px rgba(255, 210, 60, .7); }
+
+.settest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin: 4px 0; font-size: 13px; color: #9fb2c8; }
+.settest .btn.sm { min-width: 0; padding: 5px 10px; font-size: 13px; }
+.settest .btn.on { border-color: #7fd8ff; color: #7fd8ff; }
