@@ -77,7 +77,7 @@ def band_h(c, ax):
 
 BODY = {}
 EVO_RATIO = {'xia_evo': 1.0, 'gouqi_evo': 1.0, 'laoliu_evo': 1.0, 'wangchuan_evo': 1.1}
-SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder']
+SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder', 'artillery']   # artillery = 獨立造型（重砲）
 manifest = {}
 ADD = '--add' in sys.argv          # 只加入這個資料夾的造型，保留原本的清單（套裝造型用）
 if ADD:
