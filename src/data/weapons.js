@@ -348,12 +348,11 @@ W('sub_nova', {
 // def.ult = 覺醒寶具（武器進化的同時，寶具也換成新形態）。
 export const EVO_NEED = 3;
 function EVO(from, id, passive, def) {
-  const src = WEAPONS[from], base = weaponStats(src, src.maxLv), mod = def.mod || {};
-  if (mod.m) for (const k in mod.m) base[k] = (base[k] || 0) * mod.m[k];
-  if (mod.a) for (const k in mod.a) base[k] = (base[k] || 0) + mod.a[k];
-  if (mod.s) for (const k in mod.s) base[k] = mod.s[k];
+  // 進化武器沿用原武器的升級表（等級 1..滿級），每一級的數值 = 原武器該級數值再套上進化的 mod。
+  // 戰鬥中進化：直接是滿級；已永久解鎖、開場就帶進化武器：從 1 級開始照原本的升級卡成長。
+  const src = WEAPONS[from];
   // 造型：進化後換成「拿著新武器」的動作圖（assets/sprites/<角色>_evo_*.png；還沒畫的會自動沿用原造型）
-  WEAPONS[id] = Object.assign({ beh: src.beh, proj: src.proj, fx: src.fx, extra: src.extra }, def, { id, base, lv: [], maxLv: 1, evoOf: from, skin: src.skin ? src.skin + '_evo' : 'evo' });
+  WEAPONS[id] = Object.assign({ beh: src.beh, proj: src.proj, fx: src.fx, extra: src.extra }, def, { id, base: src.base, lv: src.lv, maxLv: src.maxLv, evoMod: def.mod || {}, evoOf: from, skin: src.skin ? src.skin + '_evo' : 'evo' });
   src.evo = { to: id, passive, need: EVO_NEED };
 }
 EVO('greatsword', 'starblade', 'power', {
@@ -504,6 +503,12 @@ export function weaponStats(def, level) {
     if (mod.m) for (const k in mod.m) s[k] = (s[k] || 0) * mod.m[k];
     if (mod.a) for (const k in mod.a) s[k] = (s[k] || 0) + mod.a[k];
     if (mod.s) for (const k in mod.s) s[k] = mod.s[k];
+  }
+  const em = def.evoMod;
+  if (em) {
+    if (em.m) for (const k in em.m) s[k] = (s[k] || 0) * em.m[k];
+    if (em.a) for (const k in em.a) s[k] = (s[k] || 0) + em.a[k];
+    if (em.s) for (const k in em.s) s[k] = em.s[k];
   }
   return s;
 }

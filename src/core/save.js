@@ -9,7 +9,7 @@ export const SAVE_VERSION = 2;
 const DEV = new URLSearchParams(location.search).get('dev') === '1' || (typeof window !== 'undefined' && !!window.__TEST);
 
 function fresh() {
-  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, unlocked: [], cleared: {}, char: 'tingge',
+  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, unlocked: [], cleared: {}, char: 'tingge',
     settings: { sfx: 0.5, music: 0.35, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
 }
 function migrate(s) {
@@ -85,13 +85,23 @@ export const save = {
     for (const s of SLOTS) { const el = this.equipped(charId, s.id); if (el) g[s.id] = [el, this.star(charId, el, s.id)]; }
     return g;
   },
+  // ── 武器進化：每個角色在戰鬥中進化過一次就永久解鎖，之後可在角色頁選擇開場就用進化型態 ──
+  evoUnlocked(charId, wid) { return DEV || (this.data.evos[charId] || []).includes(wid); },
+  unlockEvo(charId, wid) {
+    const a = this.data.evos[charId] || (this.data.evos[charId] = []);
+    if (a.includes(wid)) return false;
+    a.push(wid); if (!this.data.evoSel[charId]) this.data.evoSel[charId] = wid;      // 第一次解鎖：預設直接選用
+    this.write(); return true;
+  },
+  evoSel(charId) { const w = this.data.evoSel[charId]; return w && this.evoUnlocked(charId, w) ? w : ''; },
+  setEvoSel(charId, wid) { this.data.evoSel[charId] = wid && this.evoUnlocked(charId, wid) ? wid : ''; this.write(); },
   // 帶進戰場的加成 = 天賦 + 該角色熟練度 + 裝備
   bonusFor(charId) {
     const b = emptyBonus();
     for (const t of TALENTS) { const lv = this.talent(t.id); if (lv) t.apply(b, lv); }
     const r = this.rank(charId);
     b.hp += r * MASTERY.perRank.hp; b.dmg += r * MASTERY.perRank.dmg;
-    b.gear = this.gearFor(charId);
+    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId);
     return b;
   },
   // 結算：回傳這一場拿到的東西

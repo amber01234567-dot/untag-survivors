@@ -34,7 +34,7 @@ const app = {
     this.renderer.fx.onSfx = (n) => { if (n === 'boss') music('boss'); sfx(n); };
     music('s' + (STAGES[msg.stage] ? STAGES[msg.stage].series : 1));
     this.renderer.fx.opts.shake = save.data.settings.shake; this.renderer.fx.opts.dmgNum = save.data.settings.dmgNum;
-    rt.view.onEvent = (ev) => this.renderer.fx.event(ev, this.frame && this.frame.players);
+    rt.view.onEvent = (ev) => { if (ev[0] === 'evo' && ev[1] === rt.myId && ev[3]) { const c = (msg.players.find((q) => q.id === rt.myId) || {}).charId; if (c && save.unlockEvo(c, ev[3])) this.toast('已永久解鎖進化武器：' + ev[2] + '（可在角色頁切換）'); } this.renderer.fx.event(ev, this.frame && this.frame.players); };
     rt.onEnd = (res) => this.hud.showResult(res);
     this.hud.start(rt, msg);
     this.input.enabled = true;

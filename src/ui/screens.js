@@ -20,12 +20,14 @@ import { startLogoFire } from './logofire.js';
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // 角色頁：武器進化的配方與效果（還沒做進化的武器不顯示）
-function evoKit(w) {
+function evoKit(w, cid) {
   if (!w.evo) return '';
+  const un = save.evoUnlocked(cid, w.evo.to), on = save.evoSel(cid) === w.evo.to;
   const e = WEAPONS[w.evo.to], ps = PASSIVES[w.evo.passive];
   return `<div class="kit evo">${icon('icons/w_' + e.id, e.glyph, '#ffd23c')}<div><b>${e.name}</b>　<span class="tag" style="--c:#ffd23c">武器進化</span><br>${e.evoDesc}
     <div class="recipe">進化條件：<b>${w.name}</b> 升到滿級 ＋ 被動 ${icon('icons/p_' + w.evo.passive, ps.glyph, '#2de2e6')}<b>${ps.name}</b>（${ps.desc}）達到 ${EVO_NEED} 級<br><span class="dim">達成後，下一次升級一定會出現金色的「進化」卡。</span></div>
-    ${e.ult ? `<div class="recipe awk">${icon('skills/' + e.ult.id, '寶', '#ffd23c')}<span>寶具同時覺醒為 <b>${e.ult.name}</b>：${e.ult.desc}</span></div>` : ''}</div></div>`;
+    ${e.ult ? `<div class="recipe awk">${icon('skills/' + e.ult.id, '寶', '#ffd23c')}<span>寶具同時覺醒為 <b>${e.ult.name}</b>：${e.ult.desc}</span></div>` : ''}
+    <div class="recipe">${un ? `<button class="btn small ${on ? 'primary' : ''}" data-a="evosel" data-v="${on ? '' : e.id}">${on ? '✔ 開場使用中（點一下改回原武器）' : '已解鎖：改用進化武器開場'}</button>　<span class="dim">開場就是進化型態，從 1 級照原本的升級卡成長。</span>` : '<span class="dim">🔒 尚未解鎖：用這個角色在戰鬥中進化一次，就能永久解鎖並直接帶進場。</span>'}</div></div></div>`;
 }
 const P = (id, size) => `<i data-p="${id}" data-s="${size}"></i>`;
 function mount(root) { root.querySelectorAll('i[data-p]').forEach((el) => el.replaceWith(portrait(el.dataset.p, +el.dataset.s, el.dataset.set || ''))); }
@@ -62,6 +64,7 @@ export class Screens {
         case 'roster': this.back = this.cur; this.sel = save.data.char; this.show('roster'); break;
         case 'talents': this.back = this.cur; this.show('talents'); break;
         case 'gear': this.back = this.cur; this.show('gear'); break;
+        case 'evosel': save.setEvoSel(this.sel, v); sfx('click'); if (ses.lobby.players.length && this.sel === save.data.char) ses.updateMe(); this.refresh(); break;
         case 'gchar': save.data.char = v; save.write(); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
         case 'equip': { const [el, slot] = v.split('_'), c = save.data.char; if (!save.star(c, el, slot)) break; save.setEquip(c, slot, save.equipped(c, slot) === el ? null : el); sfx('click'); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'equipset': { const c = save.data.char; for (const s of SLOTS) if (save.star(c, v, s.id)) save.setEquip(c, s.id, v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
@@ -207,8 +210,8 @@ export class Screens {
           <div class="stats"><div><b>${sel.hp}</b>生命</div><div><b>${sel.speed}</b>移速</div><div><b>${sel.armor}</b>護甲</div></div>
           <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>熟練度 <b style="color:var(--teal)">Rank ${rank}</b>　<span class="dim">每階 生命 / 傷害 +3%</span></span><span class="dim">${rank >= MASTERY.maxRank ? 'MAX' : xp + ' / ' + need}</span></div><div class="bar"><i style="width:${rank >= MASTERY.maxRank ? 100 : xp / need * 100}%"></i></div></div>
           <div class="kit">${icon('icons/w_' + w.id, w.glyph, col)}<div><b>${w.name}</b>　<span class="dim">專屬武器・自動攻擊</span><ul class="lvlist">${w.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>
-          ${evoKit(w)}
-          ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>${evoKit(bw)}`; }).join('')}
+          ${evoKit(w, sel.id)}
+          ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>${evoKit(bw, sel.id)}`; }).join('')}
           <div class="kit">${icon('skills/' + sel.skill.id, '技', '#2de2e6')}<div><b>${sel.skill.name}</b>　<span class="dim">冷卻 ${sel.skill.cd} 秒</span><br>${sel.skill.desc}</div></div>
           <div class="kit">${icon('skills/' + sel.ult.id, '寶', 'var(--gold2)')}<div><b>${sel.ult.name}</b>　<span class="dim">寶具・擊殺充能</span><br>${sel.ult.desc}</div></div>
           ${sel.sheet ? `<img class="sheet-thumb" src="assets/sheets/${sel.id}.jpg" data-a="sheet" data-v="${sel.id}" alt="${sel.name} 設定圖">` : ''}

@@ -28,7 +28,8 @@ export function makePlayer(W, info, slot) {
   p.revives = p.bonus.revives | 0; p.rerolls = p.bonus.rerolls | 0;
   recalc(p);
   p.hp = p.st.maxHp;
-  addWeapon(p, def.weapon);
+  const ev = p.bonus.evo && WEAPONS[p.bonus.evo];      // 已永久解鎖並選用的進化武器：開場就是進化型態（1 級）
+  addWeapon(p, ev && ev.evoOf ? ev.id : def.weapon);
   recalc(p); p.hp = p.st.maxHp;
   return p;
 }
@@ -198,7 +199,7 @@ function describe(o) {
 }
 export function applyOption(W, p, o) {
   if (o.k === 'w') {
-    if (o.evo) W.emit('evo', p.id, WEAPONS[o.id].name);
+    if (o.evo) W.emit('evo', p.id, WEAPONS[o.id].name, o.id);
     let w = p.weapons.find((x) => x.def.id === o.id);
     if (o.replace && !w) {                     // 路線分支：換掉基礎武器
       const i = p.weapons.findIndex((x) => x.def.id === o.replace);
@@ -209,6 +210,7 @@ export function applyOption(W, p, o) {
         if (ow.cs) for (const c of ow.cs) c.dead = true;
         if (ow.zone) ow.zone.dead = true; }
       w = addWeapon(p, o.id); p.weapons.pop(); p.weapons[i] = w;
+      if (o.evo) { w.level = w.def.maxLv; w.s = weaponStats(w.def, w.level); }      // 戰鬥中進化：直接滿級
     } else if (!w) w = addWeapon(p, o.id); else { w.level = Math.min(w.def.maxLv, w.level + 1); w.s = weaponStats(w.def, w.level); }
     recalc(p);
   } else if (o.k === 'p') { p.passives[o.id] = (p.passives[o.id] || 0) + 1; recalc(p); }
