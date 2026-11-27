@@ -154,7 +154,8 @@ function rr(g, x, y, w, h, r, fill, stroke) { g.beginPath(); g.roundRect(x, y, w
 THEMES.harbor = outdoorTheme({ void: '#1b2a3a', roof: '#31506a', roofEdge: '#16283a', ambient: 'rgba(20,45,80,0.10)', roofDim: 0.14, neon: ['#7fd8ff', '#bfefff', '#ffc36b', '#7fd8ff'], lamp: '#ffc36b', gate: '#7fd8ff', gateHue: 0, f1: '#9db4c4', f2: '#a6bccb', f3: '#8aa2b3', w1: '#5d86a3', w2: '#7aa4be' });
 THEMES.icemine = outdoorTheme({ void: '#0c1420', roof: '#141f30', roofEdge: '#2a5a80', ambient: 'rgba(6,14,34,0.22)', roofDim: 0.22, neon: ['#6fd0ff', '#b8f0ff', '#ffb86b', '#6fd0ff'], lamp: '#8fe0ff', gate: '#6fd0ff', gateHue: 0, f1: '#5f7182', f2: '#667989', f3: '#4f6070', w1: '#263649', w2: '#34495f' });
 THEMES.icepalace = outdoorTheme({ void: '#10243a', roof: '#1d4a5c', roofEdge: '#2f8f8a', ambient: 'rgba(30,20,80,0.10)', roofDim: 0.16, neon: ['#9fffe0', '#c9b0ff', '#bfefff', '#9fffe0'], lamp: '#d8f6ff', gate: '#b0a0ff', gateHue: 0, f1: '#b9d6e6', f2: '#c2dceb', f3: '#a3c4d8', w1: '#5f95b8', w2: '#7fb2d0' });
-const MAP_THEMES = ['slums', 'arena', 'void', 'road', 'canyon', 'crater', 'harbor', 'icemine', 'icepalace'];
+THEMES.ashfoot = outdoorTheme({ void: '#2a0f08', roof: '#c8501a', roofEdge: '#3a1408', ambient: 'rgba(70,18,0,0.10)', roofDim: 0.0, neon: ['#ff8a3c', '#ffd26b', '#ff5a2a', '#ff8a3c'], lamp: '#ffb04d', gate: '#ff7a3c', gateHue: 180, f1: '#6a5a52', f2: '#72615a', f3: '#584a44', w1: '#2a2020', w2: '#3a2a26' });
+const MAP_THEMES = ['ashfoot', 'slums', 'arena', 'void', 'road', 'canyon', 'crater', 'harbor', 'icemine', 'icepalace'];
 const PROPS = { '1x1': ['p1a', 'p1b', 'p1c'], '2x2': ['p22'], '2x1': ['p21'], '3x1': ['p31'], '1x2': ['p12'] };
 const DECALS = [['d1', 30], ['d2', 74], ['d3', 40], ['d4', 56], ['d2', 58], ['d1', 30]];
 const TEX = {};

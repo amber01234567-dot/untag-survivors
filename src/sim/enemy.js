@@ -391,6 +391,35 @@ const AI = {
       W.emit('sh', 5);
     } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'iceguard' : 'snowowl', i * 1.2, 110);
   },
+  // 熔岩蠻牛：連續衝撞並留下火焰路徑、踏地噴發（向外擴散的火圈）、火球彈幕、召喚火星子
+  boss_lavabull(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.6; ai.trail = 0; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1180 * dt, Math.sin(ai.a) * 1180 * dt, e.r * 0.6);
+      ai.w -= dt; ai.trail -= dt;
+      if (ai.trail <= 0) { ai.trail = 0.08; warn(W, e.x, e.y, 74, 0.7, e.dmg * 0.9); }          // 火焰路徑
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 9); warn(W, e.x, e.y, 165, 0.4, e.dmg * 1.1); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.5); } }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.3 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.7 : 3.7; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1 || m === 3) { ai.chain = p2 ? 3 : m === 3 ? 2 : 1; startDash(W, e, 0.75); }
+    else if (m === 2) {                          // 踏地噴發：三圈由內往外
+      warn(W, e.x, e.y, 150, 0.7, e.dmg * 1.3); W.emit('sh', 6);
+      for (let ring = 1; ring <= (p2 ? 4 : 3); ring++) ai.q.push({ t: 0.42, fn: () => { const n = 5 + ring * 3, rr = 120 + ring * 135; for (let i = 0; i < n; i++) warn(W, e.x + Math.cos(i * TAU / n + ring * 0.5) * rr, e.y + Math.sin(i * TAU / n + ring * 0.5) * rr, 80, 0.75, e.dmg * 1.1); W.emit('sh', 4); } });
+    } else {                                     // 火球彈幕 + 召喚火星子
+      const volley = (off, sp2) => { for (let i = 0; i < 14; i++) shootAt(W, e, 'e_fire', off + i * TAU / 14, sp2, e.dmg * 0.55, { r: 10 }); };
+      volley(0, 190); ai.q.push({ t: 0.5, fn: () => volley(0.22, 220) }); if (p2) ai.q.push({ t: 0.5, fn: () => volley(0.11, 250) });
+      for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'bombbeetle' : 'ember', i * 1.2, 95);
+    }
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

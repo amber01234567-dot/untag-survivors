@@ -81,3 +81,9 @@ E('snowowl', { name: '雪鴞', hp: 50, speed: 100, dmg: 13, r: 13, xp: 4, ai: 's
 E('iceguard', { name: '冰甲衛兵', hp: 320, speed: 48, dmg: 21, r: 19, xp: 11, ai: 'burst', kbRes: 0.85, proj: 'e_ice', shotCd: 4.0, shotSpeed: 180, shotCount: 8 });
 E('icegolem', { name: '冰晶巨像', hp: 72000, speed: 50, dmg: 28, r: 50, xp: 950, ai: 'boss_icegolem', kbRes: 1, boss: true });
 E('icequeen', { name: '冰雪女王', hp: 74000, speed: 62, dmg: 29, r: 44, xp: 1000, ai: 'boss_icequeen', kbRes: 1, boss: true });
+// ───── 第四系列：熔岩火山（火屬性）─────
+E('ember', { name: '火星子', hp: 21, speed: 146, dmg: 9, r: 10, xp: 2, ai: 'swarm' });
+E('lavalizard', { name: '熔岩蜥蜴', hp: 66, speed: 100, dmg: 14, r: 13, xp: 3, ai: 'chase' });
+E('volturtle', { name: '火山龜', hp: 170, speed: 40, dmg: 21, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 460 });
+E('bombbeetle', { name: '炸彈甲蟲', hp: 46, speed: 110, dmg: 22, r: 13, xp: 3, ai: 'exploder', boomR: 92 });
+E('lavabull', { name: '熔岩蠻牛', hp: 76000, speed: 66, dmg: 29, r: 50, xp: 1050, ai: 'boss_lavabull', kbRes: 1, boss: true });

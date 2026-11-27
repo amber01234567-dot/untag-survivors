@@ -17,13 +17,25 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
-function carveShape(z, side, rng, COR, set) {
+function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
   const ell = (ex, ey, rx, ry) => { for (let y = Math.floor(ey - ry); y <= ey + ry; y++) for (let x = Math.floor(ex - rx); x <= ex + rx; x++) if (((x + 0.5 - ex) / rx) ** 2 + ((y + 0.5 - ey) / ry) ** 2 <= 1) set(x, y); };
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'rift') {                        // 熔岩裂谷：一片空地被幾條彎曲的熔岩裂縫切開，只有幾處石橋能過
+    ell(cx, cy, w / 2 + 3, h / 2 + 3); rect(X + 3, Y + 3, X + w - 3, Y + h - 3);
+    const crack = (vertical, at) => {
+      const len = vertical ? h : w, p1 = rng.range(0, 6.28), amp = rng.range(2, 3.5), bridges = [rng.int(5, Math.floor(len * 0.33)), rng.int(Math.floor(len * 0.6), len - 9)];
+      for (let i = 0; i < len; i++) {
+        if (bridges.some((b) => i >= b && i < b + 5)) continue;
+        const o = Math.round(at + Math.sin(i * 0.22 + p1) * amp);
+        for (let k = -1; k <= 1; k++) vertical ? unset(X + o + k, Y + i) : unset(X + i, Y + o + k);
+      }
+    };
+    crack(true, w * 0.3); crack(true, w * 0.7); if (rng.next() < 0.6) crack(false, h * (rng.next() < 0.5 ? 0.24 : 0.76));
+  }
   else if (z.shape === 'pier') {                        // 碼頭：中間一條橫向主棧橋，上下伸出一根根突堤，突堤之間是海
     const qh = 12, fw = 6, gw = 4, step = fw + gw;
     rect(X, cy - qh / 2, X + w, cy + qh / 2);
@@ -92,7 +104,12 @@ export function buildLevel(stage, seed) {
     else { const t = za.c[1] < zb.c[1] ? za : zb, bt = t === za ? zb : za; sides[t.idx].D = 1; sides[bt.idx].U = 1; }
   }
   for (const z of zones) {
-    if (z.shape !== 'rect') { carveShape(z, sides[z.idx], rng, COR, (x, y) => { if (x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h) tiles[idx(x, y)] = T_FLOOR; }); continue; }
+    if (z.shape !== 'rect') { const inb = (x, y) => x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h; carveShape(z, sides[z.idx], rng, COR, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_FLOOR; }, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_WALL; });
+      // 從中心往外走一遍，走不到的地板（被裂縫切掉的孤島）填回牆
+      const seen = new Set(), q = [idx(Math.floor(z.x + z.w / 2), Math.floor(z.y + z.h / 2))]; seen.add(q[0]);
+      for (let k = 0; k < q.length; k++) { const i = q[k], x = i % W, y = (i - x) / W; for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) { const j = idx(nx, ny); if (inb(nx, ny) && tiles[j] === T_FLOOR && !seen.has(j)) { seen.add(j); q.push(j); } } }
+      for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (tiles[idx(x, y)] === T_FLOOR && !seen.has(idx(x, y))) tiles[idx(x, y)] = T_WALL;
+      continue; }
     for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) tiles[idx(x, y)] = T_FLOOR;
     // 切角，讓房間不是死板的矩形
     const corners = [[z.x, z.y, 1, 1], [z.x + z.w - 1, z.y, -1, 1], [z.x, z.y + z.h - 1, 1, -1], [z.x + z.w - 1, z.y + z.h - 1, -1, -1]];
@@ -173,6 +190,19 @@ export function buildLevel(stage, seed) {
   }
 
   // ── 場地機關（戶外系列）：戰鬥區各放幾座，位置由 seed 決定 ──
+  // ── 噴發口（火系列的場地危險）：每個戰鬥區固定幾個位置，輪流噴發 ──
+  const vents = [];
+  if (stage.hazard === 'vent') for (const z of zones) {
+    if (z.kind !== 'combat' && z.kind !== 'final') continue;
+    for (let i = 0, tries = 0; i < (z.kind === 'final' ? 7 : 6) && tries < 120; tries++) {
+      const x = rng.int(z.x + 4, z.x + z.w - 5), y = rng.int(z.y + 4, z.y + z.h - 5);
+      if (Math.abs(x - (z.x + z.w / 2)) < 4 && Math.abs(y - (z.y + z.h / 2)) < 4) continue;
+      if (!clearAround(x, y, 1, 1, 2)) continue;
+      const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE;
+      if (vents.some((v) => (v.x - px) ** 2 + (v.y - py) ** 2 < 230 * 230)) continue;
+      vents.push({ x: px, y: py, zone: z.idx, ph: rng.range(0, 9) }); i++;
+    }
+  }
   const devices = [];
   if (stage.devices) for (const z of zones) {
     if (z.kind !== 'combat' && z.kind !== 'final') continue;
@@ -225,7 +255,7 @@ export function buildLevel(stage, seed) {
   }
 
   const start = zones.find((z) => z.kind === 'start');
-  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, outdoor: out, theme: stage.theme, seed,
+  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, vents, outdoor: out, theme: stage.theme, seed,
     spawn: { x: start.cx, y: start.cy } };
 }
 

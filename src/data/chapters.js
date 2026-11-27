@@ -54,6 +54,7 @@ export const SERIES = [
   { id: 1, name: '霓虹都市', sub: 'NEON CITY' },
   { id: 2, name: '廢土荒野', sub: 'WASTELAND' },
   { id: 3, name: '永凍冰原', sub: 'FROZEN TUNDRA', el: 'ice' },      // 系列三起：一個系列一種屬性，掉該屬性的套裝
+  { id: 4, name: '熔岩火山', sub: 'MAGMA VOLCANO', el: 'fire' },
 ];
 
 export const DIFFS = [
@@ -258,6 +259,29 @@ export const CHAPTERS = [
         pool: [['frostwolf', 4], ['snowowl', 4], ['iceguard', 3], ['icewalrus', 2], ['frostwisp', 3]], objs: [nests(3), elite('iceguard'), survive(60), kill(125)] },
       { id: '9-B', name: '極光王座', kind: 'boss', layout: 'gauntlet', diff: 4.8, pos: [4, 1], next: [], coins: 2300,
         pool: [['snowling', 5], ['snowowl', 4], ['iceguard', 2], ['frostwisp', 3]], objs: [kill(125), boss('icequeen')] },
+    ],
+  },
+  // ───── 第四系列：熔岩火山（火屬性：怪物打到會燃燒；掉落火龍獵人）─────
+  {
+    id: 10, series: 4, name: '焦土山麓', sub: 'SCORCHED FOOTHILLS', theme: 'ashfoot', outdoor: true, hazard: 'vent',
+    shapes: { combat: [['rift', 4], ['cave', 2]], final: 'round' },      // 空間架構：被熔岩裂縫切開的裂谷、不規則空地；首領在圓形火山口
+    intro: '雪線以下是另一個世界：地是黑的，風是燙的，連石頭都會動。山頂有東西在吼。',
+    devices: [['water', 4], ['barrel', 3]],
+    nodes: [
+      { id: '10-1', name: '灰燼小徑', kind: 'normal', layout: 'snake', diff: 4.45, pos: [0, 1], next: ['10-2', '10-3'], coins: 1350,
+        pool: [['ember', 6], ['lavalizard', 4], ['volturtle', 1]], objs: [kill(85), survive(55), kill(120)] },
+      { id: '10-2', name: '枯木林', kind: 'normal', layout: 'ring', diff: 4.53, pos: [1, 0.3], next: ['10-4'], coins: 1400,
+        pool: [['ember', 5], ['lavalizard', 4], ['bombbeetle', 3], ['volturtle', 1]], objs: [kill(75), nests(3), survive(55), elite('volturtle')] },
+      { id: '10-3', name: '冷卻的熔岩原', kind: 'normal', layout: 'hub', diff: 4.57, pos: [1, 1.7], next: ['10-4', '10-5'], coins: 1420,
+        pool: [['ember', 5], ['lavalizard', 5], ['bombbeetle', 2], ['volturtle', 2]], objs: [kill(75), survive(55), nests(3), kill(120)] },
+      { id: '10-4', name: '裂谷吊橋', kind: 'normal', layout: 'trident', diff: 4.65, pos: [2, 0.7], next: ['10-6'], coins: 1500,
+        pool: [['ember', 4], ['lavalizard', 4], ['bombbeetle', 3], ['volturtle', 2]], objs: [kill(75), nests(3), survive(55), elite('lavalizard'), kill(125)] },
+      { id: '10-5', name: '採硫人營地', kind: 'bonus', layout: 'arena', diff: 4.60, pos: [2, 2], next: ['10-6'], coins: 980,
+        pool: [['ember', 6], ['lavalizard', 3], ['bombbeetle', 2]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '10-6', name: '噴氣孔群', kind: 'elite', layout: 'cross', diff: 4.75, pos: [3, 1.2], next: ['10-B'], coins: 1700,
+        pool: [['ember', 4], ['lavalizard', 4], ['bombbeetle', 3], ['volturtle', 3]], objs: [nests(3), elite('volturtle'), survive(60), kill(125)] },
+      { id: '10-B', name: '蠻牛的火山口', kind: 'boss', layout: 'gauntlet', diff: 4.90, pos: [4, 1], next: [], coins: 2650,
+        pool: [['ember', 5], ['lavalizard', 4], ['bombbeetle', 2], ['volturtle', 1]], objs: [kill(125), boss('lavabull')] },
     ],
   },
 ];

@@ -11,7 +11,7 @@ export const PROJ_KINDS = [
   'wave', 'cleaver', 'baseball', 'laserbolt', 'missile', 'molotov', 'blade', 'dronebolt',
   'e_can', 'e_spore', 'e_orb', 'e_laser', 'e_trash', 'e_chain', 'grenade', 'note', 'fireball', 'kart',
   'starwave', 'wheel', 'fist', 'thunderball', 'tracer', 'lance', 'glaive', 'nuke', 'meatslice', 'moneybag', 'kamikaze',
-  'e_ice',
+  'e_ice', 'e_fire',
 ];
 export const ZONE_KINDS = [
   'mine', 'rune', 'runebig', 'blackhole', 'fire', 'frost', 'beam', 'pulse', 'heal', 'grill',
@@ -23,3 +23,6 @@ export const SKINS = ['', 'siege', 'evo', 'siege_evo'];
 export const SUMMON_KINDS = ['drone', 'cat', 'lion', 'rat', 'wisp', 'turret', 'tank', 'skull', 'bit', 'kebab', 'mothership', 'tiger', 'goldtank', 'dragon'];
 
 export const BUFF_BITS = { dmg: 1, haste: 2, speed: 4, shield: 8, invuln: 16, heal: 32, stealth: 64, ult: 128 };
+
+// 噴發口：每 VENT_PERIOD 秒噴一次，噴發前 VENT_WARN 秒開始發亮預警
+export const VENT_PERIOD = 9, VENT_WARN = 1.4, VENT_R = 76;
