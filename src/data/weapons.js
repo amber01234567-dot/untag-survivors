@@ -360,7 +360,7 @@ EVO('greatsword', 'starblade', 'power', {
   name: '星穹光刃', glyph: '星', fx: 'star',
   evoDesc: '大劍展開成一道比人還長的能量光刃：揮砍變成 360 度的光刃橫掃，每一擊往前射出月牙形光波',
   ult: { id: 'll_cross', name: '天穹十字斬', desc: '巨大的光刃從天而降縱劈整個畫面，緊接著再橫劈一刀形成十字。' },
-  mod: { m: { dmg: 1.3, range: 1.45, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, starWave: 0.35 } },
+  mod: { m: { dmg: 1.3, range: 1.15, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, starWave: 0.35 } },
 });
 EVO('greataxe', 'quakeaxe', 'armor', {
   name: '裂地戰斧', glyph: '裂', fx: 'heavy',
@@ -441,11 +441,10 @@ EVO('syringe', 'holychain', 'mend', {
   mod: { m: { dmg: 0.75 }, s: { chainN: 3, chainR: 330, chainTick: 0.22 } },
 });
 EVO('skewer', 'shawarma', 'vigor', {
-  name: '旋轉沙威瑪塔', glyph: '塔',
-  beh: 'tower',
-  evoDesc: '把一座旋轉的巨型烤肉塔插在地上：肉片不斷削飛出去攻擊敵人，塔附近的隊友持續回血，還會定期掉出烤肉',
-  ult: { id: 'yd_feast', name: '烤肉盛宴', desc: '召喚一座超大烤肉塔開宴會：肉片向四面八方狂射，周圍隊友大量回血並提升攻擊力。' },
-  mod: { m: { dmg: 1.0 }, s: { towerCd: 9, towerDur: 8.5, sliceCd: 0.2, sliceR: 340, towerHeal: 3.5, towerR: 190 } },
+  name: '旋轉沙威瑪塔', glyph: '塔', proj: 'meatslice',
+  evoDesc: '肩上扛著一支旋轉烤肉塔、手拿切肉刀：一刀一刀把肉片削飛出去，肉片飛得更遠並貫穿敵人；照樣會定期掉出烤肉',
+  ult: { id: 'yd_feast', name: '烤肉盛宴', desc: '把烤肉塔插在地上：肉片不斷削飛出去攻擊周圍敵人，塔旁的隊友持續回血。' },
+  mod: { m: { dmg: 1.5, cd: 0.75, speed: 0.95, life: 1.7, range: 1.5 }, s: { count: 3, spread: 0.45, pierce: 3, projR: 12, sliceCd: 0.2, sliceR: 340, towerHeal: 3.5, towerR: 190 } },
 });
 EVO('mines', 'gravball', 'area', {
   name: '重力派對球', glyph: '球',
@@ -455,20 +454,20 @@ EVO('mines', 'gravball', 'area', {
 });
 EVO('cheer', 'rocketkart', 'swift', {
   name: '火箭蕉號', glyph: '箭',
-  evoDesc: '卡丁車裝上火箭推進器：衝撞更痛、氮氣衝刺更頻繁，行駛時車尾持續拖出一條燃燒的軌跡',
-  ult: { id: 'qq_finish', name: '火箭衝線', desc: '火箭全開高速狂飆數秒：無敵、衝撞傷害大增，沿路全部著火，結束時原地大爆炸；全隊同時獲得增幅。' },
-  mod: { m: { dmg: 1.45, ramR: 1.2, boostCd: 0.6, boostDist: 1.3 }, s: { trail: 1, exhaust: 0.28 } },
+  evoDesc: '卡丁車裝上火箭推進器：衝撞更痛、氮氣衝刺更頻繁，行駛時車尾一路丟下香蕉皮，踩到的敵人會滑倒並受傷',
+  ult: { id: 'qq_finish', name: '火箭衝線', desc: '火箭全開高速狂飆數秒：無敵、衝撞傷害大增，沿路灑滿香蕉皮，結束時原地大爆炸；全隊同時獲得增幅。' },
+  mod: { m: { dmg: 1.45, ramR: 1.2, boostCd: 0.6, boostDist: 1.3 }, s: { trail: 0, peel: 0.3 } },
 });
 EVO('drones', 'mothership', 'wisdom', {
   name: '母艦協議', glyph: '艦', beh: 'mothership',
   evoDesc: '小無人機合體成一艘懸浮母艦：用追蹤雷射持續照射敵人，並定期向敵群投下炸彈',
-  ult: { id: 'mm_cannon', name: '母艦主砲', desc: '母艦充能後射出一道貫穿全場的主砲光束，會跟著你的瞄準方向緩慢轉動。' },
+  ult: { id: 'mm_cannon', name: '蜂群空投', desc: '母艦打開艙門，放出一大群自爆無人機，各自追著敵人俯衝爆炸。' },
   mod: { m: { dmg: 13 }, s: { laserTick: 0.12, bombCd: 2.2, bombR: 90, bombDmg: 5 } },
 });
 EVO('cats', 'tiger', 'mend', {
   name: '虎爺降臨', glyph: '虎', beh: 'tiger',
   evoDesc: '小貓合體成一隻大老虎：對敵群撲擊造成範圍傷害與流血，呼嚕光環變大、治療更強',
-  ult: { id: 'xs_twin', name: '雙王降臨', desc: '虎爺變得更巨大更兇猛，獅王同時出場並肩作戰。' },
+  ult: { id: 'xs_twin', name: '雙王降臨', desc: '獅王出場與虎爺並肩作戰，虎爺同時變得更兇猛。' },
   mod: { m: { dmg: 2.0, cd: 0.9, purrHeal: 2.0, purrR: 1.4, leash: 1.2, speed: 1.25 }, s: { count: 1, pounceR: 84 } },
 });
 EVO('bait', 'cashnado', 'magnet', {
@@ -479,9 +478,9 @@ EVO('bait', 'cashnado', 'magnet', {
 });
 EVO('dragonfire', 'truedragon', 'power', {
   name: '真龍顯現', glyph: '龍',
-  evoDesc: '火球變成一條盤旋在身邊的火龍：自己對敵人吐出扇形龍息並點燃他們，增益光環照舊',
+  evoDesc: '纏在手臂上的小火龍取代了火球：直接對敵人吐出扇形龍息並點燃他們，增益光環照舊',
   ult: { id: 'nf_breath', name: '真龍吐息', desc: '一條巨龍橫越整個畫面，沿路噴出龍炎並留下燃燒的地面；全隊獲得傷害加成。' },
-  mod: { m: { dmg: 2.0, cd: 0.85 }, s: { dragon: 1, count: 1, breathR: 250, breathArc: 1.15, dot: 14, dotDur: 3 } },
+  mod: { m: { dmg: 2.0, cd: 0.85 }, s: { dragon: 1, count: 1, breathR: 200, breathArc: 1.15, dot: 14, dotDur: 3 } },
 });
 EVO('revolver', 'reapersniper', 'crit', {
   name: '死神狙擊', glyph: '狙',

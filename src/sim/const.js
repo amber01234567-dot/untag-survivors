@@ -10,12 +10,12 @@ export const PROJ_KINDS = [
   'bullet', 'gatling', 'revolver', 'pistol', 'knife', 'rune', 'wisp', 'syringe', 'skewer', 'bead',
   'wave', 'cleaver', 'baseball', 'laserbolt', 'missile', 'molotov', 'blade', 'dronebolt',
   'e_can', 'e_spore', 'e_orb', 'e_laser', 'e_trash', 'e_chain', 'grenade', 'note', 'fireball', 'kart',
-  'starwave', 'wheel', 'fist', 'thunderball', 'tracer', 'lance', 'glaive', 'nuke', 'meatslice', 'moneybag',
+  'starwave', 'wheel', 'fist', 'thunderball', 'tracer', 'lance', 'glaive', 'nuke', 'meatslice', 'moneybag', 'kamikaze',
 ];
 export const ZONE_KINDS = [
   'mine', 'rune', 'runebig', 'blackhole', 'fire', 'frost', 'beam', 'pulse', 'heal', 'grill',
   'e_warn', 'e_slam', 'e_beam', 'garbage', 'seal', 'whirl', 'bell', 'airstrike', 'mark', 'shadow', 'toxic', 'decoy', 'aura', 'dragonfire', 'crack', 'zero',
-  'skyblade', 'reticle', 'bigwheel', 'rockburst', 'chopmark', 'cleaverfall', 'doomcircle', 'maw', 'mushroom', 'gravball', 'cashnado', 'breath', 'dragonpass',
+  'skyblade', 'reticle', 'bigwheel', 'rockburst', 'chopmark', 'cleaverfall', 'doomcircle', 'maw', 'mushroom', 'gravball', 'cashnado', 'breath', 'dragonpass', 'peel',
 ];
 // 角色造型索引（快照用，只能往後加）：對應 assets/sprites/<角色>_<造型>_*.png
 export const SKINS = ['', 'siege', 'evo', 'siege_evo'];

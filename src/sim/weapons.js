@@ -76,7 +76,7 @@ const TICK = {
 // 進化：裂地戰斧 —— 沿一條線依序噴出岩柱（每根是一個小圓形區域，延遲由近到遠）
 // 烤肉塔：削肉片攻擊 + 治療附近隊友。big = 寶具版（向四面八方射、治療更強）
 export function spawnKebab(W, p, x, y, s, dur, big) {
-  const k = W.addSummon({ kind: 'kebab', owner: p, x, y, life: dur, st: big ? 1 : 0 });
+  const k = W.addSummon({ kind: 'kebab', owner: p, x, y, life: dur, st: 0 });
   k.ct = 0; k.ht = 0; k.rot = 0;
   k.upd = (W2, m, dt) => {
     m.ct -= dt * bHaste(p); m.ht -= dt; m.rot += dt * 5;
@@ -88,6 +88,12 @@ export function spawnKebab(W, p, x, y, s, dur, big) {
     if (m.ht <= 0) { m.ht = 0.5; const R = s.towerR * p.st.area * (big ? 1.8 : 1); W2.playersIn(m.x, m.y, R, (q) => { W2.heal(q, (big ? q.st.maxHp * 0.03 : s.towerHeal * 0.5) , p); if (big) addBuff(q, 'bbq', { t: 1.2, dmg: 0.4 }); }); }
   };
   return k;
+}
+// 香蕉皮：踩到的敵人滑倒（短暫暈眩）並受傷，一片只會滑倒同一隻敵人一次
+export function dropPeel(W, p, x, y, dmg, dur) {
+  if (solidAt(W.L, x, y)) return;
+  W.addZone({ kind: 'peel', owner: p, x, y, r: 26, dur, tick: 0.15, aux: (W.tickN * 7) % 4,
+    upd(W2, z, dt) { z.tk -= dt; if (z.tk > 0) return; z.tk += z.tick; W2.hash.query(z.x, z.y, z.r, (e) => { const ot = e.ot || (e.ot = {}), k = 'pl' + z.id; if (ot[k]) return; ot[k] = 1; W2.strike(p, e, dmg, { stun: 0.45, kb: 140, sx: p.x, sy: p.y }); }); } });
 }
 export function fissure(W, p, x, y, a, len, dmg, hitOpt, step = 62, r = 46) {
   for (let d = step, i = 0; d <= len; d += step, i++) {
@@ -124,17 +130,6 @@ export const BEH = {
     for (const q of W.players) { if (q.gone || q.down || dist2(q.x, q.y, p.x, p.y) > s.healRange * s.healRange) continue; const v = q.hp / q.st.maxHp; if (v < bv) { bv = v; best = q; } }
     if (best) { W.heal(best, s.healAmt * s.healCount * s.chainTick / s.healCd * 1.6, p, s.overheal); if (best !== p) W.emit('l', p.x | 0, (p.y - 18) | 0, best.x | 0, (best.y - 18) | 0, 6); }
   },
-  // 進化：旋轉沙威瑪塔 —— 定期在敵群附近插一座烤肉塔：削肉片攻擊、治療附近隊友、掉烤肉
-  tower(W, p, w, dt) {
-    const s = w.s;
-    TICK.food(W, p, w, dt, s);
-    w.t -= dt * bHaste(p);
-    if ((!w.tw || w.tw.dead) && w.t <= 0 && !p.down && W.nearestEnemy(p.x, p.y, 520)) {
-      const c = W.cluster(p.x, p.y, 320, 110) || p;
-      let x = (p.x + c.x) / 2, y = (p.y + c.y) / 2; if (solidAt(W.L, x, y)) { x = p.x; y = p.y; }
-      w.tw = spawnKebab(W, p, x, y, s, s.towerDur, 0); w.t = s.towerCd * p.st.cd; p.atkN++; p.atkA = Math.atan2(y - p.y, x - p.x);
-    }
-  },
   // 進化：母艦協議 —— 一艘母艦跟在頭上：追蹤雷射 + 定期投彈
   mothership(W, p, w, dt) {
     const s = w.s;
@@ -163,7 +158,7 @@ export const BEH = {
     const s = w.s;
     if (!w.tg0 || w.tg0.dead) { w.tg0 = W.addSummon({ kind: 'tiger', owner: p, x: p.x + 30, y: p.y + 20 }); w.tg0.bt = 0; }
     const c = w.tg0, rage = p.buffs.catrage || p.buffs.twin;
-    const twinBit = p.buffs.twin ? 8 : 0;
+    const twinBit = 0;
     c.bt -= dt * bHaste(p) * (rage ? 1.8 : 1);
     let tgt = p.down ? null : (W.cluster(p.x, p.y, s.leash, 90) || null);
     const sp = s.speed * (rage ? 1.4 : 1);
@@ -174,7 +169,7 @@ export const BEH = {
     if (Math.abs(dx) > 4) c.face = dx > 0 ? 1 : -1;
     if (tgt && d <= reach + 10 && c.bt <= 0) {
       c.bt = s.cd; c.st = 2 | twinBit;
-      W.aoe(tgt.x, tgt.y, s.pounceR * p.st.area * (p.buffs.twin ? 1.5 : 1), s.dmg * (p.buffs.twin ? 1.8 : 1), p, { dot: s.dot || 8, dotDur: s.dotDur || 3, kb: 120, sx: c.x, sy: c.y, noFx: true });
+      W.aoe(tgt.x, tgt.y, s.pounceR * p.st.area, s.dmg * (p.buffs.twin ? 1.8 : 1), p, { dot: s.dot || 8, dotDur: s.dotDur || 3, kb: 120, sx: c.x, sy: c.y, noFx: true });
       W.emit('s', tgt.x | 0, tgt.y | 0, Math.round(Math.atan2(dy, dx) * 100), (s.pounceR * 1.1) | 0, 628, 3); p.atkN++; p.atkA = Math.atan2(tgt.y - p.y, tgt.x - p.x);
     }
     w.pt = (w.pt === undefined ? s.purrCd : w.pt) - dt;
@@ -509,12 +504,6 @@ export const BEH = {
     const s = w.s, r = s.auraR * p.st.area;
     if (!w.zone || w.zone.dead) w.zone = W.addZone({ kind: 'aura', owner: p, follow: p, r, dur: 1e9, tick: 9, upd() {} });
     w.zone.r = r;
-    if (s.dragon) {                               // 火龍繞著主人盤旋
-      if (!w.dg || w.dg.dead) w.dg = W.addSummon({ kind: 'dragon', owner: p, x: p.x, y: p.y });
-      w.rot = (w.rot || 0) + dt * 1.6;
-      w.dg.x = p.x + Math.cos(w.rot) * 78; w.dg.y = p.y - 26 + Math.sin(w.rot) * 46;
-      if (w.t > 0.25) { const ta = w.rot + Math.PI / 2; w.dg.st = Math.round((((ta % TAU) + TAU) % TAU) / TAU * 255); }
-    }
     w.at = (w.at || 0) - dt;
     if (w.at <= 0 && !p.down) { w.at = 0.4; W.playersIn(p.x, p.y, r, (q) => addBuff(q, 'dragon', { t: 0.9, dmg: s.buffDmg, haste: s.buffHaste })); }
     w.t -= dt * bHaste(p);
@@ -523,11 +512,10 @@ export const BEH = {
     if (!tgt) return;
     w.t = s.cd * p.st.cd; p.atkN++;
     const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
-    if (s.dragon && w.dg) {                       // 進化：真龍顯現 —— 火龍朝敵人吐出扇形龍息
-      const k = w.dg, ba = Math.atan2(tgt.y - k.y, tgt.x - k.x), R = s.breathR * p.st.area;
-      swingFrom(W, p, k.x, k.y, ba, R, s.breathArc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 60 });
-      W.addZone({ kind: 'breath', owner: p, x: k.x, y: k.y, a: ba, r: R, dur: 0.42, tick: 9, aux: Math.round(s.breathArc * 50) });
-      k.face = Math.cos(ba) >= 0 ? 1 : -1; k.st = Math.round((((ba % TAU) + TAU) % TAU) / TAU * 255);
+    if (s.dragon) {                               // 進化：真龍顯現 —— 手臂上的小火龍朝敵人吐出扇形龍息
+      const bx = p.x + Math.cos(a) * 22, by = p.y - 22 + Math.sin(a) * 14, ba = Math.atan2(tgt.y - by, tgt.x - bx), R = s.breathR * p.st.area;
+      swingFrom(W, p, bx, by, ba, R, s.breathArc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 60 });
+      W.addZone({ kind: 'breath', owner: p, x: bx, y: by, a: ba, r: R, dur: 0.42, tick: 9, aux: Math.round(s.breathArc * 50) });
       return;
     }
     volley(W, p, w, a, s, null);
@@ -542,9 +530,9 @@ export const BEH = {
       ot[w.uid] = W.time + s.hitCd / bHaste(p);
       W.strike(p, e, s.dmg * mv * (p.buffs.finish ? 3 : 1), { kb: s.kb * mv, sx: p.x, sy: p.y });
     });
-    if (s.exhaust && p.moving) {                  // 進化：火箭蕉號 —— 行駛時車尾持續留下燃燒軌跡
+    if (s.peel && p.moving) {                     // 進化：火箭蕉號 —— 行駛時車尾一路丟香蕉皮
       w.ex = (w.ex || 0) - dt;
-      if (w.ex <= 0) { w.ex = s.exhaust; W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y + 6, r: (p.buffs.finish ? 74 : 44) * p.st.area, dur: p.buffs.finish ? 4 : 2.2, tick: 0.4, dmg: s.dmg * (p.buffs.finish ? 1.1 : 0.4), hitOpt: { quiet: true } }); }
+      if (w.ex <= 0) { w.ex = s.peel * (p.buffs.finish ? 0.45 : 1); dropPeel(W, p, p.x + W.rng.range(-10, 10), p.y + 8 + W.rng.range(-8, 8), s.dmg * (p.buffs.finish ? 1.6 : 0.7), p.buffs.finish ? 5 : 3); }
     }
     w.t -= dt * bHaste(p);
     if (w.t > 0 || !p.moving || p.dash || !W.nearestEnemy(p.x, p.y, 260)) return;
@@ -642,7 +630,7 @@ export function plantMine(W, p, x, y, s, small) {
     },
     onEnd(W2, z) {
       if (s.gravity && !small) {                  // 進化：重力派對球 —— 先吸再炸
-        W2.addZone({ kind: 'gravball', owner: p, x: z.x, y: z.y, r: blast * 1.5, dur: 0.95, tick: 0.1, pull: 300, dmg: dmg * 0.04, hitOpt: { quiet: true, slow: 0.4, slowDur: 0.3 },
+        W2.addZone({ kind: 'gravball', owner: p, x: z.x, y: z.y, r: blast * 1.2, dur: 0.95, tick: 0.1, pull: 300, dmg: dmg * 0.04, hitOpt: { quiet: true, slow: 0.4, slowDur: 0.3 },
           onEnd: (W3, g) => { W3.aoe(g.x, g.y, blast, dmg, p, { fx: 12, kb: 260, stun: 0.5 }); W3.emit('sh', 5); } });
         return;
       }
@@ -660,7 +648,7 @@ export function throwDecoy(W, p, x, y, s, mark) {
   const r = s.decoyR * p.st.area;
   if (s.tornado) {                               // 進化：鈔票龍捲風 —— 會慢慢追著敵群移動、吸入並絞切
     const d = W.addDecoy(x, y, r, s.decoyDur);
-    const z = W.addZone({ kind: 'cashnado', owner: p, x, y, r: r * 0.62, dur: s.decoyDur, tick: 0.22, pull: 190, dmg: s.boomDmg * 0.04, hitOpt: { quiet: true, mark: mark ? 0.7 : 0 },
+    const z = W.addZone({ kind: 'cashnado', owner: p, x, y, r: r * 0.42, dur: s.decoyDur, tick: 0.22, pull: 170, dmg: s.boomDmg * 0.04, hitOpt: { quiet: true, mark: mark ? 0.7 : 0 },
       upd(W2, zz, dt) {
         const c = (W2.tickN % 20 === 0 || !zz.tg) ? (zz.tg = W2.cluster(zz.x, zz.y, 300, 100)) : zz.tg;
         if (c && !c.dead) { const dx = c.x - zz.x, dy = c.y - zz.y, dd = Math.hypot(dx, dy) || 1, mv = Math.min(dd, 70 * dt), nx = zz.x + dx / dd * mv, ny = zz.y + dy / dd * mv; if (!solidAt(W2.L, nx, ny)) { zz.x = nx; zz.y = ny; d.x = nx; d.y = ny; } }

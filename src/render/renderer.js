@@ -13,7 +13,7 @@ import { FXS, tinted } from './fxsprites.js';
 const PSPR = {
   bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
   knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
-  starwave: ['evo_starwave', 150, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
+  starwave: ['evo_starwave', 150, 'aim'], kamikaze: ['drone', 26, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
   e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
@@ -84,15 +84,15 @@ export class Renderer {
     for (const z of f.zones) {                  // 畫在角色之上的大型效果
       const zk = ZONE_KINDS[z.k];
       if (zk === 'cashnado' && FXS.evo_cashnado) {                    // 鈔票龍捲風：左右搖擺的漏斗
-        const im = FXS.evo_cashnado, hgt = z.r * 1.55, w = hgt * im.width / im.height, fade = Math.min(1, z.p * 8, (1 - z.p) * 6), sway = Math.sin(t * 7 + z.id) * 0.1;
+        const im = FXS.evo_cashnado, hgt = Math.max(70, z.r * 1.1), w = hgt * im.width / im.height, fade = Math.min(1, z.p * 8, (1 - z.p) * 6), sway = Math.sin(t * 7 + z.id) * 0.1;
         g.save(); g.translate(z.x, z.y + 10); g.rotate(sway); g.scale(Math.sin(t * 13) > 0 ? 1 : -1, 1); g.globalAlpha = fade * 0.95; g.drawImage(im, -w / 2, -hgt, w, hgt); g.restore(); g.globalAlpha = 1;
       } else if (zk === 'dragonpass' && FXS.dragon) {                 // 真龍吐息：橫越畫面的巨龍
-        const im = FXS.dragon, w = 560, hgt = w * im.height / im.width, fade = Math.min(1, z.p * 10, (1 - z.p) * 8);
+        const im = FXS.dragon, w = 400, hgt = w * im.height / im.width, fade = Math.min(1, z.p * 10, (1 - z.p) * 8);
         g.save(); g.translate(z.x, z.y - 40); if (Math.cos(z.a) < 0) g.scale(-1, 1); g.rotate(Math.sin(t * 5) * 0.06); g.globalAlpha = fade; g.shadowColor = '#ff8a2f'; g.shadowBlur = 30; g.drawImage(im, -w * 0.7, -hgt / 2, w, hgt); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0;
       }
     }
     for (const z of f.zones) if (ZONE_KINDS[z.k] === 'mushroom' && FXS.evo_mushroom) {      // 蕈狀雲：畫在角色之上，往上升並淡出
-      const im = FXS.evo_mushroom, big = z.aux === 1, hgt = (big ? 520 : 250) * (0.55 + 0.45 * Math.min(1, z.p * 3)), w = hgt * im.width / im.height;
+      const im = FXS.evo_mushroom, big = z.aux === 1, hgt = (big ? 380 : 150) * (0.55 + 0.45 * Math.min(1, z.p * 3)), w = hgt * im.width / im.height;
       g.globalAlpha = Math.min(1, (1 - z.p) * 2.2); g.drawImage(im, z.x - w / 2, z.y - hgt + 18, w, hgt); g.globalAlpha = 1;
     }
     fx.draw(g);
@@ -206,7 +206,7 @@ export class Renderer {
         g.save(); g.translate(s.x, s.y); g.rotate(a); if (Math.cos(a) < 0) g.scale(1, -1); g.shadowColor = '#ff9a2f'; g.shadowBlur = 14; g.drawImage(sm, -w * 0.72, -h / 2, w, h); g.restore(); g.shadowBlur = 0; return;
       }
       const big = k === 'kebab' ? s.st === 1 : k === 'tiger' ? (s.st & 8) : 0, act = k === 'tiger' ? (s.st & 3) : s.st;
-      const size = { kebab: big ? 150 : 74, mothership: 76, tiger: big ? 150 : 96, goldtank: 190 }[k], h = size * sm.height / sm.width, fly = k === 'mothership';
+      const size = { kebab: 74, mothership: 70, tiger: 66, goldtank: 78 }[k], h = size * sm.height / sm.width, fly = k === 'mothership';
       const bob = fly ? Math.sin(t * 3 + s.id) * 3 : act === 1 ? Math.abs(Math.sin(t * 12 + s.id)) * 4 : 0;
       g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(s.x, s.y + (fly ? 78 : 0), size * 0.36, size * 0.11, 0, 0, TAU); g.fill();
       g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); if (act === 2 && k === 'tiger') g.rotate(-0.2);
@@ -300,8 +300,8 @@ export class Renderer {
         const big = z.aux === 1, im = FXS.evo_discoball, fade = Math.min(1, (1 - z.p) * 8, z.p * 12 + 0.3);
         g.globalCompositeOperation = 'lighter';
         for (let i = 0; i < 3; i++) { const q = ((t * 1.4 + i / 3) % 1), rr = r * (1 - q); g.strokeStyle = `rgba(${i % 2 ? '255,90,220' : '160,110,255'},${0.5 * q * fade})`; g.lineWidth = big ? 5 : 3; g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); }
-        g.fillStyle = `rgba(150,80,255,${0.10 * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.globalCompositeOperation = 'source-over';
-        if (im) { const d = (big ? 150 : 56) * (1 + 0.12 * Math.sin(t * 16)) * (0.7 + 0.5 * z.p); g.save(); g.translate(x, y - (big ? 60 : 24)); g.rotate(Math.sin(t * 3) * 0.2); g.globalAlpha = fade; g.shadowColor = '#c06bff'; g.shadowBlur = 20; g.drawImage(im, -d / 2, -d / 2, d, d); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
+        g.fillStyle = `rgba(150,80,255,${0.06 * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.globalCompositeOperation = 'source-over';
+        if (im) { const d = (big ? 110 : 46) * (1 + 0.12 * Math.sin(t * 16)) * (0.7 + 0.5 * z.p); g.save(); g.translate(x, y - (big ? 60 : 24)); g.rotate(Math.sin(t * 3) * 0.2); g.globalAlpha = fade; g.shadowColor = '#c06bff'; g.shadowBlur = 20; g.drawImage(im, -d / 2, -d / 2, d, d); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
         break;
       }
       case 'breath': {                                // 龍息：從火龍嘴裡噴出的扇形火焰
@@ -328,7 +328,14 @@ export class Renderer {
         const im = FXS.skull, bite = z.on, fade = Math.min(1, (1 - z.p) * 6), grow = bite ? 1 : 0.55 + 0.45 * z.dp;
         g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(60,255,130,${(bite ? 0.2 : 0.07 + 0.1 * z.dp) * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
         g.strokeStyle = `rgba(120,255,170,${0.6 * fade})`; g.lineWidth = 3; g.setLineDash([14, 10]); g.lineDashOffset = -t * 60; g.stroke(); g.setLineDash([]); g.globalCompositeOperation = 'source-over';
-        if (im) { const w = r * 1.9 * grow, h = w * im.height / im.width; g.save(); g.translate(x, y - 20 - (bite ? 0 : (1 - z.dp) * 60)); g.scale(1, bite ? 0.82 + 0.18 * fade : 1 + 0.06 * Math.sin(t * 12)); g.globalAlpha = (bite ? fade : Math.min(0.85, z.dp * 1.4)); g.shadowColor = '#5dff8d'; g.shadowBlur = 26; g.drawImage(im, -w / 2, -h / 2, w, h); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
+        if (im) { const w = r * 1.45 * grow, h = w * im.height / im.width; g.save(); g.translate(x, y - 20 - (bite ? 0 : (1 - z.dp) * 60)); g.scale(1, bite ? 0.82 + 0.18 * fade : 1 + 0.06 * Math.sin(t * 12)); g.globalAlpha = (bite ? fade : Math.min(0.85, z.dp * 1.4)); g.shadowColor = '#5dff8d'; g.shadowBlur = 26; g.drawImage(im, -w / 2, -h / 2, w, h); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
+        break;
+      }
+      case 'peel': {                                  // 香蕉皮
+        const fade = Math.min(1, z.p * 14, (1 - z.p) * 5);
+        g.fillStyle = `rgba(255,220,60,${0.28 * fade})`; g.beginPath(); g.ellipse(x, y + 3, 17, 7, 0, 0, TAU); g.fill();
+        if (FXS.evo_peel) { g.save(); g.translate(x, y); g.rotate(z.aux * 1.57 + z.id); g.globalAlpha = fade; g.drawImage(FXS.evo_peel, -15, -15, 30, 30 * FXS.evo_peel.height / FXS.evo_peel.width); g.restore(); g.globalAlpha = 1; }
+        else { g.fillStyle = `rgba(255,214,40,${fade})`; g.beginPath(); for (let i = 0; i < 4; i++) { const a = i * 1.57 + z.id; g.moveTo(x, y); g.ellipse(x + Math.cos(a) * 8, y + Math.sin(a) * 5, 9, 3.5, a, 0, TAU); } g.fill(); }
         break;
       }
       case 'rockburst': {                             // 岩柱：預警一下後從地面頂出來，再縮回
@@ -351,10 +358,10 @@ export class Renderer {
         const im = FXS.evo_bigcleaver, big = z.aux === 1;
         if (!z.on) {
           g.fillStyle = `rgba(160,255,90,${0.08 + 0.16 * z.dp})`; g.strokeStyle = 'rgba(190,255,120,.75)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.stroke();
-          if (im && z.dp > 0.45) { const k2 = (z.dp - 0.45) / 0.55, h = (big ? 520 : 300), w = h * im.width / im.height; g.globalAlpha = Math.min(1, k2 * 2); g.drawImage(im, x - w / 2, y - h - (1 - k2 * k2) * 620, w, h); g.globalAlpha = 1; }
+          if (im && z.dp > 0.45) { const k2 = (z.dp - 0.45) / 0.55, h = (big ? 380 : 230), w = h * im.width / im.height; g.globalAlpha = Math.min(1, k2 * 2); g.drawImage(im, x - w / 2, y - h - (1 - k2 * k2) * 620, w, h); g.globalAlpha = 1; }
         } else {
           const fade = Math.min(1, (1 - z.p) * 5);
-          if (im) { const h = (big ? 520 : 300), w = h * im.width / im.height; g.globalAlpha = fade; g.drawImage(im, x - w / 2, y - h + 14, w, h); g.globalAlpha = 1; }
+          if (im) { const h = (big ? 380 : 230), w = h * im.width / im.height; g.globalAlpha = fade; g.drawImage(im, x - w / 2, y - h + 14, w, h); g.globalAlpha = 1; }
           g.strokeStyle = `rgba(230,255,200,${fade * 0.8})`; g.lineWidth = 5; g.beginPath(); g.ellipse(x, y, r * (1.05 - fade * 0.3), r * 0.86 * (1.05 - fade * 0.3), 0, 0, TAU); g.stroke();
         }
         break;
@@ -432,7 +439,7 @@ export class Renderer {
       }
       case 'fire': case 'grill': case 'dragonfire': if (FXS.flame) {   // 火焰區域：燃燒的地面 + 一簇簇火焰
         const fade = Math.min(1, z.p * 12, (1 - z.p) * 6), gnd = k === 'grill' ? FXS.coalground || FXS.fireground : FXS.fireground;
-        if (gnd) disc(g, gnd, x, y, r, z.id * 1.7, fade * (r > 300 ? 0.55 : 0.85));
+        if (gnd) disc(g, gnd, x, y, r, z.id * 1.7, fade * (r > 200 ? 0.5 : 0.8));      // 大範圍的火海畫淡一點，才看得到底下的敵人
         if (k === 'dragonfire' && FXS.dragonring) disc(g, FXS.dragonring, x, y, r * 0.98, -t * (r > 300 ? 0.9 : 1.5) + z.id, fade * (r > 300 ? 0.8 : 1));
         const fl = FXS.flame, cw = fl.width / 4, n = Math.max(4, Math.min(r > 300 ? 16 : 20, Math.round(r / 13)));
         for (let i = 0; i < n; i++) {
@@ -463,7 +470,7 @@ export class Renderer {
       // eslint-disable-next-line no-fallthrough
       case 'whirl_old': { g.globalCompositeOperation = 'lighter'; g.strokeStyle = z.aux ? '#dfe8f5' : '#ffd0a0'; g.lineWidth = z.aux ? 3 : 7; for (let i = 0; i < 4; i++) { g.globalAlpha = 0.5; g.beginPath(); g.ellipse(x, y - 14, r * (0.55 + (i % 2) * 0.35), r * (0.55 + (i % 2) * 0.35) * 0.8, 0, t * 14 + i * 1.57, t * 14 + i * 1.57 + 1.1); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; break; }
       case 'bell': if (FXS.mandala) {                  // 萬佛朝宗：金色蓮花法陣展開，巨掌從天而降
-        const R = 400, grow = Math.min(1, z.p * 3.2), ease = 1 - (1 - grow) * (1 - grow), fade = Math.min(1, (1 - z.p) * 3);
+        const R = 300, grow = Math.min(1, z.p * 3.2), ease = 1 - (1 - grow) * (1 - grow), fade = Math.min(1, (1 - z.p) * 3);
         disc(g, FXS.mandala, x, y, R * ease, t * 0.5, fade);
         g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#ffd76b'; g.lineWidth = 6; g.globalAlpha = fade * 0.5;
         const rr = r * Math.min(1, z.p * 1.6); g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); g.globalCompositeOperation = 'source-over';
@@ -540,11 +547,11 @@ export class Renderer {
     }
     g.save(); g.translate(x, y);
     if (k === 'fist' && FXS.evo_fist) {            // 殘影巨拳：aux 0 一般 / 1 重拳 / 2 寶具收尾巨拳
-      const im = FXS.evo_fist, w = [74, 124, 300][p.aux] || 74, h = w * im.height / im.width;
+      const im = FXS.evo_fist, w = [70, 112, 220][p.aux] || 70, h = w * im.height / im.width;
       g.rotate(p.a); if (Math.cos(p.a) < 0) g.scale(1, -1); g.globalAlpha = 0.88; g.drawImage(im, -w * 0.62, -h / 2, w, h); g.globalAlpha = 1; g.restore(); return;
     }
     if (k === 'thunderball' && FXS.evo_thunderball) { // 雷光彗星：aux 1 = 寶具的巨大雷球
-      const im = FXS.evo_thunderball, w = p.aux ? 300 : 120, h = w * im.height / im.width;
+      const im = FXS.evo_thunderball, w = p.aux ? 220 : 110, h = w * im.height / im.width;
       g.rotate(p.a); if (Math.cos(p.a) < 0) g.scale(1, -1); g.shadowColor = '#9fd8ff'; g.shadowBlur = 16; g.drawImage(im, -w * 0.8, -h / 2, w, h); g.shadowBlur = 0; g.restore(); return;
     }
     const sp = PSPR[k], sim = sp && (sp[3] ? tinted(sp[0], sp[3]) : FXS[sp[0]]);

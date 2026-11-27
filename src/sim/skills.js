@@ -17,7 +17,7 @@ export const SKILLS = {
   // 老劉・天穹十字斬：兩道巨大光刃，先縱劈再橫劈，交會在敵人最密集處
   ll_cross(W, p) {
     const c = W.cluster(p.x, p.y, 420, 160) || p, L = 1500, d = wdmg(p) * 11;
-    [Math.PI / 2, 0].forEach((a, i) => W.addZone({ kind: 'skyblade', owner: p, x: c.x - Math.cos(a) * L / 2, y: c.y - Math.sin(a) * L / 2, a, len: L, w: 190, delay: 0.55 + i * 0.6, dur: 1.25 + i * 0.6, tick: 9, dmg: d, hitOpt: { kb: 260, stun: 1.2 },
+    [Math.PI / 2, 0].forEach((a, i) => W.addZone({ kind: 'skyblade', owner: p, x: c.x - Math.cos(a) * L / 2, y: c.y - Math.sin(a) * L / 2, a, len: L, w: 130, delay: 0.55 + i * 0.6, dur: 1.25 + i * 0.6, tick: 9, dmg: d, hitOpt: { kb: 260, stun: 1.2 },
       onStart: (W2) => { W2.emit('sh', 14); W2.emit('a', 'boom'); } }));
   },
   // 飛姐・死神審判：凝結時間並鎖定全場，接著一槍同時貫穿所有目標
@@ -33,7 +33,7 @@ export const SKILLS = {
   },
   // ALLEN・法輪常轉：巨大法輪從天而降，落地後持續轉動碾壓；全場定身、隊友護盾
   al_wheel(W, p) {
-    const c = W.cluster(p.x, p.y, 380, 200) || p, R = 300 * p.st.area;
+    const c = W.cluster(p.x, p.y, 380, 200) || p, R = 250 * p.st.area;
     W.addZone({ kind: 'bigwheel', owner: p, x: c.x, y: c.y, r: R, delay: 0.7, dur: 4.7, tick: 0.3, dmg: wdmg(p) * 0.55, hitOpt: { slow: 0.6, slowDur: 0.6, kb: 20, quiet: true },
       onStart: (W2, z) => { W2.hash.query(z.x, z.y, 820, (e) => W2.strike(p, e, wdmg(p) * (Math.hypot(e.x - z.x, e.y - z.y) < z.r + e.r ? 4.5 : 1.6), { stun: 4.5, mark: 5 })); W2.emit('sh', 18); W2.emit('r', z.x | 0, z.y | 0, 820, 3); W2.emit('a', 'boom'); } });
     allies(W, p, 0, (q) => { q.shield = Math.max(q.shield, 40 + q.st.maxHp * 0.3 * p.st.heal); addBuff(q, 'buddha', { t: 6, regen: 4 }); W.emit('r', q.x | 0, q.y | 0, 80, 3); });
@@ -44,9 +44,9 @@ export const SKILLS = {
     W.aoe(x, y, 130, d * 5, p, { stun: 2, kb: 320, fx: 9 }); W.emit('sh', 18);
     W.addZone({ kind: 'crack', owner: p, x, y, r: 190, dur: 4, tick: 9 });
     let k = 0;
-    channel(W, p, 1.25, 0.24, (W2) => {
-      k++; const R = 110 + k * 105, n = 5 + k * 3;
-      for (let i = 0; i < n; i++) { const a = i * TAU / n + k * 0.4, rx = x + Math.cos(a) * R, ry = y + Math.sin(a) * R * 0.86; if (!solidAt(W2.L, rx, ry)) W2.addZone({ kind: 'rockburst', owner: p, x: rx, y: ry, r: 70, delay: 0.08, dur: 0.9, tick: 9, dmg: d * 4.2, hitOpt: { stun: 1.8, kb: 140, sx: x, sy: y }, aux: i % 5 }); }
+    channel(W, p, 1.0, 0.24, (W2) => {
+      k++; const R = 100 + k * 82, n = 5 + k * 3;
+      for (let i = 0; i < n; i++) { const a = i * TAU / n + k * 0.4, rx = x + Math.cos(a) * R, ry = y + Math.sin(a) * R * 0.86; if (!solidAt(W2.L, rx, ry)) W2.addZone({ kind: 'rockburst', owner: p, x: rx, y: ry, r: 60, delay: 0.08, dur: 0.9, tick: 9, dmg: d * 5, hitOpt: { stun: 1.8, kb: 140, sx: x, sy: y }, aux: i % 5 }); }
       W2.emit('sh', 9); W2.emit('a', 'boom');
     });
   },
@@ -55,7 +55,7 @@ export const SKILLS = {
     const d = wdmg(p);
     for (let i = 0; i < 6; i++) {
       const last = i === 5, c = last ? p : (W.cluster(p.x, p.y, 520, 150) || { x: p.x + W.rng.range(-260, 260), y: p.y + W.rng.range(-200, 200) });
-      const x = c.x + (last ? 0 : W.rng.range(-70, 70)), y = c.y + (last ? 0 : W.rng.range(-50, 50)), r = last ? 380 : 150;
+      const x = c.x + (last ? 0 : W.rng.range(-70, 70)), y = c.y + (last ? 0 : W.rng.range(-50, 50)), r = last ? 290 : 125;
       W.addZone({ kind: 'cleaverfall', owner: p, x, y, r, delay: 0.5 + i * 0.36, dur: 1.0 + i * 0.36, tick: 9, dmg: d * (last ? 3.2 : 1.9), hitOpt: { stun: last ? 2.2 : 1, kb: last ? 800 : 200, sx: x, sy: y, dot: 14, dotDur: 4 }, aux: last ? 1 : 0,
         onStart: (W2) => { W2.emit('sh', last ? 20 : 9); W2.emit('a', 'boom'); W2.emit('b', x | 0, y | 0, r, 2); } });
     }
@@ -68,13 +68,13 @@ export const SKILLS = {
       const a = p.aim + W2.rng.range(-0.55, 0.55), off = W2.rng.range(-70, 70);
       W2.shoot(p, { kind: 'fist', a, speed: 900, dmg: d * 1.5, pierce: 8, life: 0.42, r: 30, kb: 120, x: p.x - Math.sin(p.aim) * off - Math.cos(p.aim) * 30, y: p.y - 16 + Math.cos(p.aim) * off - Math.sin(p.aim) * 30 });
       p.atkN++; p.atkA = p.aim;
-    }, (W2) => { if (p.down) return; W2.shoot(p, { kind: 'fist', a: p.aim, speed: 820, dmg: d * 16, pierce: 99, life: 0.75, r: 95, kb: 700, stun: 1.5, aux: 2 }); W2.emit('sh', 20); W2.emit('a', 'boom'); });
+    }, (W2) => { if (p.down) return; W2.shoot(p, { kind: 'fist', a: p.aim, speed: 820, dmg: d * 16, pierce: 99, life: 0.75, r: 72, kb: 700, stun: 1.5, aux: 2 }); W2.emit('sh', 20); W2.emit('a', 'boom'); });
   },
   // 少年・雷神全壘打：巨大雷球貫穿全場，同時全畫面落雷
   sn_thunder(W, p) {
     const d = wdmg(p), a = p.aim;
     swing(W, p, a, 190 * p.st.area, 2.8, d * 5, { kb: 800, stun: 0.8, fx: 4 });
-    W.shoot(p, { kind: 'thunderball', a, speed: 720, dmg: d * 9, pierce: 99, life: 2.2, r: 62, kb: 400, stun: 1, aux: 1 });
+    W.shoot(p, { kind: 'thunderball', a, speed: 720, dmg: d * 9, pierce: 99, life: 2.2, r: 48, kb: 400, stun: 1, aux: 1 });
     W.emit('sh', 16);
     channel(W, p, 2.4, 0.07, (W2) => {
       const t = W2.randomEnemies(p.x, p.y, 620, 1)[0];
@@ -85,34 +85,34 @@ export const SKILLS = {
   // 嗯雞抖・極光天幕：一道直立的彩虹光幕由左到右橫掃戰場
   ejd_curtain(W, p) {
     const d = wdmg(p), dir = Math.cos(p.aim) >= 0 ? 1 : -1, x0 = p.x - dir * 620, H = 1300;
-    W.addZone({ kind: 'beam', owner: p, x: x0, y: p.y - H / 2, a: Math.PI / 2, len: H, w: 170, dur: 2.6, tick: 0.08, dmg: d * 1.5, burst: 1, aux: 1, hitOpt: { kb: 40 },
+    W.addZone({ kind: 'beam', owner: p, x: x0, y: p.y - H / 2, a: Math.PI / 2, len: H, w: 120, dur: 2.6, tick: 0.08, dmg: d * 1.5, burst: 1, aux: 1, hitOpt: { kb: 40 },
       upd(W2, z, dt) { z.x = x0 + dir * 1240 * Math.min(1, z.t / z.dur); z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); } } });
     channel(W, p, 2.6, 0.25, (W2) => W2.emit('sh', 5));
   },
   // 營長・燃燒地毯：三排燃燒彈，炸完留下整片火海
   yz_carpet(W, p) {
     const c = clusterOrAhead(W, p, 520, 260), a = p.aim + 1.57, d = wdmg(p) * 9;
-    for (let row = -1; row <= 1; row++) for (let i = -4; i <= 4; i++) {
-      const x = c.x + Math.cos(a) * i * 92 + Math.cos(p.aim) * row * 135, y = c.y + Math.sin(a) * i * 92 + Math.sin(p.aim) * row * 135;
-      W.addZone({ kind: 'airstrike', owner: p, x, y, r: 110, delay: 0.6 + (row + 1) * 0.4 + (i + 4) * 0.06, dur: 1.9 + (row + 1) * 0.4, tick: 9, onStart(W2, z) {
+    for (let row = -1; row <= 1; row++) for (let i = -3; i <= 3; i++) {
+      const x = c.x + Math.cos(a) * i * 84 + Math.cos(p.aim) * row * 115, y = c.y + Math.sin(a) * i * 84 + Math.sin(p.aim) * row * 115;
+      W.addZone({ kind: 'airstrike', owner: p, x, y, r: 96, delay: 0.6 + (row + 1) * 0.4 + (i + 3) * 0.06, dur: 1.9 + (row + 1) * 0.4, tick: 9, onStart(W2, z) {
         W2.aoe(z.x, z.y, z.r, d, p, { fx: 1, kb: 160, dot: 16, dotDur: 4 }); W2.emit('sh', 4);
-        W2.addZone({ kind: 'fire', owner: p, x: z.x, y: z.y, r: 78, dur: 7, tick: 0.4, dmg: d * 0.07, hitOpt: { quiet: true } }); } });
+        W2.addZone({ kind: 'fire', owner: p, x: z.x, y: z.y, r: 62, dur: 4.5, tick: 0.4, dmg: d * 0.1, hitOpt: { quiet: true } }); } });
     }
   },
   // 深深・終焉大魔法陣：巨大魔法陣逐層亮起並束縛敵人，最後所有節點噴出光柱
   ss_doom(W, p) {
-    const d = wdmg(p), R = 520, x = p.x, y = p.y;
+    const d = wdmg(p), R = 400, x = p.x, y = p.y;
     W.addZone({ kind: 'doomcircle', owner: p, x, y, r: R, dur: 3.9, tick: 0.3, dmg: d * 0.4, hitOpt: { slow: 0.75, slowDur: 0.6, quiet: true },
       onEnd: () => {} });
     channel(W, p, 3.0, 9, () => {}, (W2) => {
       W2.hash.query(x, y, R, (e) => W2.strike(p, e, d * 9, { stun: 2, mark: 4 }));
-      for (let i = 0; i < 12; i++) { const a = i * TAU / 12, px = x + Math.cos(a) * R * 0.72, py = y + Math.sin(a) * R * 0.72 * 0.86; W2.emit('l', px | 0, (py - 520) | 0, px | 0, py | 0, 3); W2.aoe(px, py, 110, d * 4, p, { fx: 4 }); }
+      for (let i = 0; i < 12; i++) { const a = i * TAU / 12, px = x + Math.cos(a) * R * 0.72, py = y + Math.sin(a) * R * 0.72 * 0.86; W2.emit('l', px | 0, (py - 520) | 0, px | 0, py | 0, 3); W2.aoe(px, py, 90, d * 4, p, { fx: 4 }); }
       W2.emit('l', x | 0, (y - 520) | 0, x | 0, y | 0, 3); W2.emit('sh', 20); W2.emit('a', 'boom');
     });
   },
   // TK哥・幽冥巨口：巨大骷髏把敵人吸過來一口吞下；低血量的一般敵人直接吞噬
   tk_maw(W, p) {
-    const c = W.cluster(p.x, p.y, 480, 200) || { x: p.x + Math.cos(p.aim) * 160, y: p.y + Math.sin(p.aim) * 160 }, d = wdmg(p), R = 300;
+    const c = W.cluster(p.x, p.y, 480, 200) || { x: p.x + Math.cos(p.aim) * 160, y: p.y + Math.sin(p.aim) * 160 }, d = wdmg(p), R = 230;
     W.addZone({ kind: 'maw', owner: p, x: c.x, y: c.y, r: R, delay: 1.1, dur: 1.9, tick: 0.1, pull: 300, dmg: 0, hitOpt: { quiet: true, slow: 0.5, slowDur: 0.3 },
       upd(W2, z, dt) {
         z.tk -= dt;
@@ -144,12 +144,12 @@ export const SKILLS = {
   },
   // 哞哞（火箭）・末日審判：超大彈頭從天而降
   mou_doom(W, p) {
-    const c = clusterOrAhead(W, p, 520, 240), d = wdmg(p), R = 430;
+    const c = clusterOrAhead(W, p, 520, 240), d = wdmg(p), R = 320;
     W.addZone({ kind: 'airstrike', owner: p, x: c.x, y: c.y, r: R, delay: 1.3, dur: 1.5, tick: 9 });
     lob(W, p, 'nuke', c.x, c.y, 1.3, (W2) => {
       W2.aoe(c.x, c.y, R, d * 5, p, { kb: 500, stun: 1.5, dot: 20, dotDur: 5, fx: 1 }); W2.emit('sh', 24); W2.emit('a', 'boom');
       W2.addZone({ kind: 'mushroom', owner: p, x: c.x, y: c.y, r: R, dur: 2.4, tick: 9, aux: 1 });
-      W2.addZone({ kind: 'toxic', owner: p, x: c.x, y: c.y, r: R * 0.85, dur: 9, tick: 0.5, dmg: d * 0.18, hitOpt: { quiet: true, slow: 0.3, slowDur: 0.8 } });
+      W2.addZone({ kind: 'toxic', owner: p, x: c.x, y: c.y, r: R * 0.8, dur: 6, tick: 0.5, dmg: d * 0.24, hitOpt: { quiet: true, slow: 0.3, slowDur: 0.8 } });
     }, c.x + 80, c.y - 760);
   },
   // 哞哞（攻城甲）・泰坦墜擊：高高跳起砸下，三層衝擊波
@@ -158,7 +158,7 @@ export const SKILLS = {
     let tx = p.x, ty = p.y;
     for (let dd = 220; dd >= 0; dd -= 20) { const x = p.x + Math.cos(a) * dd, y = p.y + Math.sin(a) * dd; if (!solidAt(W.L, x, y) && !solidAt(W.L, x + 14, y) && !solidAt(W.L, x - 14, y)) { tx = x; ty = y; break; } }
     p.jump = { t: 0, dur: 0.7, sx: p.x, sy: p.y, tx, ty, h: 190, onLand(W2, q) {
-      [[210, 6, 0], [360, 4, 0.22], [520, 2.6, 0.44]].forEach(([r, m, delay]) => W2.addZone({ kind: 'e_slam', owner: q, x: q.x, y: q.y, r, delay, dur: delay + 0.25, tick: 9,
+      [[170, 6, 0], [280, 4, 0.22], [390, 2.6, 0.44]].forEach(([r, m, delay]) => W2.addZone({ kind: 'e_slam', owner: q, x: q.x, y: q.y, r, delay, dur: delay + 0.25, tick: 9,
         onStart: (W3, z) => { W3.aoe(z.x, z.y, r, d * m, q, { stun: 1.6, kb: 300, fx: 9 }); W3.emit('r', z.x | 0, z.y | 0, r, 3); W3.emit('sh', 14); } }));
       q.shield = Math.max(q.shield, q.st.maxHp * 0.3);
     } };
@@ -166,61 +166,65 @@ export const SKILLS = {
   // 賴姐姐・聖光方舟：全隊復活 / 回滿 / 無敵，光鏈灼燒周圍所有敵人
   lj_ark(W, p) {
     for (const q of W.players) { if (q.gone) continue; if (q.down) { W.revive(q, 1, true); W.emit('t', q.x | 0, (q.y - 60) | 0, '聖光方舟！', 2); } W.heal(q, q.st.maxHp, p); q.invuln = Math.max(q.invuln, 4); q.shield = Math.max(q.shield, q.st.maxHp * 0.3); if (q !== p) W.emit('l', p.x | 0, (p.y - 18) | 0, q.x | 0, (q.y - 18) | 0, 6); W.emit('r', q.x | 0, q.y | 0, 140, 2); }
-    W.addZone({ kind: 'heal', owner: p, follow: p, r: 320, dur: 8, tick: 0.5, heal: 18, buff: { t: 1, regen: 3 } });
+    W.addZone({ kind: 'heal', owner: p, follow: p, r: 250, dur: 8, tick: 0.5, heal: 18, buff: { t: 1, regen: 3 } });
     const d = wdmg(p);
-    channel(W, p, 4, 0.2, (W2) => { for (const e of W2.enemiesIn(p.x, p.y, 520).slice(0, 14)) { W2.strike(p, e, d * 2.2, { dot: 20, dotDur: 3, quiet: W2.rng.next() < 0.5 }); W2.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); } });
+    channel(W, p, 4, 0.2, (W2) => { for (const e of W2.enemiesIn(p.x, p.y, 420).slice(0, 14)) { W2.strike(p, e, d * 2.2, { dot: 20, dotDur: 3, quiet: W2.rng.next() < 0.5 }); W2.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); } });
     W.emit('sh', 10);
   },
-  // 羊弟弟・烤肉盛宴：超大烤肉塔，肉片向四面八方狂射，隊友大量回血並增傷
+  // 羊弟弟・烤肉盛宴：把烤肉塔插在地上，肉片不斷削飛出去，塔旁隊友持續回血
   yd_feast(W, p) {
     const s = p.weapons[0].s;
-    spawnKebab(W, p, p.x + Math.cos(p.aim) * 60, p.y + Math.sin(p.aim) * 60, Object.assign({}, s, { dmg: s.dmg * 2.2 }), 8, 1);
-    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; const g = W.drop('k', p.x + Math.cos(a) * 90, p.y + Math.sin(a) * 90, 30); if (g) { g.src = p; g.buff = 0.2; g.bdmg = 0.15; } }
-    W.emit('sh', 10); W.emit('r', p.x | 0, p.y | 0, 340, 2);
+    let x = p.x + Math.cos(p.aim) * 70, y = p.y + Math.sin(p.aim) * 70; if (solidAt(W.L, x, y)) { x = p.x; y = p.y; }
+    spawnKebab(W, p, x, y, Object.assign({}, s, { dmg: s.dmg * 1.6, sliceCd: 0.1, towerHeal: 9 }), 10, 0);
+    for (let i = 0; i < 4; i++) { const a = i * TAU / 4; const g = W.drop('k', x + Math.cos(a) * 70, y + Math.sin(a) * 70, 30); if (g) { g.src = p; g.buff = 0.2; g.bdmg = 0.15; } }
+    allies(W, p, 0, (q) => addBuff(q, 'bbq', { t: 10, dmg: 0.3 }));
+    W.emit('sh', 8); W.emit('r', x | 0, y | 0, 200, 2);
   },
   // 跳跳・黑洞舞池：巨型重力球把全場敵人吸成一團後引爆
   tt_dance(W, p) {
     const c = W.cluster(p.x, p.y, 480, 200) || { x: p.x + Math.cos(p.aim) * 150, y: p.y + Math.sin(p.aim) * 150 }, d = wdmg(p);
-    W.addZone({ kind: 'gravball', owner: p, x: c.x, y: c.y, r: 470, dur: 3.2, tick: 0.1, pull: 330, dmg: d * 0.12, aux: 1, hitOpt: { quiet: true, slow: 0.6, slowDur: 0.3 },
-      onEnd: (W2, g) => { W2.aoe(g.x, g.y, 300, d * 9, p, { fx: 12, kb: 600, stun: 2 }); W2.emit('sh', 22); W2.emit('a', 'boom'); for (let i = 0; i < 8; i++) { const a = i * TAU / 8; W2.aoe(g.x + Math.cos(a) * 200, g.y + Math.sin(a) * 170, 110, d * 2.5, p, { fx: 12 }); } } });
+    W.addZone({ kind: 'gravball', owner: p, x: c.x, y: c.y, r: 360, dur: 3.2, tick: 0.1, pull: 330, dmg: d * 0.12, aux: 1, hitOpt: { quiet: true, slow: 0.6, slowDur: 0.3 },
+      onEnd: (W2, g) => { W2.aoe(g.x, g.y, 250, d * 9, p, { fx: 12, kb: 600, stun: 2 }); W2.emit('sh', 22); W2.emit('a', 'boom'); for (let i = 0; i < 8; i++) { const a = i * TAU / 8; W2.aoe(g.x + Math.cos(a) * 160, g.y + Math.sin(a) * 136, 90, d * 2.5, p, { fx: 12 }); } } });
   },
   // 起秋・火箭衝線：數秒內無敵狂飆，衝撞大增、沿路著火，結束時大爆炸；全隊增幅
   qq_finish(W, p) {
     const d = wdmg(p);
-    addBuff(p, 'finish', { t: 5, speed: 0.9, ult: 1, onEnd(W2, q) { if (q.down) return; W2.aoe(q.x, q.y, 300, d * 9, q, { kb: 500, stun: 1.5, fx: 1 }); W2.emit('sh', 20); W2.emit('a', 'boom'); } });
+    addBuff(p, 'finish', { t: 5, speed: 0.9, ult: 1, onEnd(W2, q) { if (q.down) return; W2.aoe(q.x, q.y, 240, d * 9, q, { kb: 500, stun: 1.5, fx: 12 }); W2.emit('sh', 20); W2.emit('a', 'boom'); } });
     p.invuln = Math.max(p.invuln, 5);
     allies(W, p, 0, (q) => { addBuff(q, 'amp', { t: 8, dmg: 0.5, haste: 0.35, ult: 1 }); W.heal(q, q.st.maxHp * 0.2, p); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
     W.emit('sh', 8);
   },
-  // 貓貓蟲・母艦主砲：充能後射出跟著瞄準方向緩慢轉動的主砲光束
+  // 貓貓蟲・蜂群空投：母艦放出一大群自爆無人機，各自追著敵人俯衝爆炸
   mm_cannon(W, p) {
-    const d = wdmg(p);
-    addBuff(p, 'swarm', { t: 4.4, ult: 1 });
-    W.addZone({ kind: 'beam', owner: p, follow: p, oy: -60, a: p.aim, len: 1100, w: 130, delay: 0.7, dur: 4.2, tick: 0.1, dmg: d * 0.42, burst: 1, turn: 1.6, hitOpt: { kb: 30 },
-      upd(W2, z, dt) { if (p.down) { z.dead = true; return; } z.a += ((((p.aim - z.a) % TAU) + TAU + Math.PI) % TAU - Math.PI) * Math.min(1, dt * 1.6); z.x = p.x - 34 * (p.face || 1) + Math.cos(z.a) * 20; z.y = p.y - 70 + Math.sin(z.a) * 20; if (z.t < z.delay) return; z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); } } });
-    channel(W, p, 4.2, 0.3, (W2) => W2.emit('sh', 4));
+    const d = wdmg(p), w = p.weapons[0];
+    addBuff(p, 'swarm', { t: 4, ult: 1 });
+    channel(W, p, 3.6, 0.075, (W2) => {
+      const m = w.ms || p, a = W2.rng.range(0, TAU);
+      W2.shoot(p, { kind: 'kamikaze', x: m.x + W2.rng.range(-14, 14), y: m.y + 6, a, speed: 430, homing: 7, dmg: d * 0.2, aoe: 66, aoeDmg: d * 0.2, life: 1.8, r: 10, fx: 1, kb: 120 });
+    });
+    W.emit('sh', 6);
   },
-  // 小順子・雙王降臨：虎爺巨大化，獅王同時出場
+  // 小順子・雙王降臨：獅王出場與虎爺並肩作戰，虎爺同時變得更兇猛
   xs_twin(W, p) {
     const d = wdmg(p);
     addBuff(p, 'twin', { t: 14, ult: 1 });
     minion(W, p, 'lion', p.x + Math.cos(p.aim) * 60, p.y + Math.sin(p.aim) * 60, { life: 14, speed: 330, dmg: d * 2.6, cd: 0.6, aoe: 95, r: 30 });
     allies(W, p, 0, (q) => { W.heal(q, q.st.maxHp * 0.3, p); W.emit('r', q.x | 0, q.y | 0, 100, 2); });
-    W.aoe(p.x, p.y, 260, d * 3, p, { stun: 1.5, kb: 300, fx: 9 }); W.emit('sh', 14);
+    W.aoe(p.x, p.y, 220, d * 3, p, { stun: 1.5, kb: 300, fx: 9 }); W.emit('sh', 14);
   },
   // 老瑾・土豪金坦克：純金禮車坦克，砲管噴錢袋，一邊開一邊撒錢，靠近的隊友獲得增益
   lk_goldtank(W, p) {
     const d = p.weapons[0].s.boomDmg;
     const tank = W.addSummon({ kind: 'goldtank', owner: p, x: p.x + Math.cos(p.aim) * 80, y: p.y + Math.sin(p.aim) * 80, life: 14, bt: 0.4 });
     tank.ct = 1; tank.at = 0;
-    W.addDecoy(tank.x, tank.y, 340, 14, tank);
+    W.addDecoy(tank.x, tank.y, 300, 14, tank);
     tank.upd = (W2, m, dt) => {
       const gx = p.x + Math.cos(p.aim) * 110, gy = p.y + Math.sin(p.aim) * 110, dx = gx - m.x, dy = gy - m.y, dd = Math.hypot(dx, dy) || 1;
       if (dd > 70) { const mv = Math.min(dd - 70, 170 * dt); m.x += dx / dd * mv; m.y += dy / dd * mv; m.st = 1; } else m.st = 0;
       if (Math.abs(dx) > 6) m.face = dx > 0 ? 1 : -1;
       W2.hash.query(m.x, m.y, 60, (e) => { const ot = e.ot || (e.ot = {}); if ((ot.gt || 0) > W2.time) return; ot.gt = W2.time + 0.5; W2.strike(p, e, d * 0.9, { kb: 260, sx: m.x, sy: m.y }); });
       m.bt -= dt; m.ct -= dt; m.at -= dt;
-      if (m.bt <= 0) { const c = W2.cluster(m.x, m.y, 480, 100); if (c) { m.bt = 0.75; const tx = c.x, ty = c.y; m.face = tx >= m.x ? 1 : -1; lob(W2, p, 'moneybag', tx, ty, 0.5, (W3) => { W3.aoe(tx, ty, 120, d * 1.5, p, { fx: 1, kb: 220 }); W3.emit('sh', 4); if (W3.rng.chance(0.5)) W3.drop('c', tx, ty, 3); }, m.x + m.face * 40, m.y - 40); } else m.bt = 0.3; }
+      if (m.bt <= 0) { const c = W2.cluster(m.x, m.y, 480, 100); if (c) { m.bt = 0.75; const tx = c.x, ty = c.y; m.face = tx >= m.x ? 1 : -1; lob(W2, p, 'moneybag', tx, ty, 0.5, (W3) => { W3.aoe(tx, ty, 95, d * 1.5, p, { fx: 1, kb: 220 }); W3.emit('sh', 4); if (W3.rng.chance(0.5)) W3.drop('c', tx, ty, 3); }, m.x + m.face * 40, m.y - 40); } else m.bt = 0.3; }
       if (m.ct <= 0) { m.ct = 1.1; W2.drop('c', m.x + W2.rng.range(-50, 50), m.y + W2.rng.range(-20, 40), 2); }
       if (m.at <= 0) { m.at = 0.5; W2.playersIn(m.x, m.y, 260, (q) => addBuff(q, 'gold', { t: 1.2, dmg: 0.35, haste: 0.2 })); }
     };
@@ -230,11 +234,11 @@ export const SKILLS = {
   nf_breath(W, p) {
     const d = wdmg(p), dir = Math.cos(p.aim) >= 0 ? 1 : -1, x0 = p.x - dir * 760, y0 = p.y;
     let dropT = 0;
-    W.addZone({ kind: 'dragonpass', owner: p, x: x0, y: y0, r: 190, a: dir > 0 ? 0 : Math.PI, dur: 2.6, tick: 0.1, dmg: d * 1.4, hitOpt: { dot: 18, dotDur: 4, kb: 60, quiet: false },
+    W.addZone({ kind: 'dragonpass', owner: p, x: x0, y: y0, r: 150, a: dir > 0 ? 0 : Math.PI, dur: 2.6, tick: 0.1, dmg: d * 1.4, hitOpt: { dot: 18, dotDur: 4, kb: 60, quiet: false },
       upd(W2, z, dt) {
         z.x = x0 + dir * 1520 * Math.min(1, z.t / z.dur); z.y = y0 + Math.sin(z.t * 3.2) * 60;
         z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); }
-        dropT -= dt; if (dropT <= 0) { dropT = 0.22; if (!solidAt(W2.L, z.x, z.y)) W2.addZone({ kind: 'dragonfire', owner: p, x: z.x, y: z.y, r: 110, dur: 6, tick: 0.4, dmg: d * 0.35, hitOpt: { dot: 14, dotDur: 3, quiet: true } }); }
+        dropT -= dt; if (dropT <= 0) { dropT = 0.22; if (!solidAt(W2.L, z.x, z.y)) W2.addZone({ kind: 'dragonfire', owner: p, x: z.x, y: z.y, r: 84, dur: 4, tick: 0.4, dmg: d * 0.45, hitOpt: { dot: 14, dotDur: 3, quiet: true } }); }
       } });
     allies(W, p, 0, (q) => { addBuff(q, 'judgment', { t: 10, dmg: 0.5, ult: 1 }); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
     channel(W, p, 2.6, 0.3, (W2) => W2.emit('sh', 6));
@@ -257,10 +261,10 @@ export const SKILLS = {
   },
   xia_quake(W, p) {
     const x = p.x + Math.cos(p.aim) * 90, y = p.y + Math.sin(p.aim) * 90;
-    W.addZone({ kind: 'e_slam', owner: p, x, y, r: 380, dur: 0.45, delay: 0.4, tick: 9, onStart(W2) {
-      W2.aoe(x, y, 380, wdmg(p) * 9, p, { stun: 2, kb: 300, fx: 9 }); W2.emit('sh', 18);
-      W2.addZone({ kind: 'crack', owner: p, x, y, r: 380, dur: 6, tick: 9 });
-      for (let i = 0; i < 3; i++) { const a = i * TAU / 3; W2.addZone({ kind: 'fire', owner: p, x: x + Math.cos(a) * 180, y: y + Math.sin(a) * 180, r: 90, dur: 5, tick: 0.4, dmg: wdmg(p) * 0.3, hitOpt: { quiet: true } }); }
+    W.addZone({ kind: 'e_slam', owner: p, x, y, r: 300, dur: 0.45, delay: 0.4, tick: 9, onStart(W2) {
+      W2.aoe(x, y, 300, wdmg(p) * 9, p, { stun: 2, kb: 300, fx: 9 }); W2.emit('sh', 18);
+      W2.addZone({ kind: 'crack', owner: p, x, y, r: 300, dur: 3.5, tick: 9 });
+      for (let i = 0; i < 3; i++) { const a = i * TAU / 3; W2.addZone({ kind: 'fire', owner: p, x: x + Math.cos(a) * 140, y: y + Math.sin(a) * 140, r: 72, dur: 4, tick: 0.4, dmg: wdmg(p) * 0.3, hitOpt: { quiet: true } }); }
     } });
   },
   // ── 狗企 ──
@@ -269,7 +273,7 @@ export const SKILLS = {
     W.emit('r', p.x | 0, p.y | 0, 60, 0);
   },
   gq_empire(W, p) {
-    W.addZone({ kind: 'garbage', owner: p, x: p.x, y: p.y, r: 300, dur: 10, tick: 0.5, dmg: wdmg(p) * 0.9, hitOpt: { slow: 0.5, slowDur: 0.8, dot: 10, dotDur: 3, quiet: true } });
+    W.addZone({ kind: 'garbage', owner: p, x: p.x, y: p.y, r: 250, dur: 10, tick: 0.5, dmg: wdmg(p) * 0.9, hitOpt: { slow: 0.5, slowDur: 0.8, dot: 10, dotDur: 3, quiet: true } });
     for (let i = 0; i < 14; i++) { const a = i * TAU / 14, d = 50 + (i % 3) * 34; minion(W, p, 'rat', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, { life: 12, speed: 300, dmg: wdmg(p) * 0.9, cd: 0.5, dot: 8 }); }
     W.emit('sh', 10);
   },
@@ -280,7 +284,7 @@ export const SKILLS = {
     addBuff(p, 'focus', { t: 2.5, haste: 0.35 });
   },
   tg_limit(W, p) {
-    addBuff(p, 'limit', { t: 8, haste: 1.2, speed: 0.3, dmg: 0.5, ult: 1, onEnd(W2, q) { if (q.down) return; W2.aoe(q.x + Math.cos(q.aim) * 60, q.y + Math.sin(q.aim) * 60, 270, wdmg(q) * 22, q, { kb: 600, stun: 1.5, fx: 9 }); W2.emit('sh', 20); } });
+    addBuff(p, 'limit', { t: 8, haste: 1.2, speed: 0.3, dmg: 0.5, ult: 1, onEnd(W2, q) { if (q.down) return; W2.aoe(q.x + Math.cos(q.aim) * 60, q.y + Math.sin(q.aim) * 60, 230, wdmg(q) * 22, q, { kb: 600, stun: 1.5, fx: 9 }); W2.emit('sh', 20); } });
     W.emit('r', p.x | 0, p.y | 0, 200, 1);
   },
   // ── 少年 ──
@@ -303,7 +307,7 @@ export const SKILLS = {
   },
   ejd_aurora(W, p) {
     addBuff(p, 'aurora', { t: 4, ult: 1 });
-    W.addZone({ kind: 'beam', owner: p, follow: p, oy: -16, a: p.aim, len: 900, w: 90, dur: 4, tick: 0.1, dmg: wdmg(p) * 3, burst: 1, aux: 1, turn: 2.6, upd: beamUpd });
+    W.addZone({ kind: 'beam', owner: p, follow: p, oy: -16, a: p.aim, len: 820, w: 72, dur: 4, tick: 0.1, dmg: wdmg(p) * 3, burst: 1, aux: 1, turn: 2.6, upd: beamUpd });
     channel(W, p, 4, 0.25, (W2) => W2.emit('sh', 4));
   },
   // ── 營長 ──
@@ -311,8 +315,8 @@ export const SKILLS = {
   yz_airstrike(W, p) {
     const c = clusterOrAhead(W, p, 520, 260), a = p.aim + 1.57, d = wdmg(p) * 26;
     for (let row = -1; row <= 1; row++) for (let i = -3; i <= 3; i++) {
-      const x = c.x + Math.cos(a) * i * 95 + Math.cos(p.aim) * row * 130, y = c.y + Math.sin(a) * i * 95 + Math.sin(p.aim) * row * 130;
-      W.addZone({ kind: 'airstrike', owner: p, x, y, r: 115, delay: 0.7 + (row + 1) * 0.35 + Math.abs(i) * 0.05, dur: 1.9, tick: 9, onStart(W2, z) { W2.aoe(z.x, z.y, z.r, d, p, { fx: 1, kb: 200 }); W2.emit('sh', 5); } });
+      const x = c.x + Math.cos(a) * i * 82 + Math.cos(p.aim) * row * 112, y = c.y + Math.sin(a) * i * 82 + Math.sin(p.aim) * row * 112;
+      W.addZone({ kind: 'airstrike', owner: p, x, y, r: 98, delay: 0.7 + (row + 1) * 0.35 + Math.abs(i) * 0.05, dur: 1.9, tick: 9, onStart(W2, z) { W2.aoe(z.x, z.y, z.r, d, p, { fx: 1, kb: 200 }); W2.emit('sh', 5); } });
     }
   },
   // ── 深深 ──
@@ -322,12 +326,12 @@ export const SKILLS = {
   },
   ss_seal(W, p) {
     p.stealth = 6; addBuff(p, 'shadow', { t: 6, speed: 0.25, ult: 1 });
-    const z = W.addZone({ kind: 'seal', owner: p, follow: p, r: 420, dur: 6, tick: 0.5, dmg: 0, hitOpt: { slow: 0.4, slowDur: 0.8, quiet: true } });
+    const z = W.addZone({ kind: 'seal', owner: p, follow: p, r: 330, dur: 6, tick: 0.5, dmg: 0, hitOpt: { slow: 0.4, slowDur: 0.8, quiet: true } });
     channel(W, p, 6, 0.16, (W2) => {
       const t = W2.randomEnemies(p.x, p.y, z.r, 1)[0];
-      const x = t ? t.x : p.x + W2.rng.range(-300, 300), y = t ? t.y : p.y + W2.rng.range(-300, 300);
+      const x = t ? t.x : p.x + W2.rng.range(-240, 240), y = t ? t.y : p.y + W2.rng.range(-240, 240);
       W2.emit('l', x | 0, (y - 460) | 0, x | 0, y | 0, 3);
-      W2.aoe(x, y, 85, wdmg(p) * 4.5, p, { fx: 4 });
+      W2.aoe(x, y, 75, wdmg(p) * 4.5, p, { fx: 4 });
     });
   },
   // ── TK哥 ──
@@ -377,7 +381,7 @@ export const SKILLS = {
   wc_ring(W, p) { ring(W, p, 16, 'knife', { speed: 700, dmg: wdmg(p) * 1.8, pierce: 99, life: 0.7, ret: true, r: 8 }, p.aim); },
   wc_storm(W, p) {
     addBuff(p, 'blade', { t: 5, speed: 0.2, ult: 1 });
-    W.addZone({ kind: 'whirl', owner: p, follow: p, r: 220, dur: 5, tick: 0.16, dmg: wdmg(p) * 0.9, aux: 1, hitOpt: { kb: 30, quiet: true } });
+    W.addZone({ kind: 'whirl', owner: p, follow: p, r: 190, dur: 5, tick: 0.16, dmg: wdmg(p) * 0.9, aux: 1, hitOpt: { kb: 30, quiet: true } });
     let off = 0;
     channel(W, p, 5, 0.3, (W2) => { off += 0.4; ring(W2, p, 8, 'knife', { speed: 760, dmg: wdmg(p) * 1.4, pierce: 6, life: 0.7, r: 8 }, off); });
   },
@@ -387,22 +391,22 @@ export const SKILLS = {
   },
   lj_revive(W, p) {
     for (const q of W.players) { if (q.gone) continue; if (q.down) { W.revive(q, 0.6, true); W.emit('t', q.x | 0, (q.y - 60) | 0, '起死回生！', 2); } W.heal(q, q.st.maxHp, p); q.invuln = Math.max(q.invuln, 3); W.emit('r', q.x | 0, q.y | 0, 120, 2); }
-    W.addZone({ kind: 'heal', owner: p, follow: p, r: 260, dur: 8, tick: 0.5, heal: 14, buff: { t: 1, regen: 2 } });
+    W.addZone({ kind: 'heal', owner: p, follow: p, r: 230, dur: 8, tick: 0.5, heal: 14, buff: { t: 1, regen: 2 } });
   },
   // ── 羊弟弟 ──
   yd_party(W, p) {
     W.addZone({ kind: 'grill', owner: p, x: p.x, y: p.y, r: 155 * p.st.area, dur: 8, tick: 0.5, dmg: wdmg(p) * 0.5, heal: 7, buff: { t: 1, haste: 0.2 }, hitOpt: { dot: 8, dotDur: 2, quiet: true } });
   },
   yd_inferno(W, p) {
-    W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y, r: 360, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.5, aux: 1, hitOpt: { dot: 14, dotDur: 3, quiet: true } });
+    W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y, r: 280, dur: 7, tick: 0.4, dmg: wdmg(p) * 1.5, aux: 1, hitOpt: { dot: 14, dotDur: 3, quiet: true } });
     for (let i = 0; i < 6; i++) { const a = i * TAU / 6; const g = W.drop('k', p.x + Math.cos(a) * 80, p.y + Math.sin(a) * 80, 30); if (g) { g.src = p; g.buff = 0.2; g.bdmg = 0.15; } }
     allies(W, p, 0, (q) => addBuff(q, 'bbq', { t: 10, dmg: 0.4 }));
     W.emit('sh', 10);
   },
   // ── ALLEN ──
   al_freeze(W, p) {
-    W.hash.query(p.x, p.y, 310 * p.st.area, (e) => W.strike(p, e, wdmg(p) * 2, { stun: 2.8, mark: 4 }));
-    W.emit('r', p.x | 0, p.y | 0, (310 * p.st.area) | 0, 3);
+    W.hash.query(p.x, p.y, 260 * p.st.area, (e) => W.strike(p, e, wdmg(p) * 2, { stun: 2.8, mark: 4 }));
+    W.emit('r', p.x | 0, p.y | 0, (260 * p.st.area) | 0, 3);
   },
   al_buddha(W, p) {
     W.addZone({ kind: 'bell', owner: p, follow: p, r: 800, dur: 2, tick: 9 });
@@ -468,7 +472,7 @@ export const SKILLS = {
     W.addZone({ kind: 'dragonfire', owner: p, x: p.x, y: p.y, r: 200 * p.st.area, dur: 6, tick: 0.4, dmg: wdmg(p) * 0.7, buff: { t: 1, dmg: 0.3 }, hitOpt: { dot: 10, dotDur: 2, quiet: true } });
   },
   nf_judgment(W, p) {
-    W.addZone({ kind: 'dragonfire', owner: p, follow: p, r: 420, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.6, aux: 1, hitOpt: { dot: 16, dotDur: 3, quiet: true } });
+    W.addZone({ kind: 'dragonfire', owner: p, follow: p, r: 320, dur: 8, tick: 0.4, dmg: wdmg(p) * 1.6, aux: 1, hitOpt: { dot: 16, dotDur: 3, quiet: true } });
     allies(W, p, 0, (q) => { addBuff(q, 'judgment', { t: 10, dmg: 0.5, ult: 1 }); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
     W.emit('sh', 14);
   },

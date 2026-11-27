@@ -443,12 +443,12 @@ export const SPRITE_SHEETS = {
  "tk_evo": {
   "px": 250,
   "walk": [
-   260,
+   244,
    254
   ],
   "attack": [
-   288,
-   254
+   312,
+   272
   ]
  },
  "wangchuan_evo": {

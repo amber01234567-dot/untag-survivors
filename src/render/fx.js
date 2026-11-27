@@ -106,7 +106,7 @@ export class Fx {
     for (const s of this.slashes) {
       const k = 1 - s.life / s.max, [c1, c2] = SLASH[s.st] || SLASH[0];
       if (s.st === 7 && FXS.evo_starslash) {          // 進化：星穹光刃的光刃橫掃
-        const im = FXS.evo_starslash, d = s.r * 2.3 * (0.8 + k * 0.3);
+        const im = FXS.evo_starslash, d = s.r * 2.05 * (0.8 + k * 0.3);
         g.save(); g.translate(s.x, s.y); g.scale(1, 0.86); g.rotate(s.a + k * 2.6);
         g.globalCompositeOperation = 'source-over'; g.globalAlpha = Math.min(1, (1 - k) * 1.7);
         g.drawImage(im, -d / 2, -d / 2, d, d); g.restore(); g.globalCompositeOperation = 'lighter';
