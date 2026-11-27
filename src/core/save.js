@@ -64,24 +64,25 @@ export const save = {
     this.data.coins -= cost; this.data.talents[id] = lv + 1; this.write();
     return true;
   },
-  // ── 裝備：gear = { '<屬性>_<部位>': 星數 }；equip = { 角色: { 部位: 屬性 } } ──
-  star(el, slot) { return this.data.gear[gearId(el, slot)] || 0; },
-  // 取得一件：沒有就 1 星，重複取得升星（滿星後不再變化）
-  addGear(el, slot) {
-    const id = gearId(el, slot), cur = this.data.gear[id] || 0;
-    this.data.gear[id] = Math.min(MAX_STAR, cur + 1);
-    return { el, slot, star: this.data.gear[id], isNew: !cur, maxed: cur >= MAX_STAR };
+  // ── 裝備：每個角色各自的背包。gear = { 角色: { '<屬性>_<部位>': 星數 } }；equip = { 角色: { 部位: 屬性 } } ──
+  star(charId, el, slot) { const g = this.data.gear[charId]; return (g && g[gearId(el, slot)]) || 0; },
+  gearCount(charId) { return Object.keys(this.data.gear[charId] || {}).length; },
+  // 取得一件（給指定角色）：沒有就 1 星，重複取得升星（滿星後不再變化）
+  addGear(charId, el, slot) {
+    const g = this.data.gear[charId] || (this.data.gear[charId] = {}), id = gearId(el, slot), cur = g[id] || 0;
+    g[id] = Math.min(MAX_STAR, cur + 1);
+    return { el, slot, star: g[id], isNew: !cur, maxed: cur >= MAX_STAR };
   },
-  equipped(charId, slot) { const e = this.data.equip[charId]; const el = e && e[slot]; return el && this.star(el, slot) ? el : null; },
+  equipped(charId, slot) { const e = this.data.equip[charId]; const el = e && e[slot]; return el && this.star(charId, el, slot) ? el : null; },
   setEquip(charId, slot, el) {
     const e = this.data.equip[charId] || (this.data.equip[charId] = {});
-    if (el && this.star(el, slot)) e[slot] = el; else delete e[slot];
+    if (el && this.star(charId, el, slot)) e[slot] = el; else delete e[slot];
     this.write();
   },
   // 這個角色帶進戰場的裝備：{ 部位: [屬性, 星數] }
   gearFor(charId) {
     const g = {};
-    for (const s of SLOTS) { const el = this.equipped(charId, s.id); if (el) g[s.id] = [el, this.star(el, s.id)]; }
+    for (const s of SLOTS) { const el = this.equipped(charId, s.id); if (el) g[s.id] = [el, this.star(charId, el, s.id)]; }
     return g;
   },
   // 帶進戰場的加成 = 天賦 + 該角色熟練度 + 裝備
@@ -105,12 +106,12 @@ export const save = {
     const ranksUp = this.addCharXp(res.myChar, xp);
     if (won) d.cleared[res.stage] = Math.max(d.cleared[res.stage] || 0, res.diff + 1);
     d.stats.runs++; if (won) d.stats.wins++; d.stats.kills += res.kills;
-    // 裝備掉落：通關屬性章節才會掉。防具有機率（首領關必掉），武器配件只有首領關機率掉
+    // 裝備掉落（給這一場用的角色）：通關屬性章節才會掉。防具有機率（首領關必掉），武器配件只有首領關機率掉
     const drops = [];
     if (won && res.el && EL[res.el]) {
       const boss = st.kind === 'boss', luck = diff.reward;
-      if (Math.random() < Math.min(1, (boss ? DROP.armorBoss : DROP.armor) * luck)) drops.push(this.addGear(res.el, ARMOR_SLOTS[Math.floor(Math.random() * 3)]));
-      if (boss && Math.random() < Math.min(1, DROP.acc * luck)) drops.push(this.addGear(res.el, 'acc'));
+      if (Math.random() < Math.min(1, (boss ? DROP.armorBoss : DROP.armor) * luck)) drops.push(this.addGear(res.myChar, res.el, ARMOR_SLOTS[Math.floor(Math.random() * 3)]));
+      if (boss && Math.random() < Math.min(1, DROP.acc * luck)) drops.push(this.addGear(res.myChar, res.el, 'acc'));
     }
     this.write();
     return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops };

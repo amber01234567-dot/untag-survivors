@@ -12,7 +12,9 @@ import { SLOT_COLORS } from '../render/renderer.js';
 import { save, DEV } from '../core/save.js';
 import { sfx, setVolume, setMusicVolume } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
-import { icon } from './icons.js';
+import { icon, U } from './icons.js';
+// 裝備圖示：圖還沒載入 / 沒有圖時退回文字圓框
+const gicon = (el, slot, glyph) => `<span class="gic"><img alt="" src="${U('icons/g_' + el + '_' + slot)}" onerror="this.remove()"><span class="gg">${glyph}</span></span>`;
 import { startLogoFire } from './logofire.js';
 
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
@@ -60,10 +62,11 @@ export class Screens {
         case 'roster': this.back = this.cur; this.sel = save.data.char; this.show('roster'); break;
         case 'talents': this.back = this.cur; this.show('talents'); break;
         case 'gear': this.back = this.cur; this.show('gear'); break;
-        case 'equip': { const [el, slot] = v.split('_'), c = save.data.char; if (!save.star(el, slot)) break; save.setEquip(c, slot, save.equipped(c, slot) === el ? null : el); sfx('click'); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
-        case 'equipset': { const c = save.data.char; for (const s of SLOTS) if (save.star(v, s.id)) save.setEquip(c, s.id, v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
+        case 'gchar': save.data.char = v; save.write(); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
+        case 'equip': { const [el, slot] = v.split('_'), c = save.data.char; if (!save.star(c, el, slot)) break; save.setEquip(c, slot, save.equipped(c, slot) === el ? null : el); sfx('click'); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
+        case 'equipset': { const c = save.data.char; for (const s of SLOTS) if (save.star(c, v, s.id)) save.setEquip(c, s.id, v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'unequip': { const c = save.data.char; for (const s of SLOTS) save.setEquip(c, s.id, null); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
-        case 'geartest': { if (v === 'clear') { save.data.gear = {}; save.data.equip = {}; } else for (const e of ELEMENTS) for (const s of SLOTS) { if (v === 'max') save.data.gear[e.id + '_' + s.id] = MAX_STAR; else save.addGear(e.id, s.id); } save.write(); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
+        case 'geartest': { const c = save.data.char; if (v === 'clear') { delete save.data.gear[c]; delete save.data.equip[c]; } else for (const e of ELEMENTS) for (const s of SLOTS) { if (v === 'max') (save.data.gear[c] || (save.data.gear[c] = {}))[e.id + '_' + s.id] = MAX_STAR; else save.addGear(c, e.id, s.id); } save.write(); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'back': this.show(this.back === 'lobby' && ses.lobby.players.length ? 'lobby' : 'home'); break;
         case 'leave': ses.leave(); ses.lobby.players = []; this.show('home'); break;
         case 'tab': this.tab = +v; this.show('lobby'); break;
@@ -219,7 +222,7 @@ export class Screens {
     const cid = save.data.char, c = CHARS[cid], g = save.gearFor(cid), sum = gearSummary(g);
     const pct = (x) => Math.round(x * 100) + '%', stars = (n) => `<span class="gst">${'★'.repeat(n)}${'☆'.repeat(MAX_STAR - n)}</span>`;
     if (sum.set && this._gearKey !== cid + sum.set) { const key = cid + sum.set; loadSet(cid, sum.set).then(() => { this._gearKey = key; if (this.cur === 'gear') this.refresh(); }); }      // 套裝圖載入後重畫一次預覽
-    const slots = SLOTS.map((s) => { const it = g[s.id]; return `<div class="gslot" style="--c:${it ? EL[it[0]].color : 'var(--line)'}"><span class="gg">${s.glyph}</span><div><div class="dim" style="font-size:11px">${s.name}</div>${it ? `<b>${gearName(it[0], s.id)}</b> ${stars(it[1])}` : '<span class="dim">未裝備</span>'}</div></div>`; }).join('');
+    const slots = SLOTS.map((s) => { const it = g[s.id]; return `<div class="gslot" style="--c:${it ? EL[it[0]].color : 'var(--line)'}">${it ? gicon(it[0], s.id, s.glyph) : `<span class="gg">${s.glyph}</span>`}<div><div class="dim" style="font-size:11px">${s.name}</div>${it ? `<b>${gearName(it[0], s.id)}</b> ${stars(it[1])}` : '<span class="dim">未裝備</span>'}</div></div>`; }).join('');
     // 效果說明
     const fx = [];
     if (sum.acc) {
@@ -231,19 +234,20 @@ export class Screens {
     for (const el in sum.adv) fx.push(`<div>對 <b style="color:${EL[BEATS[el]].color}">${EL[BEATS[el]].name}</b> 屬性怪傷害 <b>+${pct(sum.adv[el])}</b>　<span class="dim">（${EL[el].name}裝備）</span></div>`);
     for (const el in sum.resist) fx.push(`<div><b style="color:${EL[el].color}">${EL[el].name}</b> 屬性怪對你的傷害與負面效果 <b>−${pct(Math.min(0.75, sum.resist[el]))}</b></div>`);
     if (sum.set) fx.push(`<div style="color:${EL[sum.set].color}"><b>套裝外觀：${EL[sum.set].set}</b></div>`);
-    const have = Object.keys(save.data.gear).length;
+    const have = save.gearCount(cid);
     const rows = ELEMENTS.map((e) => `<div class="grow" style="--c:${e.color}"><button class="gel" data-a="equipset" data-v="${e.id}" title="整套穿上"><b>${e.name}</b><span>${e.set}</span></button>${SLOTS.map((s) => {
-      const st = save.star(e.id, s.id), on = save.equipped(cid, s.id) === e.id;
-      return `<button class="gitem ${st ? '' : 'none'} ${on ? 'on' : ''}" data-a="equip" data-v="${e.id}_${s.id}" ${st ? '' : 'disabled'}><span class="gg">${s.glyph}</span><span class="gn">${s.name}</span>${st ? stars(st) : '<span class="gst dim">未取得</span>'}${on ? '<i>裝備中</i>' : ''}</button>`;
+      const st = save.star(cid, e.id, s.id), on = save.equipped(cid, s.id) === e.id;
+      return `<button class="gitem ${st ? '' : 'none'} ${on ? 'on' : ''}" data-a="equip" data-v="${e.id}_${s.id}" ${st ? '' : 'disabled'}>${gicon(e.id, s.id, s.glyph)}<span class="gn">${s.name}</span>${st ? stars(st) : '<span class="gst dim">未取得</span>'}${on ? '<i>裝備中</i>' : ''}</button>`;
     }).join('')}</div>`).join('');
     return `<div class="page">
-      <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">裝備</div><div class="dim" style="font-size:12px">背包全角色共用，每個角色各自穿</div><div class="sp"></div>
+      <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">裝備</div><div class="dim" style="font-size:12px">每個角色有自己的裝備：用哪個角色通關，掉的就是那個角色的</div><div class="sp"></div>
         ${DEV ? '<button class="btn small" data-a="geartest" data-v="add">測試：全部 +1 星</button><button class="btn small" data-a="geartest" data-v="max">測試：全部 5 星</button><button class="btn small ghost" data-a="geartest" data-v="clear">清空</button>' : ''}</div>
+      <div class="gchars">${CHAR_LIST.filter((x) => save.isUnlocked(x.id)).map((x) => `<button class="gchar ${x.id === cid ? 'on' : ''}" data-a="gchar" data-v="${x.id}" title="${x.name}">${P(x.id, 44)}<span>${save.gearCount(x.id) || ''}</span></button>`).join('')}</div>
       <div class="gearpage">
         <div class="panel gleft"><div class="gport"><i data-p="${cid}" data-s="150" data-set="${sum.set || ''}"></i></div><div class="nm" style="font-weight:900;font-size:16px;text-align:center">${c.name}</div>
           <div class="gslots">${slots}</div><button class="btn small ghost" data-a="unequip">全部卸下</button>
           <div class="gfx">${fx.join('')}</div></div>
-        <div class="panel gright scroll"><div class="dim" style="font-size:12px;margin-bottom:8px">點裝備穿上／卸下；點左邊屬性名稱可整套穿上。防具穿滿同屬性三件才會改變外觀。重複取得會升星（上限 ${MAX_STAR} 星，每星效果 +15%）。${have ? '' : '<br>目前沒有任何裝備：通關屬性章節有機率掉落防具，首領有機率掉落武器配件。'}</div>
+        <div class="panel gright scroll"><div class="dim" style="font-size:12px;margin-bottom:8px">點裝備穿上／卸下；點左邊屬性名稱可整套穿上。防具穿滿同屬性三件才會改變外觀。重複取得會升星（上限 ${MAX_STAR} 星，每星效果 +15%）。${have ? '' : '<br>${c.name} 目前沒有任何裝備：用 ${c.name} 通關屬性章節有機率掉落防具，首領有機率掉落武器配件。'}</div>
           <div class="ghead"><span></span>${SLOTS.map((s) => `<span>${s.name}</span>`).join('')}</div>${rows}
           <div class="dim" style="font-size:12px;margin-top:10px;line-height:1.8">克制關係：${['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder', 'ice'].map((id) => `<b style="color:${EL[id].color}">${EL[id].name}</b>`).join(' → ')}（左邊克制右邊）<br>克制加成：防具每件 +${pct(ADV.piece)}、同屬性三件 +${pct(ADV.set3)}、武器配件 +${pct(ADV.acc)}、四件全 5 星再 +${pct(ADV.allFive)}（最高 20%）。防具每件抗性 ${pct(RESIST_PER_PIECE)}（隨星數提高）。</div></div>
       </div></div>`;
