@@ -207,8 +207,8 @@ const DRAW = {
 // VIS = 顯示高度相對碰撞半徑的倍率；巢穴依章節主題換圖。
 const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, nest: 2.6, golem: 2.9, champ: 3, warden: 3.1, conecrab: 3, vending: 3, sandbag: 3.1, brute: 2.9, signghost: 3, popup: 2.7,
   tumble: 2.6, vulture: 2.8, dustling: 2.8, shard: 2.8, cactus: 3.1, bison: 2.8, crystal: 2.8, scrapbot: 3, mortar: 2.7, sandworm: 3, wreckdrone: 2.8, rig: 2.7, wormqueen: 3.2, colossus: 3.2,
-  snowling: 2.6, frostwolf: 2.7, pengu: 2.8, icecrab: 2.7, snowman: 3, captain: 3.1 };
-const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7' };
+  snowling: 2.6, frostwolf: 2.7, pengu: 2.8, icecrab: 2.7, snowman: 3, captain: 3.1, icewalrus: 2.8, frostwisp: 2.7, snowowl: 2.8, iceguard: 3, icegolem: 3.2, icequeen: 3.3 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7', icemine: 'nest8', icepalace: 'nest9' };
 const IMG = {};
 let theme = 'slums';
 const cache = new Map();
@@ -217,7 +217,7 @@ export function loadEnemySprites() {
   const names = ENEMY_LIST.map((d) => d.id).filter((id) => id !== 'nest').concat(Object.values(NEST));
   return Promise.all(names.map((n) => new Promise((res) => {
     const im = new Image(); im.onload = () => { IMG[n] = im; res(); }; im.onerror = () => res();
-    im.src = new URL(`../../assets/enemies/${n}.png`, import.meta.url).href;
+    im.src = (typeof window !== 'undefined' && window.__EN && window.__EN[n]) || new URL(`../../assets/enemies/${n}.png`, import.meta.url).href;      // 測試頁把怪物圖內嵌成一個檔
   })));
 }
 export function enemySprite(idx, frame, flash) {

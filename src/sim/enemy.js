@@ -341,6 +341,56 @@ const AI = {
       for (const q of W.alive()) { warn(W, q.x, q.y, 105, 1.0, e.dmg * 1.2); if (p2) warn(W, q.x + W.rng.range(-140, 140), q.y + W.rng.range(-140, 140), 105, 1.3, e.dmg * 1.2); }
     }
   },
+  // 冰晶巨像：震地衝擊圈、水晶尖刺直線、召喚冰靈；半血後落石更多
+  boss_icegolem(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    seek(W, e, dt, sp * (p2 ? 1.2 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.5 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 3.0 : 4.0; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 震地：自己腳下 + 向外兩圈
+      warn(W, e.x, e.y, 170, 0.9, e.dmg * 1.4); W.emit('sh', 6);
+      for (let ring = 1; ring <= (p2 ? 3 : 2); ring++) ai.q.push({ t: 0.5, fn: () => { const n = 6 + ring * 2, rr = 150 + ring * 150; for (let i = 0; i < n; i++) warn(W, e.x + Math.cos(i * TAU / n + ring) * rr, e.y + Math.sin(i * TAU / n + ring) * rr, 86, 0.8, e.dmg * 1.1); W.emit('sh', 5); } });
+    } else if (m === 2) {                        // 水晶尖刺：朝每個玩家一條直線
+      for (const q of W.alive()) { const a = Math.atan2(q.y - e.y, q.x - e.x); for (let k = 0; k < (p2 ? 3 : 1); k++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: a + (k - (p2 ? 1 : 0)) * 0.35, len: 620, w: 54, delay: 0.95, dur: 1.25, tick: 9, dmg: e.dmg * 1.3 }); }
+      W.emit('sh', 4);
+    } else if (m === 3) {                        // 水晶碎片彈幕
+      const volley = (off, sp2) => { for (let i = 0; i < 12; i++) shootAt(W, e, 'e_ice', off + i * TAU / 12, sp2, e.dmg * 0.55, { r: 11 }); };
+      volley(0, 170); ai.q.push({ t: 0.45, fn: () => volley(0.26, 200) }); ai.q.push({ t: 0.45, fn: () => volley(0.13, 230) }); if (p2) ai.q.push({ t: 0.45, fn: () => volley(0.39, 200) });
+    } else {                                     // 召喚冰靈 + 落石
+      for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 2 ? 'frostwisp' : 'snowling', i * 1.1, 95);
+      for (const q of W.alive()) for (let i = 0; i < (p2 ? 4 : 2); i++) warn(W, q.x + (i ? W.rng.range(-160, 160) : 0), q.y + (i ? W.rng.range(-160, 160) : 0), 96, 1.0 + i * 0.25, e.dmg * 1.2);
+    }
+  },
+  // 冰雪女王：瞬移、扇形冰槍、暴風雪（大量冰柱）、召喚雪鴞與衛兵；半血後冰槍變成全方位
+  boss_icequeen(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    // 保持中距離：太近後退、太遠靠近
+    if (d > 380) seek(W, e, dt, sp, p.x, p.y); else if (d < 230) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.8 * dt, (e.y - p.y) / d * sp * 0.8 * dt, e.r * 0.6);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.6 : 3.5; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    const fan = (n, spread, sp2) => { const a = Math.atan2(p.y - e.y, p.x - e.x); for (let i = 0; i < n; i++) shootAt(W, e, 'e_ice', a + (i - (n - 1) / 2) * spread, sp2, e.dmg * 0.6, { r: 10 }); };
+    if (m === 1) { fan(7, 0.16, 250); ai.q.push({ t: 0.4, fn: () => fan(9, 0.14, 280) }); if (p2) ai.q.push({ t: 0.4, fn: () => { for (let i = 0; i < 18; i++) shootAt(W, e, 'e_ice', i * TAU / 18, 210, e.dmg * 0.55, { r: 10 }); } }); }
+    else if (m === 2) {                          // 瞬移到玩家附近，落點爆出冰環
+      const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 260, ty = p.y + Math.sin(a) * 260;
+      if (!solidAt(W.L, tx, ty)) { W.emit('r', e.x | 0, e.y | 0, 90, 1); e.x = tx; e.y = ty; W.emit('r', e.x | 0, e.y | 0, 120, 1); }
+      warn(W, e.x, e.y, 180, 0.8, e.dmg * 1.3);
+      ai.q.push({ t: 0.9, fn: () => { for (let i = 0; i < 14; i++) shootAt(W, e, 'e_ice', i * TAU / 14, 220, e.dmg * 0.55, { r: 10 }); } });
+    } else if (m === 3) {                        // 暴風雪：連續幾波冰柱追著每個玩家
+      for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.4 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-50, 50), q.y + W.rng.range(-50, 50), 92, 0.9, e.dmg * 1.1); warn(W, q.x + W.rng.range(-190, 190), q.y + W.rng.range(-190, 190), 92, 1.1, e.dmg * 1.1); } } });
+      W.emit('sh', 5);
+    } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'iceguard' : 'snowowl', i * 1.2, 110);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

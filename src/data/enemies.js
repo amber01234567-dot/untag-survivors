@@ -75,3 +75,9 @@ E('pengu', { name: '企鵝水兵', hp: 90, speed: 78, dmg: 18, r: 13, xp: 5, ai:
 E('icecrab', { name: '冰晶蟹', hp: 72, speed: 58, dmg: 13, r: 14, xp: 4, ai: 'shooter', proj: 'e_ice', shotCd: 2.6, shotRange: 370, shotSpeed: 230 });
 E('snowman', { name: '擲彈雪人', hp: 165, speed: 42, dmg: 20, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 450 });
 E('captain', { name: '冰霜船長', hp: 74000, speed: 56, dmg: 27, r: 48, xp: 900, ai: 'boss_captain', kbRes: 1, boss: true });
+E('icewalrus', { name: '冰甲海象', hp: 420, speed: 58, dmg: 26, r: 22, xp: 13, ai: 'charger', kbRes: 0.9 });
+E('frostwisp', { name: '冰靈', hp: 44, speed: 112, dmg: 21, r: 13, xp: 3, ai: 'exploder', boomR: 90, fly: true });
+E('snowowl', { name: '雪鴞', hp: 50, speed: 100, dmg: 13, r: 13, xp: 4, ai: 'shooter', fly: true, proj: 'e_ice', shotCd: 2.6, shotRange: 380, shotSpeed: 240 });
+E('iceguard', { name: '冰甲衛兵', hp: 320, speed: 48, dmg: 21, r: 19, xp: 11, ai: 'burst', kbRes: 0.85, proj: 'e_ice', shotCd: 4.0, shotSpeed: 180, shotCount: 8 });
+E('icegolem', { name: '冰晶巨像', hp: 72000, speed: 50, dmg: 28, r: 50, xp: 950, ai: 'boss_icegolem', kbRes: 1, boss: true });
+E('icequeen', { name: '冰雪女王', hp: 74000, speed: 62, dmg: 29, r: 44, xp: 1000, ai: 'boss_icequeen', kbRes: 1, boss: true });

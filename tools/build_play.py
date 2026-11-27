@@ -14,5 +14,7 @@ ui = {}
 for d in ('icons', 'skills'):
     for f in sorted(glob.glob(os.path.join(ROOT, 'assets/ui', d, '*.png'))):
         ui[d + '/' + os.path.basename(f)[:-4]] = 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode()
-open(os.path.join(ROOT, 'dist/ui-inline.js'), 'w').write('window.__UI = ' + json.dumps(ui) + ';')
+en = {os.path.basename(f)[:-4]: 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode() for f in sorted(glob.glob(os.path.join(ROOT, 'assets/enemies/*.png')))}
+open(os.path.join(ROOT, 'dist/ui-inline.js'), 'w').write('window.__UI = ' + json.dumps(ui) + ';\nwindow.__EN = ' + json.dumps(en) + ';')
+print('內嵌怪物圖', len(en))
 print('內嵌圖示', len(ui))

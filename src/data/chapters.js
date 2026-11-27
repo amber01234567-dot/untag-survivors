@@ -216,6 +216,50 @@ export const CHAPTERS = [
         pool: [['snowling', 5], ['frostwolf', 4], ['pengu', 2], ['icecrab', 2], ['snowman', 1]], objs: [kill(120), boss('captain')] },
     ],
   },
+  {
+    id: 8, series: 3, name: '冰晶礦坑', sub: 'CRYSTAL MINE', theme: 'icemine', outdoor: true, hazard: 'icicle',
+    shapes: { combat: [['cave', 4], ['cross', 2], ['islands', 1]], final: 'cave' },      // 空間架構：不規則洞窟、十字坑道
+    intro: '冰川底下有一座沒人敢回去的礦坑。水晶還在發光，礦工的燈也還亮著——只是提燈的已經不是人了。',
+    devices: [['icebomb', 4], ['brazier', 3]],
+    nodes: [
+      { id: '8-1', name: '礦坑入口', kind: 'normal', layout: 'zig', diff: 4.05, pos: [0, 1], next: ['8-2', '8-3'], coins: 980,
+        pool: [['snowling', 5], ['frostwolf', 4], ['frostwisp', 3], ['icecrab', 2]], objs: [kill(80), survive(55), kill(110)] },
+      { id: '8-2', name: '水晶礦脈', kind: 'normal', layout: 'hub', diff: 4.12, pos: [1, 0.3], next: ['8-4'], coins: 1020,
+        pool: [['snowling', 5], ['frostwisp', 4], ['icecrab', 3], ['icewalrus', 1]], objs: [kill(70), nests(3), survive(55), elite('icewalrus')] },
+      { id: '8-3', name: '廢棄軌道', kind: 'normal', layout: 'trident', diff: 4.16, pos: [1, 1.7], next: ['8-4', '8-5'], coins: 1040,
+        pool: [['frostwolf', 5], ['frostwisp', 3], ['pengu', 2], ['snowman', 2]], objs: [kill(70), survive(55), nests(3), kill(115)] },
+      { id: '8-4', name: '坍方區', kind: 'normal', layout: 'ring', diff: 4.25, pos: [2, 0.7], next: ['8-6'], coins: 1100,
+        pool: [['snowling', 4], ['frostwisp', 4], ['icecrab', 3], ['icewalrus', 2], ['snowman', 1]], objs: [kill(70), nests(3), survive(55), elite('icewalrus'), kill(120)] },
+      { id: '8-5', name: '藏寶坑道', kind: 'bonus', layout: 'arena', diff: 4.2, pos: [2, 2], next: ['8-6'], coins: 720,
+        pool: [['snowling', 6], ['frostwisp', 3], ['frostwolf', 3]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '8-6', name: '升降機井', kind: 'elite', layout: 'cross', diff: 4.35, pos: [3, 1.2], next: ['8-B'], coins: 1250,
+        pool: [['frostwolf', 4], ['frostwisp', 4], ['icecrab', 3], ['icewalrus', 2], ['snowman', 2]], objs: [nests(3), elite('icewalrus'), survive(60), kill(120)] },
+      { id: '8-B', name: '晶核深處', kind: 'boss', layout: 'gauntlet', diff: 4.5, pos: [4, 1], next: [], coins: 1950,
+        pool: [['snowling', 5], ['frostwisp', 4], ['icecrab', 2], ['icewalrus', 1]], objs: [kill(120), boss('icegolem')] },
+    ],
+  },
+  {
+    id: 9, series: 3, name: '極光冰宮', sub: 'AURORA PALACE', theme: 'icepalace', outdoor: true, hazard: 'icicle',
+    shapes: { combat: [['hall', 4], ['round', 2], ['cross', 1]], final: 'hall' },      // 空間架構：有柱列的方正大廳、圓形舞廳
+    intro: '極光底下的宮殿沒有一扇門是鎖的。女王在等客人——她已經很久沒有新的冰雕了。',
+    devices: [['brazier', 4], ['icebomb', 3]],
+    nodes: [
+      { id: '9-1', name: '冰雕庭園', kind: 'normal', layout: 'snake', diff: 4.35, pos: [0, 1], next: ['9-2', '9-3'], coins: 1150,
+        pool: [['snowling', 5], ['frostwolf', 4], ['snowowl', 3], ['iceguard', 1]], objs: [kill(80), survive(55), kill(115)] },
+      { id: '9-2', name: '鏡廳', kind: 'normal', layout: 'ring', diff: 4.42, pos: [1, 0.3], next: ['9-4'], coins: 1200,
+        pool: [['frostwisp', 4], ['snowowl', 4], ['iceguard', 2], ['pengu', 2]], objs: [kill(70), nests(3), survive(55), elite('iceguard')] },
+      { id: '9-3', name: '衛兵迴廊', kind: 'normal', layout: 'hub', diff: 4.46, pos: [1, 1.7], next: ['9-4', '9-5'], coins: 1220,
+        pool: [['frostwolf', 4], ['snowowl', 3], ['iceguard', 2], ['icewalrus', 1], ['snowman', 2]], objs: [kill(70), survive(55), nests(3), kill(120)] },
+      { id: '9-4', name: '宴會大廳', kind: 'normal', layout: 'trident', diff: 4.55, pos: [2, 0.7], next: ['9-6'], coins: 1300,
+        pool: [['snowling', 4], ['frostwisp', 3], ['snowowl', 3], ['iceguard', 2], ['icewalrus', 2]], objs: [kill(70), nests(3), survive(55), elite('iceguard'), kill(125)] },
+      { id: '9-5', name: '寶物庫', kind: 'bonus', layout: 'arena', diff: 4.5, pos: [2, 2], next: ['9-6'], coins: 850,
+        pool: [['snowling', 6], ['snowowl', 3], ['frostwolf', 3]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '9-6', name: '王座前廳', kind: 'elite', layout: 'cross', diff: 4.65, pos: [3, 1.2], next: ['9-B'], coins: 1480,
+        pool: [['frostwolf', 4], ['snowowl', 4], ['iceguard', 3], ['icewalrus', 2], ['frostwisp', 3]], objs: [nests(3), elite('iceguard'), survive(60), kill(125)] },
+      { id: '9-B', name: '極光王座', kind: 'boss', layout: 'gauntlet', diff: 4.8, pos: [4, 1], next: [], coins: 2300,
+        pool: [['snowling', 5], ['snowowl', 4], ['iceguard', 2], ['frostwisp', 3]], objs: [kill(125), boss('icequeen')] },
+    ],
+  },
 ];
 
 export const STAGES = {};
