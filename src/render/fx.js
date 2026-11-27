@@ -83,7 +83,7 @@ export class Fx {
   sfx(n) { if (n && this.onSfx) this.onSfx(n); }
 
   update(dt) {
-    this.shake = Math.max(0, this.shake - dt * 40); this.budget = 110;
+    this.shake = Math.max(0, this.shake - dt * 40); this.budget = 110; this.t = (this.t || 0) + dt;
     const upd = (arr) => { let j = 0; for (let i = 0; i < arr.length; i++) { const o = arr[i]; o.life -= dt; if (o.life > 0) arr[j++] = o; } arr.length = j; };
     for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 1 - 3 * dt; p.vy = p.vy * (1 - 3 * dt) + p.grav * dt; }
     for (const t of this.texts) { t.y += t.vy * dt; t.vy *= 1 - 2.5 * dt; }
@@ -139,6 +139,13 @@ export class Fx {
     for (const l of this.lines) {
       const k = l.life / l.max;
       g.globalAlpha = k;
+      if (l.st >= 5 && l.st <= 7) {            // 進化：聖療光鏈（5 金鏈傷害 / 6 綠鏈治療）、母艦雷射（7）
+        const col = l.st === 5 ? '#ffd76b' : l.st === 6 ? '#7dffb0' : '#7cf6ff', dx = l.x2 - l.x1, dy = l.y2 - l.y1, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+        g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 10; g.lineWidth = l.st === 7 ? 4 : 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(l.x1, l.y1);
+        if (l.st === 7) g.lineTo(l.x2, l.y2); else for (let i = 1; i <= 10; i++) { const w2 = Math.sin(i * 1.3 + l.seed + this.t * 14) * 7 * Math.sin(i / 10 * Math.PI); g.lineTo(l.x1 + dx * i / 10 + nx * w2, l.y1 + dy * i / 10 + ny * w2); }
+        g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.stroke(); g.shadowBlur = 0; g.lineCap = 'butt';
+        if (l.st === 7) { g.fillStyle = col; g.beginPath(); g.arc(l.x2, l.y2, 7 * k, 0, 6.283); g.fill(); }
+      } else
       if (l.st === 4) {                        // 進化：死神狙擊的貫穿光線
         g.lineCap = 'round'; g.shadowColor = '#ff2a4a'; g.shadowBlur = 18;
         g.strokeStyle = '#ff2a4a'; g.lineWidth = 24 * k; g.beginPath(); g.moveTo(l.x1, l.y1); g.lineTo(l.x2, l.y2); g.stroke();

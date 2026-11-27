@@ -2,7 +2,7 @@
 // 新角色的技能直接在這裡加一個 (W, p) => {...} 即可，盡量用現成的積木（aoe / addZone / shoot / dash / addBuff）。
 import { TAU, dist2 } from '../core/util.js';
 import { addBuff, dash, moveDir } from './player.js';
-import { swing, beamUpd, lob, plantMine, throwDecoy, fissure } from './weapons.js';
+import { swing, beamUpd, lob, plantMine, throwDecoy, fissure, spawnKebab } from './weapons.js';
 import { solidAt } from './levelgen.js';
 
 const wdmg = (p) => p.weapons[0].s.dmg;
@@ -162,6 +162,82 @@ export const SKILLS = {
         onStart: (W3, z) => { W3.aoe(z.x, z.y, r, d * m, q, { stun: 1.6, kb: 300, fx: 9 }); W3.emit('r', z.x | 0, z.y | 0, r, 3); W3.emit('sh', 14); } }));
       q.shield = Math.max(q.shield, q.st.maxHp * 0.3);
     } };
+  },
+  // 賴姐姐・聖光方舟：全隊復活 / 回滿 / 無敵，光鏈灼燒周圍所有敵人
+  lj_ark(W, p) {
+    for (const q of W.players) { if (q.gone) continue; if (q.down) { W.revive(q, 1, true); W.emit('t', q.x | 0, (q.y - 60) | 0, '聖光方舟！', 2); } W.heal(q, q.st.maxHp, p); q.invuln = Math.max(q.invuln, 4); q.shield = Math.max(q.shield, q.st.maxHp * 0.3); if (q !== p) W.emit('l', p.x | 0, (p.y - 18) | 0, q.x | 0, (q.y - 18) | 0, 6); W.emit('r', q.x | 0, q.y | 0, 140, 2); }
+    W.addZone({ kind: 'heal', owner: p, follow: p, r: 320, dur: 8, tick: 0.5, heal: 18, buff: { t: 1, regen: 3 } });
+    const d = wdmg(p);
+    channel(W, p, 4, 0.2, (W2) => { for (const e of W2.enemiesIn(p.x, p.y, 520).slice(0, 14)) { W2.strike(p, e, d * 2.2, { dot: 20, dotDur: 3, quiet: W2.rng.next() < 0.5 }); W2.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); } });
+    W.emit('sh', 10);
+  },
+  // 羊弟弟・烤肉盛宴：超大烤肉塔，肉片向四面八方狂射，隊友大量回血並增傷
+  yd_feast(W, p) {
+    const s = p.weapons[0].s;
+    spawnKebab(W, p, p.x + Math.cos(p.aim) * 60, p.y + Math.sin(p.aim) * 60, Object.assign({}, s, { dmg: s.dmg * 2.2 }), 8, 1);
+    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; const g = W.drop('k', p.x + Math.cos(a) * 90, p.y + Math.sin(a) * 90, 30); if (g) { g.src = p; g.buff = 0.2; g.bdmg = 0.15; } }
+    W.emit('sh', 10); W.emit('r', p.x | 0, p.y | 0, 340, 2);
+  },
+  // 跳跳・黑洞舞池：巨型重力球把全場敵人吸成一團後引爆
+  tt_dance(W, p) {
+    const c = W.cluster(p.x, p.y, 480, 200) || { x: p.x + Math.cos(p.aim) * 150, y: p.y + Math.sin(p.aim) * 150 }, d = wdmg(p);
+    W.addZone({ kind: 'gravball', owner: p, x: c.x, y: c.y, r: 470, dur: 3.2, tick: 0.1, pull: 330, dmg: d * 0.12, aux: 1, hitOpt: { quiet: true, slow: 0.6, slowDur: 0.3 },
+      onEnd: (W2, g) => { W2.aoe(g.x, g.y, 300, d * 9, p, { fx: 12, kb: 600, stun: 2 }); W2.emit('sh', 22); W2.emit('a', 'boom'); for (let i = 0; i < 8; i++) { const a = i * TAU / 8; W2.aoe(g.x + Math.cos(a) * 200, g.y + Math.sin(a) * 170, 110, d * 2.5, p, { fx: 12 }); } } });
+  },
+  // 起秋・火箭衝線：數秒內無敵狂飆，衝撞大增、沿路著火，結束時大爆炸；全隊增幅
+  qq_finish(W, p) {
+    const d = wdmg(p);
+    addBuff(p, 'finish', { t: 5, speed: 0.9, ult: 1, onEnd(W2, q) { if (q.down) return; W2.aoe(q.x, q.y, 300, d * 9, q, { kb: 500, stun: 1.5, fx: 1 }); W2.emit('sh', 20); W2.emit('a', 'boom'); } });
+    p.invuln = Math.max(p.invuln, 5);
+    allies(W, p, 0, (q) => { addBuff(q, 'amp', { t: 8, dmg: 0.5, haste: 0.35, ult: 1 }); W.heal(q, q.st.maxHp * 0.2, p); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
+    W.emit('sh', 8);
+  },
+  // 貓貓蟲・母艦主砲：充能後射出跟著瞄準方向緩慢轉動的主砲光束
+  mm_cannon(W, p) {
+    const d = wdmg(p);
+    addBuff(p, 'swarm', { t: 4.4, ult: 1 });
+    W.addZone({ kind: 'beam', owner: p, follow: p, oy: -60, a: p.aim, len: 1100, w: 130, delay: 0.7, dur: 4.2, tick: 0.1, dmg: d * 0.42, burst: 1, turn: 1.6, hitOpt: { kb: 30 },
+      upd(W2, z, dt) { if (p.down) { z.dead = true; return; } z.a += ((((p.aim - z.a) % TAU) + TAU + Math.PI) % TAU - Math.PI) * Math.min(1, dt * 1.6); z.x = p.x - 34 * (p.face || 1) + Math.cos(z.a) * 20; z.y = p.y - 70 + Math.sin(z.a) * 20; if (z.t < z.delay) return; z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); } } });
+    channel(W, p, 4.2, 0.3, (W2) => W2.emit('sh', 4));
+  },
+  // 小順子・雙王降臨：虎爺巨大化，獅王同時出場
+  xs_twin(W, p) {
+    const d = wdmg(p);
+    addBuff(p, 'twin', { t: 14, ult: 1 });
+    minion(W, p, 'lion', p.x + Math.cos(p.aim) * 60, p.y + Math.sin(p.aim) * 60, { life: 14, speed: 330, dmg: d * 2.6, cd: 0.6, aoe: 95, r: 30 });
+    allies(W, p, 0, (q) => { W.heal(q, q.st.maxHp * 0.3, p); W.emit('r', q.x | 0, q.y | 0, 100, 2); });
+    W.aoe(p.x, p.y, 260, d * 3, p, { stun: 1.5, kb: 300, fx: 9 }); W.emit('sh', 14);
+  },
+  // 老瑾・土豪金坦克：純金禮車坦克，砲管噴錢袋，一邊開一邊撒錢，靠近的隊友獲得增益
+  lk_goldtank(W, p) {
+    const d = p.weapons[0].s.boomDmg;
+    const tank = W.addSummon({ kind: 'goldtank', owner: p, x: p.x + Math.cos(p.aim) * 80, y: p.y + Math.sin(p.aim) * 80, life: 14, bt: 0.4 });
+    tank.ct = 1; tank.at = 0;
+    W.addDecoy(tank.x, tank.y, 340, 14, tank);
+    tank.upd = (W2, m, dt) => {
+      const gx = p.x + Math.cos(p.aim) * 110, gy = p.y + Math.sin(p.aim) * 110, dx = gx - m.x, dy = gy - m.y, dd = Math.hypot(dx, dy) || 1;
+      if (dd > 70) { const mv = Math.min(dd - 70, 170 * dt); m.x += dx / dd * mv; m.y += dy / dd * mv; m.st = 1; } else m.st = 0;
+      if (Math.abs(dx) > 6) m.face = dx > 0 ? 1 : -1;
+      W2.hash.query(m.x, m.y, 60, (e) => { const ot = e.ot || (e.ot = {}); if ((ot.gt || 0) > W2.time) return; ot.gt = W2.time + 0.5; W2.strike(p, e, d * 0.9, { kb: 260, sx: m.x, sy: m.y }); });
+      m.bt -= dt; m.ct -= dt; m.at -= dt;
+      if (m.bt <= 0) { const c = W2.cluster(m.x, m.y, 480, 100); if (c) { m.bt = 0.75; const tx = c.x, ty = c.y; m.face = tx >= m.x ? 1 : -1; lob(W2, p, 'moneybag', tx, ty, 0.5, (W3) => { W3.aoe(tx, ty, 120, d * 1.5, p, { fx: 1, kb: 220 }); W3.emit('sh', 4); if (W3.rng.chance(0.5)) W3.drop('c', tx, ty, 3); }, m.x + m.face * 40, m.y - 40); } else m.bt = 0.3; }
+      if (m.ct <= 0) { m.ct = 1.1; W2.drop('c', m.x + W2.rng.range(-50, 50), m.y + W2.rng.range(-20, 40), 2); }
+      if (m.at <= 0) { m.at = 0.5; W2.playersIn(m.x, m.y, 260, (q) => addBuff(q, 'gold', { t: 1.2, dmg: 0.35, haste: 0.2 })); }
+    };
+    W.emit('sh', 12);
+  },
+  // 農夫哥哥・真龍吐息：巨龍橫越畫面，沿路噴火並留下燃燒地面；全隊增傷
+  nf_breath(W, p) {
+    const d = wdmg(p), dir = Math.cos(p.aim) >= 0 ? 1 : -1, x0 = p.x - dir * 760, y0 = p.y;
+    let dropT = 0;
+    W.addZone({ kind: 'dragonpass', owner: p, x: x0, y: y0, r: 190, a: dir > 0 ? 0 : Math.PI, dur: 2.6, tick: 0.1, dmg: d * 1.4, hitOpt: { dot: 18, dotDur: 4, kb: 60, quiet: false },
+      upd(W2, z, dt) {
+        z.x = x0 + dir * 1520 * Math.min(1, z.t / z.dur); z.y = y0 + Math.sin(z.t * 3.2) * 60;
+        z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); }
+        dropT -= dt; if (dropT <= 0) { dropT = 0.22; if (!solidAt(W2.L, z.x, z.y)) W2.addZone({ kind: 'dragonfire', owner: p, x: z.x, y: z.y, r: 110, dur: 6, tick: 0.4, dmg: d * 0.35, hitOpt: { dot: 14, dotDur: 3, quiet: true } }); }
+      } });
+    allies(W, p, 0, (q) => { addBuff(q, 'judgment', { t: 10, dmg: 0.5, ult: 1 }); W.emit('r', q.x | 0, q.y | 0, 110, 1); });
+    channel(W, p, 2.6, 0.3, (W2) => W2.emit('sh', 6));
   },
   // ═════ 一般技能與寶具 ═════
   // ── 老劉 ──

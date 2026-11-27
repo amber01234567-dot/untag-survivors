@@ -308,6 +308,28 @@ export const SPRITE_SHEETS = {
    254
   ]
  },
+ "laijie_evo": {
+  "px": 250,
+  "walk": [
+   274,
+   255
+  ],
+  "attack": [
+   438,
+   254
+  ]
+ },
+ "laojin_evo": {
+  "px": 250,
+  "walk": [
+   231,
+   254
+  ],
+  "attack": [
+   286,
+   254
+  ]
+ },
  "laoliu_evo": {
   "px": 250,
   "walk": [
@@ -317,6 +339,17 @@ export const SPRITE_SHEETS = {
   "attack": [
    375,
    286
+  ]
+ },
+ "maomaochong_evo": {
+  "px": 250,
+  "walk": [
+   243,
+   254
+  ],
+  "attack": [
+   242,
+   254
   ]
  },
  "moumou_evo": {
@@ -341,6 +374,28 @@ export const SPRITE_SHEETS = {
    254
   ]
  },
+ "nongfu_evo": {
+  "px": 250,
+  "walk": [
+   230,
+   255
+  ],
+  "attack": [
+   292,
+   255
+  ]
+ },
+ "qiqiu_evo": {
+  "px": 250,
+  "walk": [
+   295,
+   255
+  ],
+  "attack": [
+   356,
+   255
+  ]
+ },
  "shaonian_evo": {
   "px": 250,
   "walk": [
@@ -363,6 +418,17 @@ export const SPRITE_SHEETS = {
    255
   ]
  },
+ "tiaotiao_evo": {
+  "px": 250,
+  "walk": [
+   189,
+   255
+  ],
+  "attack": [
+   281,
+   254
+  ]
+ },
  "tingge_evo": {
   "px": 250,
   "walk": [
@@ -377,12 +443,12 @@ export const SPRITE_SHEETS = {
  "tk_evo": {
   "px": 250,
   "walk": [
-   243,
-   255
+   260,
+   254
   ],
   "attack": [
-   283,
-   255
+   288,
+   254
   ]
  },
  "wangchuan_evo": {
@@ -407,15 +473,37 @@ export const SPRITE_SHEETS = {
    267
   ]
  },
- "yingzhang_evo": {
+ "xiaoshunzi_evo": {
   "px": 250,
   "walk": [
-   201,
+   131,
    255
   ],
   "attack": [
-   247,
+   163,
+   254
+  ]
+ },
+ "yangdidi_evo": {
+  "px": 250,
+  "walk": [
+   198,
+   257
+  ],
+  "attack": [
+   234,
+   258
+  ]
+ },
+ "yingzhang_evo": {
+  "px": 250,
+  "walk": [
+   237,
    255
+  ],
+  "attack": [
+   269,
+   254
   ]
  }
 };

@@ -1,0 +1,4 @@
+Use your image generation tool to create ONE image and save it as evo_goldtank.png in the current directory. Do not write code to draw it; generate it with the image tool.
+Image: a 2D game visual effect / object sprite: a ridiculous solid-GOLD stretch-limousine TANK seen from the side, facing right: a long shiny gold tank with limousine windows, tank tracks, a big gold cannon barrel with banknotes sticking out, a hound in sunglasses driving from the top hatch and a white waving lucky-cat statue on the turret. Funny and flashy. Wide landscape 2:1.
+Art style: 2D ANIME / cartoon animation VFX style: bold shapes, clean dark or coloured outlines, CEL SHADING with 2-3 flat tones, hand-drawn anime effect look. NOT 3D, NOT photorealistic, no soft airbrush glow. Two references are attached for the game's style. The background MUST be fully transparent (alpha 0): no backdrop, no panel, no ground plane, no text.
+After saving, print the file path.

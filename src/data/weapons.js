@@ -405,10 +405,10 @@ EVO('runes', 'lancearray', 'wisdom', {
   mod: { m: { dmg: 1.9, speed: 2.2, life: 0.45 }, s: { count: 3, spread: 0.26, homing: 0, pierce: 99, projR: 12, back: 26 } },
 });
 EVO('wisps', 'netherskull', 'regen', {
-  name: '幽冥骷髏', glyph: '骷', beh: 'skull',
-  evoDesc: '小鬼火合體成一顆巨大的幽火綠骷髏，自己在場上游走啃咬敵人，咬死敵人時為主人回血',
-  ult: { id: 'tk_maw', name: '幽冥巨口', desc: '巨大的幽綠骷髏張口把範圍內的敵人吸過來一口吞下，血量低的敵人直接被吞噬。' },
-  mod: { m: { dmg: 3.0 }, s: { biteCd: 0.34, biteR: 74, skullSpeed: 300, leash: 430 } },
+  name: '鬼火大王', glyph: '王', beh: 'skull',
+  evoDesc: '小鬼火合體成一隻圓滾滾的大鬼火，自己在場上追著敵人啃咬；頭上的數字每咬一口就重抽一次，數字越大咬得越痛，咬死敵人時為主人回血',
+  ult: { id: 'tk_maw', name: '大口吞吞', desc: '大鬼火變得超級巨大，張開嘴把範圍內的敵人吸過來一口吞下，血量低的敵人直接被吞掉。' },
+  mod: { m: { dmg: 1.4 }, s: { biteCd: 0.34, biteR: 74, skullSpeed: 300, leash: 430 } },
 });
 EVO('pistol', 'twinbits', 'swift', {
   name: '浮游雙槍', glyph: '浮',
@@ -433,6 +433,55 @@ EVO('siege', 'titan', 'vigor', {
   evoDesc: '機甲整體變大換色：每一記重拳落地都向外擴散一圈衝擊波，護甲與生命再提升',
   ult: { id: 'mou_titan', name: '泰坦墜擊', desc: '機甲高高跳起砸下，衝擊波向外擴散三層並震暈敵人。' },
   mod: { m: { dmg: 1.25, hpMul: 1.12, range: 1.15 }, a: { armorAdd: 3 }, s: { titan: 1, combo: 2 } },
+});
+EVO('syringe', 'holychain', 'mend', {
+  name: '聖療光鏈', glyph: '鏈', beh: 'chain',
+  evoDesc: '針筒投射變成持續的光鏈：同時連住附近數個敵人造成傷害與毒素，另一端連著血量最低的隊友持續補血',
+  ult: { id: 'lj_ark', name: '聖光方舟', desc: '光鏈連結全隊：復活倒地的隊友、回滿生命並給予短暫無敵，同時灼燒周圍所有敵人。' },
+  mod: { m: { dmg: 0.75 }, s: { chainN: 3, chainR: 330, chainTick: 0.22 } },
+});
+EVO('skewer', 'shawarma', 'vigor', {
+  name: '旋轉沙威瑪塔', glyph: '塔',
+  beh: 'tower',
+  evoDesc: '把一座旋轉的巨型烤肉塔插在地上：肉片不斷削飛出去攻擊敵人，塔附近的隊友持續回血，還會定期掉出烤肉',
+  ult: { id: 'yd_feast', name: '烤肉盛宴', desc: '召喚一座超大烤肉塔開宴會：肉片向四面八方狂射，周圍隊友大量回血並提升攻擊力。' },
+  mod: { m: { dmg: 1.0 }, s: { towerCd: 9, towerDur: 8.5, sliceCd: 0.2, sliceR: 340, towerHeal: 3.5, towerR: 190 } },
+});
+EVO('mines', 'gravball', 'area', {
+  name: '重力派對球', glyph: '球',
+  evoDesc: '地雷變成迪斯可重力球：被觸發後先把周圍敵人吸過來，再一口氣炸開',
+  ult: { id: 'tt_dance', name: '黑洞舞池', desc: '丟出一顆巨型重力球，把全場敵人吸成一團後引爆。' },
+  mod: { m: { dmg: 1.0, r: 1.25, cd: 1.2 }, s: { gravity: 1, cluster: 0 } },
+});
+EVO('cheer', 'rocketkart', 'swift', {
+  name: '火箭蕉號', glyph: '箭',
+  evoDesc: '卡丁車裝上火箭推進器：衝撞更痛、氮氣衝刺更頻繁，行駛時車尾持續拖出一條燃燒的軌跡',
+  ult: { id: 'qq_finish', name: '火箭衝線', desc: '火箭全開高速狂飆數秒：無敵、衝撞傷害大增，沿路全部著火，結束時原地大爆炸；全隊同時獲得增幅。' },
+  mod: { m: { dmg: 1.45, ramR: 1.2, boostCd: 0.6, boostDist: 1.3 }, s: { trail: 1, exhaust: 0.28 } },
+});
+EVO('drones', 'mothership', 'wisdom', {
+  name: '母艦協議', glyph: '艦', beh: 'mothership',
+  evoDesc: '小無人機合體成一艘懸浮母艦：用追蹤雷射持續照射敵人，並定期向敵群投下炸彈',
+  ult: { id: 'mm_cannon', name: '母艦主砲', desc: '母艦充能後射出一道貫穿全場的主砲光束，會跟著你的瞄準方向緩慢轉動。' },
+  mod: { m: { dmg: 13 }, s: { laserTick: 0.12, bombCd: 2.2, bombR: 90, bombDmg: 5 } },
+});
+EVO('cats', 'tiger', 'mend', {
+  name: '虎爺降臨', glyph: '虎', beh: 'tiger',
+  evoDesc: '小貓合體成一隻大老虎：對敵群撲擊造成範圍傷害與流血，呼嚕光環變大、治療更強',
+  ult: { id: 'xs_twin', name: '雙王降臨', desc: '虎爺變得更巨大更兇猛，獅王同時出場並肩作戰。' },
+  mod: { m: { dmg: 2.0, cd: 0.9, purrHeal: 2.0, purrR: 1.4, leash: 1.2, speed: 1.25 }, s: { count: 1, pounceR: 84 } },
+});
+EVO('bait', 'cashnado', 'magnet', {
+  name: '鈔票龍捲風', glyph: '捲',
+  evoDesc: '丟出去的鈔票捲成一道鈔票龍捲風：吸引敵人並把他們吸進去絞切，結束時金幣四散爆開',
+  ult: { id: 'lk_goldtank', name: '土豪金坦克', desc: '開出一台純金加長禮車坦克：砲管噴鈔票和金條，一邊開一邊撒錢，隊友靠近會獲得增益。' },
+  mod: { m: { boomDmg: 1.3, decoyR: 1.15 }, a: { decoyDur: 1.5 }, s: { tornado: 1, coins: 3 } },
+});
+EVO('dragonfire', 'truedragon', 'power', {
+  name: '真龍顯現', glyph: '龍',
+  evoDesc: '火球變成一條盤旋在身邊的火龍：自己對敵人吐出扇形龍息並點燃他們，增益光環照舊',
+  ult: { id: 'nf_breath', name: '真龍吐息', desc: '一條巨龍橫越整個畫面，沿路噴出龍炎並留下燃燒的地面；全隊獲得傷害加成。' },
+  mod: { m: { dmg: 2.0, cd: 0.85 }, s: { dragon: 1, count: 1, breathR: 250, breathArc: 1.15, dot: 14, dotDur: 3 } },
 });
 EVO('revolver', 'reapersniper', 'crit', {
   name: '死神狙擊', glyph: '狙',

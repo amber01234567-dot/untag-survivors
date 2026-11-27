@@ -17,6 +17,11 @@ export function swing(W, p, a, range, arc, dmg, o) {
   W.emit('s', p.x | 0, (p.y - 14) | 0, Math.round(a * 100), range | 0, Math.round(arc * 100), o.fx || 0);
 }
 
+// 以任意位置為圓心的扇形打擊（召喚物的吐息 / 撲擊用）
+function swingFrom(W, p, x, y, a, range, arc, dmg, o) {
+  const half = arc / 2;
+  W.hash.query(x, y, range, (e) => { if (dist2(x, y, e.x, e.y) > 30 * 30 && Math.abs(angDiff(a, Math.atan2(e.y - y, e.x - x))) > half) return; W.strike(p, e, dmg, Object.assign({ sx: x, sy: y }, o)); });
+}
 function volley(W, p, w, a, s, extra) {
   const n = s.count || 1, spread = n > 1 ? (s.spread || 0.3) : 0;
   for (let i = 0; i < n; i++) {
@@ -69,6 +74,21 @@ const TICK = {
 };
 
 // 進化：裂地戰斧 —— 沿一條線依序噴出岩柱（每根是一個小圓形區域，延遲由近到遠）
+// 烤肉塔：削肉片攻擊 + 治療附近隊友。big = 寶具版（向四面八方射、治療更強）
+export function spawnKebab(W, p, x, y, s, dur, big) {
+  const k = W.addSummon({ kind: 'kebab', owner: p, x, y, life: dur, st: big ? 1 : 0 });
+  k.ct = 0; k.ht = 0; k.rot = 0;
+  k.upd = (W2, m, dt) => {
+    m.ct -= dt * bHaste(p); m.ht -= dt; m.rot += dt * 5;
+    if (m.ct <= 0) {
+      m.ct = s.sliceCd * (big ? 0.55 : 1);
+      const e = big ? null : W2.randomEnemies(m.x, m.y, s.sliceR * p.st.area, 1)[0];
+      if (big || e) { const a = e ? Math.atan2(e.y - m.y + 40, e.x - m.x) : m.rot * 1.7; W2.shoot(p, { kind: 'meatslice', x: m.x, y: m.y - 46, a, speed: 560, dmg: s.dmg * (big ? 1.3 : 1), pierce: big ? 3 : 1, life: 0.75, r: 12, dot: s.dot, dotDur: s.dotDur, kb: 30 }); }
+    }
+    if (m.ht <= 0) { m.ht = 0.5; const R = s.towerR * p.st.area * (big ? 1.8 : 1); W2.playersIn(m.x, m.y, R, (q) => { W2.heal(q, (big ? q.st.maxHp * 0.03 : s.towerHeal * 0.5) , p); if (big) addBuff(q, 'bbq', { t: 1.2, dmg: 0.4 }); }); }
+  };
+  return k;
+}
 export function fissure(W, p, x, y, a, len, dmg, hitOpt, step = 62, r = 46) {
   for (let d = step, i = 0; d <= len; d += step, i++) {
     const fx2 = x + Math.cos(a) * d, fy = y + Math.sin(a) * d;
@@ -91,6 +111,79 @@ function railShot(W, p, a, s) {
 }
 
 export const BEH = {
+  // 進化：聖療光鏈 —— 持續連住附近敵人（傷害）與最需要治療的隊友（補血）
+  chain(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0 || p.down) return;
+    w.t = s.chainTick;
+    const R = s.chainR * (p.st.area * 0.5 + 0.5), es = W.enemiesIn(p.x, p.y, R).slice().sort((a, b) => dist2(a.x, a.y, p.x, p.y) - dist2(b.x, b.y, p.x, p.y)).slice(0, s.chainN + (s.count > 1 ? 1 : 0));
+    for (const e of es) { W.strike(p, e, s.dmg, { dot: s.dot, dotDur: s.dotDur, quiet: W.rng.next() < 0.5 }); W.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); }
+    if (es.length) { w.n++; if (w.n % 3 === 0) { p.atkN++; p.atkA = Math.atan2(es[0].y - p.y, es[0].x - p.x); } }
+    let best = null, bv = 0.999;
+    for (const q of W.players) { if (q.gone || q.down || dist2(q.x, q.y, p.x, p.y) > s.healRange * s.healRange) continue; const v = q.hp / q.st.maxHp; if (v < bv) { bv = v; best = q; } }
+    if (best) { W.heal(best, s.healAmt * s.healCount * s.chainTick / s.healCd * 1.6, p, s.overheal); if (best !== p) W.emit('l', p.x | 0, (p.y - 18) | 0, best.x | 0, (best.y - 18) | 0, 6); }
+  },
+  // 進化：旋轉沙威瑪塔 —— 定期在敵群附近插一座烤肉塔：削肉片攻擊、治療附近隊友、掉烤肉
+  tower(W, p, w, dt) {
+    const s = w.s;
+    TICK.food(W, p, w, dt, s);
+    w.t -= dt * bHaste(p);
+    if ((!w.tw || w.tw.dead) && w.t <= 0 && !p.down && W.nearestEnemy(p.x, p.y, 520)) {
+      const c = W.cluster(p.x, p.y, 320, 110) || p;
+      let x = (p.x + c.x) / 2, y = (p.y + c.y) / 2; if (solidAt(W.L, x, y)) { x = p.x; y = p.y; }
+      w.tw = spawnKebab(W, p, x, y, s, s.towerDur, 0); w.t = s.towerCd * p.st.cd; p.atkN++; p.atkA = Math.atan2(y - p.y, x - p.x);
+    }
+  },
+  // 進化：母艦協議 —— 一艘母艦跟在頭上：追蹤雷射 + 定期投彈
+  mothership(W, p, w, dt) {
+    const s = w.s;
+    if (!w.ms || w.ms.dead) w.ms = W.addSummon({ kind: 'mothership', owner: p, x: p.x, y: p.y - 70 });
+    const m = w.ms, tx = p.x - 34 * (p.face || 1), ty = p.y - 78;
+    m.x += (tx - m.x) * Math.min(1, dt * 5); m.y += (ty - m.y) * Math.min(1, dt * 5);
+    if (p.down) return;
+    const boost = p.buffs.swarm ? 1.8 : 1;
+    w.t -= dt * bHaste(p) * boost; w.bt = (w.bt === undefined ? 1.2 : w.bt) - dt * bHaste(p) * boost;
+    if (w.t <= 0) {
+      w.t = s.laserTick;
+      if (!w.tg || w.tg.dead || dist2(w.tg.x, w.tg.y, m.x, m.y) > s.range * s.range * 1.3) w.tg = W.nearestEnemy(m.x, m.y + 40, s.range);
+      const e = w.tg;
+      if (e) { W.strike(p, e, s.dmg * s.laserTick / s.cd, { quiet: W.rng.next() < 0.6 }); W.emit('l', m.x | 0, (m.y + 8) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 7); m.face = e.x >= m.x ? 1 : -1; w.n++; if (w.n % 5 === 0) { p.atkN++; p.atkA = Math.atan2(e.y - p.y, e.x - p.x); } }
+    }
+    if (w.bt <= 0) {
+      const c = W.cluster(p.x, p.y, s.range, 100);
+      if (!c) { w.bt = 0.4; return; }
+      w.bt = s.bombCd * p.st.cd;
+      const bx = c.x, by = c.y;
+      lob(W, p, 'missile', bx, by, 0.5, (W2) => { W2.aoe(bx, by, s.bombR * p.st.area, s.dmg * s.bombDmg / 13, p, { fx: 1, kb: 160 }); W2.emit('sh', 3); }, m.x, m.y);
+    }
+  },
+  // 進化：虎爺降臨 —— 一隻大老虎撲擊敵群（範圍傷害），呼嚕光環治療隊友
+  tiger(W, p, w, dt) {
+    const s = w.s;
+    if (!w.tg0 || w.tg0.dead) { w.tg0 = W.addSummon({ kind: 'tiger', owner: p, x: p.x + 30, y: p.y + 20 }); w.tg0.bt = 0; }
+    const c = w.tg0, rage = p.buffs.catrage || p.buffs.twin;
+    const twinBit = p.buffs.twin ? 8 : 0;
+    c.bt -= dt * bHaste(p) * (rage ? 1.8 : 1);
+    let tgt = p.down ? null : (W.cluster(p.x, p.y, s.leash, 90) || null);
+    const sp = s.speed * (rage ? 1.4 : 1);
+    let gx, gy;
+    if (tgt) { gx = tgt.x; gy = tgt.y; } else { const a = W.time * 0.5; gx = p.x + Math.cos(a) * 56; gy = p.y + Math.sin(a) * 40; }
+    const dx = gx - c.x, dy = gy - c.y, d = Math.hypot(dx, dy) || 1, reach = tgt ? tgt.r + 30 : 8;
+    if (d > reach) { const m = Math.min(d - reach + 1, sp * dt); c.x += dx / d * m; c.y += dy / d * m; c.st = 1 | twinBit; } else c.st = twinBit;
+    if (Math.abs(dx) > 4) c.face = dx > 0 ? 1 : -1;
+    if (tgt && d <= reach + 10 && c.bt <= 0) {
+      c.bt = s.cd; c.st = 2 | twinBit;
+      W.aoe(tgt.x, tgt.y, s.pounceR * p.st.area * (p.buffs.twin ? 1.5 : 1), s.dmg * (p.buffs.twin ? 1.8 : 1), p, { dot: s.dot || 8, dotDur: s.dotDur || 3, kb: 120, sx: c.x, sy: c.y, noFx: true });
+      W.emit('s', tgt.x | 0, tgt.y | 0, Math.round(Math.atan2(dy, dx) * 100), (s.pounceR * 1.1) | 0, 628, 3); p.atkN++; p.atkA = Math.atan2(tgt.y - p.y, tgt.x - p.x);
+    }
+    w.pt = (w.pt === undefined ? s.purrCd : w.pt) - dt;
+    if (w.pt > 0 || p.down) return;
+    w.pt = s.purrCd * p.st.cd;
+    const R = s.purrR * p.st.area;
+    for (const [x, y] of [[c.x, c.y], [p.x, p.y]]) { W.emit('r', x | 0, y | 0, R | 0, 2); }
+    for (const q of W.players) if (!q.gone && !q.down && (dist2(q.x, q.y, c.x, c.y) <= R * R || dist2(q.x, q.y, p.x, p.y) <= R * R)) { W.heal(q, s.purrHeal * 3, p); if (s.purrHaste) addBuff(q, 'purr', { t: 4, haste: s.purrHaste }); }
+  },
   // 進化：幽冥骷髏 —— 一顆大骷髏自己追著敵群啃咬（不會離主人太遠）
   skull(W, p, w, dt) {
     const s = w.s;
@@ -102,11 +195,15 @@ export const BEH = {
     const tx = w.tg ? w.tg.x : p.x + Math.cos(W.time * 1.3) * 60, ty = w.tg ? w.tg.y : p.y - 30 + Math.sin(W.time * 1.3) * 30;
     const dx = tx - k.x, dy = ty - k.y, d = Math.hypot(dx, dy) || 1, sp = s.skullSpeed * (far ? 2 : 1) * dt;
     if (d > 8) { k.x += dx / d * Math.min(d, sp); k.y += dy / d * Math.min(d, sp); if (Math.abs(dx) > 4) k.face = dx > 0 ? 1 : -1; }
-    w.t -= dt * bHaste(p); k.st = w.t > s.biteCd * p.st.cd * 0.6 ? 1 : 0;
+    w.t -= dt * bHaste(p); if (!w.digit) w.digit = W.rng.int(Math.max(1, s.minDigit || 1), 9); k.st = w.digit + (w.t > s.biteCd * p.st.cd * 0.6 ? 16 : 0);      // st = 數字 + 16（剛咬完）
     if (w.t > 0) return;
     let n = 0, kills = 0;
-    W.hash.query(k.x, k.y, s.biteR * p.st.area, (e) => { n++; W.strike(p, e, s.dmg, { kb: 40, sx: k.x, sy: k.y }); if (e.dead) kills++; });
+    if (!w.digit) w.digit = W.rng.int(Math.max(1, s.minDigit || 1), 9);
+    const dg = w.digit, mul = dg / 5 * (dg === 9 && s.nine ? 3 : 1);      // 沿用數字鬼火的規則：數字越大越痛
+    W.hash.query(k.x, k.y, s.biteR * p.st.area, (e) => { n++; W.strike(p, e, s.dmg * mul, { kb: 40, sx: k.x, sy: k.y }); if (e.dead) kills++; });
+    k.aux = dg;
     if (!n) return;
+    w.digit = 0;
     w.t = s.biteCd * p.st.cd; p.atkN++; p.atkA = Math.atan2(k.y - p.y, k.x - p.x);
     if (kills) W.heal(p, Math.min(6, kills * 1.5), p);
     W.emit('h', k.x | 0, k.y | 0, 6);
@@ -412,6 +509,12 @@ export const BEH = {
     const s = w.s, r = s.auraR * p.st.area;
     if (!w.zone || w.zone.dead) w.zone = W.addZone({ kind: 'aura', owner: p, follow: p, r, dur: 1e9, tick: 9, upd() {} });
     w.zone.r = r;
+    if (s.dragon) {                               // 火龍繞著主人盤旋
+      if (!w.dg || w.dg.dead) w.dg = W.addSummon({ kind: 'dragon', owner: p, x: p.x, y: p.y });
+      w.rot = (w.rot || 0) + dt * 1.6;
+      w.dg.x = p.x + Math.cos(w.rot) * 78; w.dg.y = p.y - 26 + Math.sin(w.rot) * 46;
+      if (w.t > 0.25) { const ta = w.rot + Math.PI / 2; w.dg.st = Math.round((((ta % TAU) + TAU) % TAU) / TAU * 255); }
+    }
     w.at = (w.at || 0) - dt;
     if (w.at <= 0 && !p.down) { w.at = 0.4; W.playersIn(p.x, p.y, r, (q) => addBuff(q, 'dragon', { t: 0.9, dmg: s.buffDmg, haste: s.buffHaste })); }
     w.t -= dt * bHaste(p);
@@ -420,6 +523,13 @@ export const BEH = {
     if (!tgt) return;
     w.t = s.cd * p.st.cd; p.atkN++;
     const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
+    if (s.dragon && w.dg) {                       // 進化：真龍顯現 —— 火龍朝敵人吐出扇形龍息
+      const k = w.dg, ba = Math.atan2(tgt.y - k.y, tgt.x - k.x), R = s.breathR * p.st.area;
+      swingFrom(W, p, k.x, k.y, ba, R, s.breathArc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 60 });
+      W.addZone({ kind: 'breath', owner: p, x: k.x, y: k.y, a: ba, r: R, dur: 0.42, tick: 9, aux: Math.round(s.breathArc * 50) });
+      k.face = Math.cos(ba) >= 0 ? 1 : -1; k.st = Math.round((((ba % TAU) + TAU) % TAU) / TAU * 255);
+      return;
+    }
     volley(W, p, w, a, s, null);
   },
 
@@ -430,8 +540,12 @@ export const BEH = {
       const ot = e.ot || (e.ot = {});
       if ((ot[w.uid] || 0) > W.time) return;
       ot[w.uid] = W.time + s.hitCd / bHaste(p);
-      W.strike(p, e, s.dmg * mv, { kb: s.kb * mv, sx: p.x, sy: p.y });
+      W.strike(p, e, s.dmg * mv * (p.buffs.finish ? 3 : 1), { kb: s.kb * mv, sx: p.x, sy: p.y });
     });
+    if (s.exhaust && p.moving) {                  // 進化：火箭蕉號 —— 行駛時車尾持續留下燃燒軌跡
+      w.ex = (w.ex || 0) - dt;
+      if (w.ex <= 0) { w.ex = s.exhaust; W.addZone({ kind: 'fire', owner: p, x: p.x, y: p.y + 6, r: (p.buffs.finish ? 74 : 44) * p.st.area, dur: p.buffs.finish ? 4 : 2.2, tick: 0.4, dmg: s.dmg * (p.buffs.finish ? 1.1 : 0.4), hitOpt: { quiet: true } }); }
+    }
     w.t -= dt * bHaste(p);
     if (w.t > 0 || !p.moving || p.dash || !W.nearestEnemy(p.x, p.y, 260)) return;
     w.t = s.boostCd * p.st.cd; p.atkN++;
@@ -527,6 +641,11 @@ export function plantMine(W, p, x, y, s, small) {
       if (trig) z.t = z.dur;
     },
     onEnd(W2, z) {
+      if (s.gravity && !small) {                  // 進化：重力派對球 —— 先吸再炸
+        W2.addZone({ kind: 'gravball', owner: p, x: z.x, y: z.y, r: blast * 1.5, dur: 0.95, tick: 0.1, pull: 300, dmg: dmg * 0.04, hitOpt: { quiet: true, slow: 0.4, slowDur: 0.3 },
+          onEnd: (W3, g) => { W3.aoe(g.x, g.y, blast, dmg, p, { fx: 12, kb: 260, stun: 0.5 }); W3.emit('sh', 5); } });
+        return;
+      }
       W2.aoe(z.x, z.y, blast, dmg, p, { fx: 1, kb: 220 });
       if (s.cluster && !small) for (let i = 0; i < s.cluster; i++) {
         const a = W2.rng.range(0, TAU), d = W2.rng.range(60, 110);
@@ -539,6 +658,20 @@ export function plantMine(W, p, x, y, s, small) {
 // 丟出一個誘餌：吸引敵人，結束時爆炸
 export function throwDecoy(W, p, x, y, s, mark) {
   const r = s.decoyR * p.st.area;
+  if (s.tornado) {                               // 進化：鈔票龍捲風 —— 會慢慢追著敵群移動、吸入並絞切
+    const d = W.addDecoy(x, y, r, s.decoyDur);
+    const z = W.addZone({ kind: 'cashnado', owner: p, x, y, r: r * 0.62, dur: s.decoyDur, tick: 0.22, pull: 190, dmg: s.boomDmg * 0.04, hitOpt: { quiet: true, mark: mark ? 0.7 : 0 },
+      upd(W2, zz, dt) {
+        const c = (W2.tickN % 20 === 0 || !zz.tg) ? (zz.tg = W2.cluster(zz.x, zz.y, 300, 100)) : zz.tg;
+        if (c && !c.dead) { const dx = c.x - zz.x, dy = c.y - zz.y, dd = Math.hypot(dx, dy) || 1, mv = Math.min(dd, 70 * dt), nx = zz.x + dx / dd * mv, ny = zz.y + dy / dd * mv; if (!solidAt(W2.L, nx, ny)) { zz.x = nx; zz.y = ny; d.x = nx; d.y = ny; } }
+        zz.tk -= dt; if (zz.tk <= 0) { zz.tk += zz.tick; W2.zoneTick(zz); }
+      },
+      onEnd(W2, zz) {
+        W2.aoe(zz.x, zz.y, s.boomR * p.st.area * 1.3, s.boomDmg, p, { fx: 1, kb: 240 });
+        for (let i = 0; i < (s.coins || 0); i++) W2.drop('c', zz.x + W2.rng.range(-40, 40), zz.y + W2.rng.range(-40, 40), 2);
+      } });
+    return z;
+  }
   W.addDecoy(x, y, r, s.decoyDur);
   return W.addZone({ kind: 'decoy', owner: p, x, y, r, dur: s.decoyDur, tick: 0.5, dmg: 0, hitOpt: mark ? { mark: 0.7, quiet: true } : null,
     onEnd(W2, z) {

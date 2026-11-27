@@ -13,7 +13,7 @@ import { FXS, tinted } from './fxsprites.js';
 const PSPR = {
   bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
   knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
-  starwave: ['evo_starwave', 150, 'aim'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
+  starwave: ['evo_starwave', 150, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
   e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
@@ -81,6 +81,16 @@ export class Renderer {
     for (const p of f.projs) if (vis(p.x, p.y, 60)) this.proj(g, p, t);
     for (const [k, v] of seen) if (!v.live) seen.delete(k);
     for (const z of f.zones) if (z.len) this.beam(g, z, t);
+    for (const z of f.zones) {                  // 畫在角色之上的大型效果
+      const zk = ZONE_KINDS[z.k];
+      if (zk === 'cashnado' && FXS.evo_cashnado) {                    // 鈔票龍捲風：左右搖擺的漏斗
+        const im = FXS.evo_cashnado, hgt = z.r * 1.55, w = hgt * im.width / im.height, fade = Math.min(1, z.p * 8, (1 - z.p) * 6), sway = Math.sin(t * 7 + z.id) * 0.1;
+        g.save(); g.translate(z.x, z.y + 10); g.rotate(sway); g.scale(Math.sin(t * 13) > 0 ? 1 : -1, 1); g.globalAlpha = fade * 0.95; g.drawImage(im, -w / 2, -hgt, w, hgt); g.restore(); g.globalAlpha = 1;
+      } else if (zk === 'dragonpass' && FXS.dragon) {                 // 真龍吐息：橫越畫面的巨龍
+        const im = FXS.dragon, w = 560, hgt = w * im.height / im.width, fade = Math.min(1, z.p * 10, (1 - z.p) * 8);
+        g.save(); g.translate(z.x, z.y - 40); if (Math.cos(z.a) < 0) g.scale(-1, 1); g.rotate(Math.sin(t * 5) * 0.06); g.globalAlpha = fade; g.shadowColor = '#ff8a2f'; g.shadowBlur = 30; g.drawImage(im, -w * 0.7, -hgt / 2, w, hgt); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0;
+      }
+    }
     for (const z of f.zones) if (ZONE_KINDS[z.k] === 'mushroom' && FXS.evo_mushroom) {      // 蕈狀雲：畫在角色之上，往上升並淡出
       const im = FXS.evo_mushroom, big = z.aux === 1, hgt = (big ? 520 : 250) * (0.55 + 0.45 * Math.min(1, z.p * 3)), w = hgt * im.width / im.height;
       g.globalAlpha = Math.min(1, (1 - z.p) * 2.2); g.drawImage(im, z.x - w / 2, z.y - hgt + 18, w, hgt); g.globalAlpha = 1;
@@ -182,10 +192,27 @@ export class Renderer {
       g.save(); g.translate(s.x, s.y); g.rotate(a); if (Math.cos(a) < 0) g.scale(1, -1); g.shadowColor = '#2de2e6'; g.shadowBlur = 8; g.drawImage(sm, -w / 2, -h / 2, w, h); g.restore(); g.shadowBlur = 0;
       return;
     }
-    if (sm && k === 'skull') {                    // 幽冥骷髏：咬的時候縮放一下
-      const size = 96 * (s.st === 1 ? 1.12 : 1), h = size * sm.height / sm.width, bob = Math.sin(t * 4 + s.id) * 4;
-      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(s.x, s.y + 40, 30, 9, 0, 0, TAU); g.fill();
-      g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); g.shadowColor = '#5dff8d'; g.shadowBlur = 18; g.globalAlpha = 0.93; g.drawImage(sm, -size / 2, -h / 2, size, h); g.restore(); g.shadowBlur = 0; g.globalAlpha = 1;
+    if (sm && k === 'skull') {                    // 鬼火大王：st = 頭上的數字（+16 = 剛咬完，縮放一下）
+      const digit = s.st & 15, bite = s.st & 16, size = 84 * (bite ? 1.14 : 1), h = size * sm.height / sm.width, bob = Math.sin(t * 4 + s.id) * 4;
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(s.x, s.y + 40, 28, 8, 0, 0, TAU); g.fill();
+      g.save(); g.translate(s.x, s.y - bob); g.save(); g.scale(s.face < 0 ? -1 : 1, 1); g.shadowColor = '#5dff8d'; g.shadowBlur = 16; g.drawImage(sm, -size / 2, -h / 2, size, h); g.restore(); g.shadowBlur = 0;
+      if (digit) { g.font = '900 22px "Courier New", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = digit >= 9 ? '#ffd23c' : '#ffffff'; g.strokeStyle = '#06301c'; g.lineWidth = 4; g.strokeText(digit, 0, -h * 0.62); g.fillText(digit, 0, -h * 0.62); }
+      g.restore();
+      return;
+    }
+    if (sm && (k === 'kebab' || k === 'mothership' || k === 'tiger' || k === 'goldtank' || k === 'dragon')) {
+      if (k === 'dragon') {                       // 火龍：st = 朝向角度
+        const a = s.st / 255 * TAU, w = 150, h = w * sm.height / sm.width;
+        g.save(); g.translate(s.x, s.y); g.rotate(a); if (Math.cos(a) < 0) g.scale(1, -1); g.shadowColor = '#ff9a2f'; g.shadowBlur = 14; g.drawImage(sm, -w * 0.72, -h / 2, w, h); g.restore(); g.shadowBlur = 0; return;
+      }
+      const big = k === 'kebab' ? s.st === 1 : k === 'tiger' ? (s.st & 8) : 0, act = k === 'tiger' ? (s.st & 3) : s.st;
+      const size = { kebab: big ? 150 : 74, mothership: 76, tiger: big ? 150 : 96, goldtank: 190 }[k], h = size * sm.height / sm.width, fly = k === 'mothership';
+      const bob = fly ? Math.sin(t * 3 + s.id) * 3 : act === 1 ? Math.abs(Math.sin(t * 12 + s.id)) * 4 : 0;
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(s.x, s.y + (fly ? 78 : 0), size * 0.36, size * 0.11, 0, 0, TAU); g.fill();
+      g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); if (act === 2 && k === 'tiger') g.rotate(-0.2);
+      if (k === 'kebab') { const sq = 1 + Math.sin(t * 9) * 0.03; g.scale(sq, 2 - sq); }
+      if (k === 'goldtank') { g.shadowColor = '#ffd23c'; g.shadowBlur = 16; }
+      g.drawImage(sm, -size / 2, fly ? -h / 2 : -h, size, h); g.restore(); g.shadowBlur = 0;
       return;
     }
     if (sm) {                                     // 圖片召喚物
@@ -269,6 +296,23 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
+      case 'gravball': {                              // 重力派對球：紫色吸力圈 + 迪斯可球（aux 1 = 寶具的巨型球）
+        const big = z.aux === 1, im = FXS.evo_discoball, fade = Math.min(1, (1 - z.p) * 8, z.p * 12 + 0.3);
+        g.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 3; i++) { const q = ((t * 1.4 + i / 3) % 1), rr = r * (1 - q); g.strokeStyle = `rgba(${i % 2 ? '255,90,220' : '160,110,255'},${0.5 * q * fade})`; g.lineWidth = big ? 5 : 3; g.beginPath(); g.ellipse(x, y, rr, rr * 0.86, 0, 0, TAU); g.stroke(); }
+        g.fillStyle = `rgba(150,80,255,${0.10 * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.globalCompositeOperation = 'source-over';
+        if (im) { const d = (big ? 150 : 56) * (1 + 0.12 * Math.sin(t * 16)) * (0.7 + 0.5 * z.p); g.save(); g.translate(x, y - (big ? 60 : 24)); g.rotate(Math.sin(t * 3) * 0.2); g.globalAlpha = fade; g.shadowColor = '#c06bff'; g.shadowBlur = 20; g.drawImage(im, -d / 2, -d / 2, d, d); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
+        break;
+      }
+      case 'breath': {                                // 龍息：從火龍嘴裡噴出的扇形火焰
+        const arc = z.aux / 50, fade = Math.min(1, (1 - z.p) * 2.2), grow = Math.min(1, z.p * 3.5 + 0.25);
+        g.save(); g.translate(x, y); g.scale(1, 0.9); g.rotate(z.a); g.globalCompositeOperation = 'lighter';
+        const gr = g.createRadialGradient(0, 0, 8, 0, 0, r * grow); gr.addColorStop(0, `rgba(255,250,200,${0.85 * fade})`); gr.addColorStop(0.35, `rgba(255,180,50,${0.7 * fade})`); gr.addColorStop(1, 'rgba(255,60,10,0)');
+        g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r * grow, -arc / 2, arc / 2); g.closePath(); g.fill();
+        if (FXS.flame) for (let i = 0; i < 5; i++) { const aa = (i / 4 - 0.5) * arc * 0.8, d = r * grow * (0.45 + 0.4 * ((i * 37 % 10) / 10)), sz = 46; g.save(); g.rotate(aa); g.translate(d, 0); g.rotate(Math.PI / 2); g.globalAlpha = fade * 0.9; g.drawImage(FXS.flame, -sz / 2, -sz / 2, sz, sz * FXS.flame.height / FXS.flame.width); g.restore(); }
+        g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+        break;
+      }
       case 'doomcircle': {                            // 終焉大魔法陣：三層由外到內逐層亮起、反向旋轉，最後整個爆亮
         const im = FXS.circle, fade = Math.min(1, (1 - z.p) * 5), end = z.p > 0.77 ? Math.min(1, (z.p - 0.77) * 8) : 0;
         [[1, 0, 0.35], [0.66, 0.24, -0.55], [0.36, 0.48, 0.9]].forEach(([k2, at, sp], i) => {
