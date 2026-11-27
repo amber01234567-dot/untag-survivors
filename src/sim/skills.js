@@ -2,7 +2,7 @@
 // 新角色的技能直接在這裡加一個 (W, p) => {...} 即可，盡量用現成的積木（aoe / addZone / shoot / dash / addBuff）。
 import { TAU, dist2 } from '../core/util.js';
 import { addBuff, dash, moveDir } from './player.js';
-import { swing, beamUpd, lob, plantMine, throwDecoy } from './weapons.js';
+import { swing, beamUpd, lob, plantMine, throwDecoy, fissure } from './weapons.js';
 import { solidAt } from './levelgen.js';
 
 const wdmg = (p) => p.weapons[0].s.dmg;
@@ -37,6 +37,50 @@ export const SKILLS = {
     W.addZone({ kind: 'bigwheel', owner: p, x: c.x, y: c.y, r: R, delay: 0.7, dur: 4.7, tick: 0.3, dmg: wdmg(p) * 0.55, hitOpt: { slow: 0.6, slowDur: 0.6, kb: 20, quiet: true },
       onStart: (W2, z) => { W2.hash.query(z.x, z.y, 820, (e) => W2.strike(p, e, wdmg(p) * (Math.hypot(e.x - z.x, e.y - z.y) < z.r + e.r ? 4.5 : 1.6), { stun: 4.5, mark: 5 })); W2.emit('sh', 18); W2.emit('r', z.x | 0, z.y | 0, 820, 3); W2.emit('a', 'boom'); } });
     allies(W, p, 0, (q) => { q.shield = Math.max(q.shield, 40 + q.st.maxHp * 0.3 * p.st.heal); addBuff(q, 'buddha', { t: 6, regen: 4 }); W.emit('r', q.x | 0, q.y | 0, 80, 3); });
+  },
+  // 夏・天崩地裂：以自己為中心，一圈一圈往外噴發岩柱
+  xia_shatter(W, p) {
+    const x = p.x, y = p.y, d = wdmg(p);
+    W.aoe(x, y, 130, d * 5, p, { stun: 2, kb: 320, fx: 9 }); W.emit('sh', 18);
+    W.addZone({ kind: 'crack', owner: p, x, y, r: 190, dur: 4, tick: 9 });
+    let k = 0;
+    channel(W, p, 1.25, 0.24, (W2) => {
+      k++; const R = 110 + k * 105, n = 5 + k * 3;
+      for (let i = 0; i < n; i++) { const a = i * TAU / n + k * 0.4, rx = x + Math.cos(a) * R, ry = y + Math.sin(a) * R * 0.86; if (!solidAt(W2.L, rx, ry)) W2.addZone({ kind: 'rockburst', owner: p, x: rx, y: ry, r: 70, delay: 0.08, dur: 0.9, tick: 9, dmg: d * 4.2, hitOpt: { stun: 1.8, kb: 140, sx: x, sy: y }, aux: i % 5 }); }
+      W2.emit('sh', 9); W2.emit('a', 'boom');
+    });
+  },
+  // 狗企・地獄廚房：巨型菜刀輪流剁向敵群，最後一刀全場震飛
+  gq_kitchen(W, p) {
+    const d = wdmg(p);
+    for (let i = 0; i < 6; i++) {
+      const last = i === 5, c = last ? p : (W.cluster(p.x, p.y, 520, 150) || { x: p.x + W.rng.range(-260, 260), y: p.y + W.rng.range(-200, 200) });
+      const x = c.x + (last ? 0 : W.rng.range(-70, 70)), y = c.y + (last ? 0 : W.rng.range(-50, 50)), r = last ? 380 : 150;
+      W.addZone({ kind: 'cleaverfall', owner: p, x, y, r, delay: 0.5 + i * 0.36, dur: 1.0 + i * 0.36, tick: 9, dmg: d * (last ? 3.2 : 1.9), hitOpt: { stun: last ? 2.2 : 1, kb: last ? 800 : 200, sx: x, sy: y, dot: 14, dotDur: 4 }, aux: last ? 1 : 0,
+        onStart: (W2) => { W2.emit('sh', last ? 20 : 9); W2.emit('a', 'boom'); W2.emit('b', x | 0, y | 0, r, 2); } });
+    }
+  },
+  // 庭哥・千手無束：3 秒內對前方轟出數十記拳影，最後一記巨拳
+  tg_thousand(W, p) {
+    addBuff(p, 'limit', { t: 3.4, speed: 0.15, dmg: 0.2, ult: 1 });
+    const d = wdmg(p);
+    channel(W, p, 3, 0.055, (W2) => {
+      const a = p.aim + W2.rng.range(-0.55, 0.55), off = W2.rng.range(-70, 70);
+      W2.shoot(p, { kind: 'fist', a, speed: 900, dmg: d * 1.5, pierce: 8, life: 0.42, r: 30, kb: 120, x: p.x - Math.sin(p.aim) * off - Math.cos(p.aim) * 30, y: p.y - 16 + Math.cos(p.aim) * off - Math.sin(p.aim) * 30 });
+      p.atkN++; p.atkA = p.aim;
+    }, (W2) => { if (p.down) return; W2.shoot(p, { kind: 'fist', a: p.aim, speed: 820, dmg: d * 16, pierce: 99, life: 0.75, r: 95, kb: 700, stun: 1.5, aux: 2 }); W2.emit('sh', 20); W2.emit('a', 'boom'); });
+  },
+  // 少年・雷神全壘打：巨大雷球貫穿全場，同時全畫面落雷
+  sn_thunder(W, p) {
+    const d = wdmg(p), a = p.aim;
+    swing(W, p, a, 190 * p.st.area, 2.8, d * 5, { kb: 800, stun: 0.8, fx: 4 });
+    W.shoot(p, { kind: 'thunderball', a, speed: 720, dmg: d * 9, pierce: 99, life: 2.2, r: 62, kb: 400, stun: 1, aux: 1 });
+    W.emit('sh', 16);
+    channel(W, p, 2.4, 0.07, (W2) => {
+      const t = W2.randomEnemies(p.x, p.y, 620, 1)[0];
+      const tx = t ? t.x : p.x + W2.rng.range(-420, 420), ty = t ? t.y : p.y + W2.rng.range(-280, 280);
+      W2.emit('l', tx | 0, (ty - 460) | 0, tx | 0, ty | 0, 1); W2.aoe(tx, ty, 78, d * 2.6, p, { stun: 0.6, fx: 1 });
+    });
   },
   // ═════ 一般技能與寶具 ═════
   // ── 老劉 ──

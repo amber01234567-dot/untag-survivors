@@ -251,8 +251,7 @@ function placeholder(g, p, def) {
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
 const H_DEFAULT = 82;
-// 進化造型：武器或光環超出頭頂，包圍框比身體高，所以顯示高度要對應放大，身體才會和原造型一樣大
-const H = { laoliu_evo: 90, allen_evo: 87, qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
+const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 function loadImg(name) {
   if (IMG[name]) return IMG[name].p;
@@ -275,7 +274,7 @@ function spriteLook(g, p, id) {
   const m = SPRITE_SHEETS[id], atk = p.atk > 0, useAtk = atk || !p.moving;
   const sheet = IMG[id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk;
   const i = atk ? Math.min(3, Math.floor(p.atk * 4)) : p.moving ? Math.floor(p.t * 9) % 4 : 3;
-  const sc = (H[id] || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
+  const sc = (H[id] || H[id.replace(/_evo$/, '')] || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
   g.save(); g.scale(1 / (1 + breathe), 1 + breathe); g.imageSmoothingQuality = 'high';
   g.drawImage(sheet, i * cw, 0, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
   g.restore();

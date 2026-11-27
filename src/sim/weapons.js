@@ -4,7 +4,7 @@ import { TAU, angDiff, dist2 } from '../core/util.js';
 import { bHaste, addBuff, dash } from './player.js';
 import { solidAt, blocksShot } from './levelgen.js';
 
-const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5, star: 7 };
+const FX = { steel: 0, heavy: 1, toxic: 2, punch: 3, wood: 4, teal: 5, star: 7, chop: 8 };
 
 // 扇形揮砍
 export function swing(W, p, a, range, arc, dmg, o) {
@@ -68,6 +68,14 @@ const TICK = {
   },
 };
 
+// 進化：裂地戰斧 —— 沿一條線依序噴出岩柱（每根是一個小圓形區域，延遲由近到遠）
+export function fissure(W, p, x, y, a, len, dmg, hitOpt, step = 62, r = 46) {
+  for (let d = step, i = 0; d <= len; d += step, i++) {
+    const fx2 = x + Math.cos(a) * d, fy = y + Math.sin(a) * d;
+    if (solidAt(W.L, fx2, fy)) break;
+    W.addZone({ kind: 'rockburst', owner: p, x: fx2, y: fy, r, delay: 0.05 + i * 0.045, dur: 0.75 + i * 0.045, tick: 9, dmg, hitOpt: Object.assign({ kb: 90, sx: x, sy: y }, hitOpt), aux: (i * 7) % 5 });
+  }
+}
 // 進化：死神狙擊 —— 瞬間貫穿的光線（遇牆停止），暴擊在命中點爆炸
 function railShot(W, p, a, s) {
   const x0 = p.x + Math.cos(a) * 18, y0 = p.y - 14 + Math.sin(a) * 18, ca = Math.cos(a), sa = Math.sin(a);
@@ -127,13 +135,38 @@ export const BEH = {
     w.t -= dt * bHaste(p);
     if (w.t > 0) return;
     const range = s.range * p.st.area;
-    const tgt = W.nearestEnemy(p.x, p.y, range * 1.25);
+    const tgt = W.nearestEnemy(p.x, p.y, s.fist ? s.fistRange * (p.st.area * 0.5 + 0.5) : range * 1.25);
     if (!tgt) return;
     w.t = s.cd * p.st.cd; w.n++;
     const a = Math.atan2(tgt.y - p.y, tgt.x - p.x), fx = FX[w.def.fx] || 0;
     const o = { kb: s.kb, dot: s.dot, dotDur: s.dotDur, fx, critAdd: p.buffs.stealth ? 1 : 0 };
     p.atkN++; p.atkA = a;
+    if (s.fist) {                                 // 進化：殘影巨拳 —— 拳影飛出去打，左右手交替；每 N 拳一記重拳
+      const big = w.n % s.combo === 0 || !!p.buffs.limit, side = w.n % 2 ? 1 : -1, k = big ? 1.7 : 1;
+      W.shoot(p, { kind: 'fist', a, speed: 760, dmg: s.dmg * (big ? s.comboMul * 0.8 : 1.5), pierce: big ? 99 : 5, life: 0.4 * (p.st.area * 0.5 + 0.5), r: 28 * k, kb: s.kb * (big ? 5 : 2), stun: big ? s.comboStun : 0, aux: big ? 1 : 0,
+        x: p.x + Math.cos(a) * 20 - Math.sin(a) * 14 * side, y: p.y - 16 + Math.sin(a) * 20 + Math.cos(a) * 14 * side });
+      if (big) W.emit('sh', 3);
+      return;
+    }
+    if (s.quake) {                                // 進化：裂地戰斧 —— 砸地 + 沿線噴出岩柱
+      const cx = p.x + Math.cos(a) * 60, cy = p.y + Math.sin(a) * 60;
+      W.aoe(cx, cy, 95 * p.st.area, s.dmg, p, Object.assign({}, o, { fx: 9 })); W.emit('sh', 4);
+      const fan = w.n % s.combo === 0 ? [-0.5, 0, 0.5] : [0];
+      for (const off of fan) fissure(W, p, cx, cy, a + off, s.quakeLen * (p.st.area * 0.5 + 0.5), s.dmg * 0.9, { stun: s.comboStun || 0.4, dot: s.dot, dotDur: s.dotDur });
+      return;
+    }
     swing(W, p, a, range, s.arc, s.dmg, o);
+    if (s.chop) {                                 // 進化：斬骨巨刀 —— 留下帶毒刀痕，命中回血
+      const cx = p.x + Math.cos(a) * range * 0.6, cy = p.y + Math.sin(a) * range * 0.6;
+      let n = 0; W.hash.query(cx, cy, range * 0.55, () => n++);
+      if (n) W.heal(p, Math.min(10, 2 + n * 1.5), p);
+      W.addZone({ kind: 'chopmark', owner: p, x: cx, y: cy, a, r: range * 0.5, dur: 3.2, tick: 0.5, dmg: s.dmg * 0.09, hitOpt: { dot: s.dot, dotDur: s.dotDur, slow: 0.25, slowDur: 0.8, quiet: true } });
+      W.emit('sh', 5);
+    }
+    if (s.thunder) {                              // 進化：雷霆金剛棒 —— 命中的敵人頭上劈下落雷
+      const hit = []; W.hash.query(p.x + Math.cos(a) * range * 0.6, p.y + Math.sin(a) * range * 0.6, range * 0.7, (e) => { if (hit.length < s.thunder) hit.push(e); });
+      for (const e of hit) { W.emit('l', e.x | 0, (e.y - 460) | 0, e.x | 0, e.y | 0, 1); W.aoe(e.x, e.y, 62 * p.st.area, s.dmg * 0.55, p, { stun: 0.25, noFx: true }); }
+    }
     if (s.double) w.pend = { t: 0.16, a: a + Math.PI, range, o };
     const forceCombo = p.buffs.limit;
     if (s.combo && (w.n % s.combo === 0 || forceCombo)) {
@@ -144,7 +177,8 @@ export const BEH = {
     if (s.starWave) W.shoot(p, { kind: 'starwave', a, speed: 680, dmg: s.dmg * s.starWave, pierce: 99, life: 1.4, r: 64, kb: 90, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：星穹光刃
     if (s.waveEvery && w.n % s.waveEvery === 0) W.shoot(p, { kind: 'wave', a, speed: 540, dmg: s.dmg * s.waveDmg, pierce: 99, life: 0.75, r: 30, kb: 60 });
     if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotDur: s.dotDur }); }
-    if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });
+    if (s.comet && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'thunderball', a, speed: 900, dmg: s.dmg * s.ballDmg, pierce: 99, life: 1.3, r: 24, kb: 220, stun: 0.3 });
+    else if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });
   },
 
   gun(W, p, w, dt) {

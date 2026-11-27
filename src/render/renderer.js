@@ -254,6 +254,34 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
+      case 'rockburst': {                             // 岩柱：預警一下後從地面頂出來，再縮回
+        if (!z.on) { g.fillStyle = `rgba(255,190,70,${0.12 + 0.2 * z.dp})`; g.beginPath(); g.ellipse(x, y, r * z.dp, r * 0.7 * z.dp, 0, 0, TAU); g.fill(); break; }
+        const life = (z.p - z.dp * 0) , q = Math.min(1, (1 - z.p) * 4), up = Math.min(1, (z.p * 1) * 6 + 0.2), im = FXS.evo_rockspike;
+        g.fillStyle = `rgba(40,25,10,${0.35 * q})`; g.beginPath(); g.ellipse(x, y, r * 0.95, r * 0.5, 0, 0, TAU); g.fill();
+        if (im) { const w = r * 2.5, h = w * im.height / im.width * (0.55 + 0.45 * Math.min(1, up)) * q; g.save(); g.translate(x, y + r * 0.35); if (z.aux & 1) g.scale(-1, 1); g.drawImage(im, -w / 2, -h, w, h); g.restore(); }
+        else { g.fillStyle = '#5a4a3a'; g.beginPath(); g.moveTo(x - r * 0.5, y); g.lineTo(x, y - r * 1.6 * q); g.lineTo(x + r * 0.5, y); g.fill(); }
+        break;
+      }
+      case 'chopmark': {                              // 刀痕：一道帶毒的裂口
+        const fade = Math.min(1, (1 - z.p) * 3);
+        g.save(); g.translate(x, y); g.scale(1, 0.86); g.rotate(z.a); g.globalAlpha = fade;
+        g.fillStyle = 'rgba(20,28,10,.7)'; g.beginPath(); g.ellipse(0, 0, r * 1.25, r * 0.13, 0, 0, TAU); g.fill();
+        g.strokeStyle = '#9dff3c'; g.lineWidth = 2; g.shadowColor = '#9dff3c'; g.shadowBlur = 8; g.globalAlpha = fade * (0.55 + 0.25 * Math.sin(t * 9 + z.id)); g.stroke(); g.shadowBlur = 0;
+        g.restore(); g.globalAlpha = 1;
+        break;
+      }
+      case 'cleaverfall': {                           // 地獄廚房：先預警圈，巨型菜刀從天而降
+        const im = FXS.evo_bigcleaver, big = z.aux === 1;
+        if (!z.on) {
+          g.fillStyle = `rgba(160,255,90,${0.08 + 0.16 * z.dp})`; g.strokeStyle = 'rgba(190,255,120,.75)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.stroke();
+          if (im && z.dp > 0.45) { const k2 = (z.dp - 0.45) / 0.55, h = (big ? 520 : 300), w = h * im.width / im.height; g.globalAlpha = Math.min(1, k2 * 2); g.drawImage(im, x - w / 2, y - h - (1 - k2 * k2) * 620, w, h); g.globalAlpha = 1; }
+        } else {
+          const fade = Math.min(1, (1 - z.p) * 5);
+          if (im) { const h = (big ? 520 : 300), w = h * im.width / im.height; g.globalAlpha = fade; g.drawImage(im, x - w / 2, y - h + 14, w, h); g.globalAlpha = 1; }
+          g.strokeStyle = `rgba(230,255,200,${fade * 0.8})`; g.lineWidth = 5; g.beginPath(); g.ellipse(x, y, r * (1.05 - fade * 0.3), r * 0.86 * (1.05 - fade * 0.3), 0, 0, TAU); g.stroke();
+        }
+        break;
+      }
       case 'reticle': {                               // 死神審判：鎖定標記
         const s2 = (r + 18) * (1.6 - 0.6 * Math.min(1, z.p * 5)), a2 = Math.min(1, z.p * 6);
         if (FXS.evo_reticle) { g.save(); g.translate(x, y - r * 0.5); g.rotate(t * 2 + z.id); g.globalAlpha = a2; g.drawImage(FXS.evo_reticle, -s2, -s2, s2 * 2, s2 * 2); g.restore(); g.globalAlpha = 1; }
@@ -434,6 +462,14 @@ export class Renderer {
       y -= Math.sin(pr * Math.PI) * 70 + (k === 'baseball' ? (1 - pr) * 300 : 0);
     }
     g.save(); g.translate(x, y);
+    if (k === 'fist' && FXS.evo_fist) {            // 殘影巨拳：aux 0 一般 / 1 重拳 / 2 寶具收尾巨拳
+      const im = FXS.evo_fist, w = [74, 124, 300][p.aux] || 74, h = w * im.height / im.width;
+      g.rotate(p.a); if (Math.cos(p.a) < 0) g.scale(1, -1); g.globalAlpha = 0.88; g.drawImage(im, -w * 0.62, -h / 2, w, h); g.globalAlpha = 1; g.restore(); return;
+    }
+    if (k === 'thunderball' && FXS.evo_thunderball) { // 雷光彗星：aux 1 = 寶具的巨大雷球
+      const im = FXS.evo_thunderball, w = p.aux ? 300 : 120, h = w * im.height / im.width;
+      g.rotate(p.a); if (Math.cos(p.a) < 0) g.scale(1, -1); g.shadowColor = '#9fd8ff'; g.shadowBlur = 16; g.drawImage(im, -w * 0.8, -h / 2, w, h); g.shadowBlur = 0; g.restore(); return;
+    }
     const sp = PSPR[k], sim = sp && (sp[3] ? tinted(sp[0], sp[3]) : FXS[sp[0]]);
     if (sim) {                                    // 圖片子彈
       const w = sp[1], h = w * sim.height / sim.width;

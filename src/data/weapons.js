@@ -362,6 +362,30 @@ EVO('greatsword', 'starblade', 'power', {
   ult: { id: 'll_cross', name: '天穹十字斬', desc: '巨大的光刃從天而降縱劈整個畫面，緊接著再橫劈一刀形成十字。' },
   mod: { m: { dmg: 1.3, range: 1.45, kb: 1.3 }, s: { arc: 6.283, double: 0, waveEvery: 0, starWave: 0.35 } },
 });
+EVO('greataxe', 'quakeaxe', 'armor', {
+  name: '裂地戰斧', glyph: '裂', fx: 'heavy',
+  evoDesc: '從「揮砍」變成「砸地」：每一擊在前方撕開一條地裂，岩柱沿線一路噴出並震暈敵人；每第三擊同時裂出三道',
+  ult: { id: 'xia_shatter', name: '天崩地裂', desc: '以自己為中心，整片地面由近到遠連鎖碎裂，岩柱一圈一圈噴發。' },
+  mod: { m: { dmg: 1.55 }, s: { quake: 1, combo: 3, comboSpin: 0, comboMul: 1, quakeLen: 400 } },
+});
+EVO('cleaver', 'bonechopper', 'regen', {
+  name: '斬骨巨刀', glyph: '斬', fx: 'chop',
+  evoDesc: '菜刀變成比身體還大的屠夫巨刀：從快速連砍變成重重往下「剁」，每一刀震飛敵人並在地上留下一道帶毒的刀痕，命中還會回血',
+  ult: { id: 'gq_kitchen', name: '地獄廚房', desc: '數把巨型菜刀從天上輪流剁下來，最後一刀把全場敵人剁飛。' },
+  mod: { m: { dmg: 4.6, cd: 3.0, range: 2.0, kb: 6 }, s: { arc: 1.5, chop: 1, throwEvery: 0, throwCount: 0 } },
+});
+EVO('gloves', 'phantomfist', 'haste', {
+  name: '殘影巨拳', glyph: '影', fx: 'punch',
+  evoDesc: '拳頭化成巨大的半透明拳影往前飛出：近戰變成中距離的拳影連打，每第三拳是一記更大的重拳',
+  ult: { id: 'tg_thousand', name: '千手無束', desc: '背後浮現無數拳影，對前方連續轟出數十拳，最後一記巨拳收尾。' },
+  mod: { m: { dmg: 0.95 }, s: { fist: 1, fistRange: 300, combo: 3 } },
+});
+EVO('bat', 'thunderclub', 'crit', {
+  name: '雷霆金剛棒', glyph: '雷', fx: 'wood',
+  evoDesc: '球棒帶電變大：每次命中在落點劈下落雷；擊出的球變成貫穿全場的雷光彗星',
+  ult: { id: 'sn_thunder', name: '雷神全壘打', desc: '蓄力一棒把巨大的雷球轟出去，同時全畫面降下落雷。' },
+  mod: { m: { dmg: 1.2, range: 1.2 }, s: { thunder: 3, comet: 1, ballEvery: 2, ballDmg: 2.2 } },
+});
 EVO('revolver', 'reapersniper', 'crit', {
   name: '死神狙擊', glyph: '狙',
   evoDesc: '左輪換成長管狙擊槍：子彈變成瞬間貫穿整個畫面的狙擊光線；暴擊時在命中點引發爆炸',

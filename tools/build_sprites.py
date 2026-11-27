@@ -68,8 +68,16 @@ def atlas(fr, scale):
         sheet.alpha_composite(im, (round(i * cw + cw / 2 - ax), ch - 2 - im.height))
     return sheet, cw, ch
 
+def band_h(c, ax):
+    """腳底中心上方一小柱（寬約身高的 24%）裡最高的不透明像素到腳底的距離：近似「身體高度」，不受旁邊伸出去的武器影響。"""
+    h, w = c.shape[:2]; half = max(6, int(h * 0.12))
+    m = c[:, max(0, int(ax) - half):min(w, int(ax) + half), 3] > 128
+    rows = np.where(m.any(axis=1))[0]
+    return float(h - rows.min()) if len(rows) else float(h)
+
+BODY = {}
 manifest = {}
-for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png'))):
+for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png')), key=lambda q: (q.endswith('_evo_walk.png'), q)):      # 原造型先處理，進化造型才有得對齊
     cid = os.path.basename(wp)[:-9]
     ap = os.path.join(SRC, cid + '_attack.png')
     if not os.path.exists(ap): print('缺攻擊圖表', cid); continue
@@ -77,6 +85,10 @@ for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png'))):
     walk_h = float(np.median([h for _, _, h in wf]))
     ready_h = af[-1][2]                              # 攻擊最後一格是預備姿勢，拿來對齊大小
     ws = TARGET / walk_h
+    if cid.endswith('_evo') and cid[:-4] in BODY:  # 進化造型：身體要和原造型一樣大（武器再長也不影響），用「腳上方那一柱的高度」對齊
+        ws = BODY[cid[:-4]] / float(np.median([band_h(c, ax) for c, ax, _ in wf]))
+    else:
+        BODY[cid] = float(np.median([band_h(c, ax) for c, ax, _ in wf])) * ws
     ratio = min(1.3, max(0.8, walk_h / ready_h))
     if cid.endswith('_evo'): ratio = 1.0          # 進化造型的武器很長，包圍框高度不可靠；走路與攻擊圖是用同樣大小生成的，直接沿用
     wsheet, wcw, wch = atlas(wf, ws); asheet, acw, ach = atlas(af, ws * ratio)
