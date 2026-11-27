@@ -16,6 +16,48 @@ const DIMS = {
   outdoor: { CW: 60, CH: 48, COR: 10, k: 1.22, SIZES: { start: [24, 18], combat: [37, 27], treasure: [22, 18], final: [44, 32] } },
 };
 
+// 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
+const SHAPE_SIZE = { pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+// 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
+function carveShape(z, side, rng, COR, set) {
+  const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
+  const ell = (ex, ey, rx, ry) => { for (let y = Math.floor(ey - ry); y <= ey + ry; y++) for (let x = Math.floor(ex - rx); x <= ex + rx; x++) if (((x + 0.5 - ex) / rx) ** 2 + ((y + 0.5 - ey) / ry) ** 2 <= 1) set(x, y); };
+  const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
+  if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'pier') {                        // 碼頭：中間一條橫向主棧橋，上下伸出一根根突堤，突堤之間是海
+    const qh = 12, fw = 6, gw = 4, step = fw + gw;
+    rect(X, cy - qh / 2, X + w, cy + qh / 2);
+    const off = ((w / 2 - fw / 2) % step + step) % step;
+    for (let fx = X + off - step; fx < X + w; fx += step) {
+      if (fx < X) continue;
+      const up = Math.round((h / 2 - qh / 2) * rng.range(0.55, 1)), dn = Math.round((h / 2 - qh / 2) * rng.range(0.55, 1));
+      rect(fx, cy - qh / 2 - up, fx + fw, cy + qh / 2 + dn);
+    }
+  } else if (z.shape === 'islands') {                   // 浮冰：中央一大塊，四周幾塊浮冰用冰橋相連
+    ell(cx, cy, w * 0.24, h * 0.3);
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const ex = cx + sx * w * rng.range(0.27, 0.31), ey = cy + sy * h * rng.range(0.25, 0.29), rx = w * rng.range(0.16, 0.19), ry = h * rng.range(0.18, 0.21);
+      ell(ex, ey, rx, ry);
+      for (let t = 0; t <= 1; t += 0.04) ell(cx + (ex - cx) * t, cy + (ey - cy) * t, 2.6, 2.6);
+    }
+  } else if (z.shape === 'cave') {                      // 洞窟：不規則的圓
+    const p1 = rng.range(0, 6.28), p2 = rng.range(0, 6.28), p3 = rng.range(0, 6.28);
+    for (let y = Y; y < Y + h; y++) for (let x = X; x < X + w; x++) {
+      const dx = (x + 0.5 - cx) / (w / 2), dy = (y + 0.5 - cy) / (h / 2), a = Math.atan2(dy, dx);
+      const f = Math.min(1, 0.8 + 0.13 * Math.sin(3 * a + p1) + 0.09 * Math.sin(5 * a + p2) + 0.05 * Math.sin(8 * a + p3));
+      if (dx * dx + dy * dy <= f * f) set(x, y);
+    }
+  } else if (z.shape === 'cross') { rect(cx - w * 0.23, Y, cx + w * 0.23, Y + h); rect(X, cy - h * 0.25, X + w, cy + h * 0.25); }
+  else {                                                // hall：方正的大廳，四角小切角
+    rect(X, Y, X + w, Y + h);
+  }
+  // 中心與通道口一定相通
+  rect(cx - 5, cy - 5, cx + 5, cy + 5);
+  const b = COR / 2 + 1;
+  if (side.U) rect(cx - b, Y, cx + b, cy); if (side.D) rect(cx - b, cy, cx + b, Y + h);
+  if (side.L) rect(X, cy - b, cx, cy + b); if (side.R) rect(cx, cy - b, X + w, cy + b);
+}
+
 export function buildLevel(stage, seed) {
   const rng = new RNG(seed);
   const layout = LAYOUTS[stage.layout];
@@ -30,16 +72,27 @@ export function buildLevel(stage, seed) {
   // ── 區域 ──
   const zones = layout.zones.map((z, i) => {
     const kind = z.kind || 'combat';
-    let [w, h] = z.size ? [Math.round(z.size[0] * SK / 2) * 2, Math.round(z.size[1] * SK / 2) * 2] : SIZES[kind];
-    if (kind === 'combat' && !z.size) { w += rng.int(-1, 2) * 2; h += rng.int(-1, 1) * 2; }
+    // 區域形狀（系列三起，由章節的 shapes 指定；沒指定就是原本的矩形房間）
+    const sp = stage.shapes && stage.shapes[kind], shape = !sp || z.size ? 'rect' : typeof sp === 'string' ? sp : rng.weighted(sp);
+    let [w, h] = z.size ? [Math.round(z.size[0] * SK / 2) * 2, Math.round(z.size[1] * SK / 2) * 2] : shape !== 'rect' && SHAPE_SIZE[shape] ? SHAPE_SIZE[shape][kind === 'final' ? 1 : 0] : SIZES[kind];
+    if (kind === 'combat' && !z.size && shape === 'rect') { w += rng.int(-1, 2) * 2; h += rng.int(-1, 1) * 2; }
+    if (kind === 'start' || kind === 'treasure') { if (shape !== 'rect') [w, h] = SIZES[kind]; }
     const x = z.c[0] * CW + ((CW - w) >> 1), y = z.c[1] * CH + ((CH - h) >> 1);
-    return { idx: i, id: z.id, kind, c: z.c, x, y, w, h, cx: (x + w / 2) * TILE, cy: (y + h / 2) * TILE,
+    return { idx: i, id: z.id, kind, shape, c: z.c, x, y, w, h, cx: (x + w / 2) * TILE, cy: (y + h / 2) * TILE,
       state: kind === 'start' ? 'cleared' : 'locked', obj: null, floor: null };
   });
   const byId = {};
   for (const z of zones) byId[z.id] = z;
 
+  // 每個區域哪幾邊有通道（非矩形的區域要保證通道口與中心相連）
+  const sides = zones.map(() => ({}));
+  for (const [a, b] of layout.links) {
+    const za = byId[a], zb = byId[b];
+    if (za.c[1] === zb.c[1]) { const l = za.c[0] < zb.c[0] ? za : zb, r = l === za ? zb : za; sides[l.idx].R = 1; sides[r.idx].L = 1; }
+    else { const t = za.c[1] < zb.c[1] ? za : zb, bt = t === za ? zb : za; sides[t.idx].D = 1; sides[bt.idx].U = 1; }
+  }
   for (const z of zones) {
+    if (z.shape !== 'rect') { carveShape(z, sides[z.idx], rng, COR, (x, y) => { if (x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h) tiles[idx(x, y)] = T_FLOOR; }); continue; }
     for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) tiles[idx(x, y)] = T_FLOOR;
     // 切角，讓房間不是死板的矩形
     const corners = [[z.x, z.y, 1, 1], [z.x + z.w - 1, z.y, -1, 1], [z.x, z.y + z.h - 1, 1, -1], [z.x + z.w - 1, z.y + z.h - 1, -1, -1]];
@@ -94,8 +147,17 @@ export function buildLevel(stage, seed) {
     return true;
   };
   for (const z of zones) {
-    const n = Math.floor((z.w * z.h) / (z.kind === 'final' ? 150 : 95));
+    let n = Math.floor((z.w * z.h) / (z.kind === 'final' ? 150 : 95));
     const midX = z.x + z.w / 2, midY = z.y + z.h / 2;
+    if (z.shape === 'hall') {                          // 大廳：對稱的柱列，零散障礙物較少
+      n = Math.floor(n * 0.35);
+      for (let py = z.y + 4; py < z.y + z.h - 5; py += 6) for (let px = z.x + 4; px < z.x + z.w - 5; px += 7) {
+        if (Math.abs(px + 1 - midX) < 6 || Math.abs(py + 1 - midY) < 6) continue;
+        if (!clearAround(px, py, 2, 2, 1)) continue;
+        for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
+        props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
+      }
+    } else if (z.shape === 'pier' || z.shape === 'islands') n = Math.floor(n * 0.6);
     for (let i = 0, tries = 0; i < n && tries < n * 12; tries++) {
       const shape = rng.weighted([[[1, 1], 4], [[2, 2], 3], [[2, 1], 2], [[1, 2], 2], [[3, 1], 1]]);
       const [w, h] = shape;

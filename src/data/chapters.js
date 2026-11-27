@@ -196,6 +196,7 @@ export const CHAPTERS = [
   // ───── 第三系列：永凍冰原（冰屬性：怪物打到會緩速；掉落騎士冰甲）─────
   {
     id: 7, series: 3, name: '冰封港口', sub: 'FROZEN HARBOUR', theme: 'harbor', outdoor: true, hazard: 'icicle',
+    shapes: { combat: [['pier', 4], ['islands', 3], ['rect', 1]], final: 'round' },      // 空間架構：突堤碼頭、浮冰群；首領在圓形錨地
     intro: '海結冰了，船也是。碼頭上的東西沒有一個歡迎活人——連企鵝都不例外。',
     devices: [['icebomb', 4], ['brazier', 3]],
     nodes: [
@@ -218,7 +219,7 @@ export const CHAPTERS = [
 ];
 
 export const STAGES = {};
-for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.series = ch.series || 1; STAGES[n.id] = n; }
+for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.shapes = n.shapes || ch.shapes || null; n.series = ch.series || 1; STAGES[n.id] = n; }
 
 export const NODE_KINDS = {
   normal: { name: '戰鬥', glyph: '戰' }, elite: { name: '菁英', glyph: '菁' },
