@@ -99,6 +99,7 @@ requestAnimationFrame(loop);
 
 await Promise.all([loadSprites(), loadEnemySprites(), loadMapTextures(), loadFxSprites()]);                      // 圖片立繪要先載好，選單上的頭像才畫得出來
 // 啟動畫面。?quick=1-1,tingge 直接開一場單人（開發用）
+if (qs.get('set')) window.__SET = qs.get('set');
 if (qs.get('quick')) {
   const [stage, ch] = qs.get('quick').split(',');
   if (CHARS[ch] && (DEV || save.isUnlocked(ch))) save.data.char = ch;

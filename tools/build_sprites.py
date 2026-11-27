@@ -78,6 +78,10 @@ def band_h(c, ax):
 BODY = {}
 EVO_RATIO = {'xia_evo': 1.0, 'gouqi_evo': 1.0, 'laoliu_evo': 1.0, 'wangchuan_evo': 1.1}
 manifest = {}
+ADD = '--add' in sys.argv          # 只加入這個資料夾的造型，保留原本的清單（套裝造型用）
+if ADD:
+    txt = open(os.path.join(ROOT, 'src', 'data', 'sprites.js')).read()
+    manifest = json.loads(txt[txt.index('{'):txt.rindex('}') + 1])
 for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png')), key=lambda q: (q.endswith('_evo_walk.png'), q)):      # 原造型先處理，進化造型才有得對齊
     cid = os.path.basename(wp)[:-9]
     ap = os.path.join(SRC, cid + '_attack.png')

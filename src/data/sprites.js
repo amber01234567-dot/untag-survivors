@@ -505,5 +505,247 @@ export const SPRITE_SHEETS = {
    269,
    254
   ]
+ },
+ "allen_ice": {
+  "px": 250,
+  "walk": [
+   202,
+   254
+  ],
+  "attack": [
+   302,
+   256
+  ]
+ },
+ "enjidou_ice": {
+  "px": 250,
+  "walk": [
+   247,
+   254
+  ],
+  "attack": [
+   298,
+   254
+  ]
+ },
+ "feijie_ice": {
+  "px": 250,
+  "walk": [
+   196,
+   256
+  ],
+  "attack": [
+   281,
+   255
+  ]
+ },
+ "gouqi_ice": {
+  "px": 250,
+  "walk": [
+   218,
+   254
+  ],
+  "attack": [
+   248,
+   267
+  ]
+ },
+ "hajimi_ice": {
+  "px": 250,
+  "walk": [
+   250,
+   254
+  ],
+  "attack": [
+   256,
+   254
+  ]
+ },
+ "laijie_ice": {
+  "px": 250,
+  "walk": [
+   275,
+   255
+  ],
+  "attack": [
+   311,
+   254
+  ]
+ },
+ "laojin_ice": {
+  "px": 250,
+  "walk": [
+   244,
+   255
+  ],
+  "attack": [
+   353,
+   254
+  ]
+ },
+ "laoliu_ice": {
+  "px": 250,
+  "walk": [
+   244,
+   254
+  ],
+  "attack": [
+   315,
+   293
+  ]
+ },
+ "maomaochong_ice": {
+  "px": 250,
+  "walk": [
+   217,
+   254
+  ],
+  "attack": [
+   225,
+   254
+  ]
+ },
+ "moumou_ice": {
+  "px": 250,
+  "walk": [
+   296,
+   255
+  ],
+  "attack": [
+   285,
+   254
+  ]
+ },
+ "nongfu_ice": {
+  "px": 250,
+  "walk": [
+   216,
+   254
+  ],
+  "attack": [
+   263,
+   257
+  ]
+ },
+ "qiqiu_ice": {
+  "px": 250,
+  "walk": [
+   247,
+   254
+  ],
+  "attack": [
+   195,
+   263
+  ]
+ },
+ "shaonian_ice": {
+  "px": 250,
+  "walk": [
+   212,
+   256
+  ],
+  "attack": [
+   237,
+   255
+  ]
+ },
+ "shenshen_ice": {
+  "px": 250,
+  "walk": [
+   255,
+   254
+  ],
+  "attack": [
+   247,
+   254
+  ]
+ },
+ "tiaotiao_ice": {
+  "px": 250,
+  "walk": [
+   224,
+   254
+  ],
+  "attack": [
+   231,
+   254
+  ]
+ },
+ "tingge_ice": {
+  "px": 250,
+  "walk": [
+   192,
+   254
+  ],
+  "attack": [
+   218,
+   254
+  ]
+ },
+ "tk_ice": {
+  "px": 250,
+  "walk": [
+   249,
+   255
+  ],
+  "attack": [
+   254,
+   254
+  ]
+ },
+ "wangchuan_ice": {
+  "px": 250,
+  "walk": [
+   251,
+   254
+  ],
+  "attack": [
+   288,
+   254
+  ]
+ },
+ "xia_ice": {
+  "px": 250,
+  "walk": [
+   248,
+   255
+  ],
+  "attack": [
+   328,
+   313
+  ]
+ },
+ "xiaoshunzi_ice": {
+  "px": 250,
+  "walk": [
+   189,
+   254
+  ],
+  "attack": [
+   239,
+   256
+  ]
+ },
+ "yangdidi_ice": {
+  "px": 250,
+  "walk": [
+   230,
+   255
+  ],
+  "attack": [
+   299,
+   254
+  ]
+ },
+ "yingzhang_ice": {
+  "px": 250,
+  "walk": [
+   235,
+   254
+  ],
+  "attack": [
+   240,
+   254
+  ]
  }
 };

@@ -250,9 +250,18 @@ function placeholder(g, p, def) {
 // 每個角色兩張圖集：走路 4 格、攻擊 4 格（最後一格同時當待機姿勢），由 tools/build_sprites.py 產生。
 // 新增角色：把 <id>_walk.png / <id>_attack.png 放進來源資料夾重跑該工具即可。
 // H = 角色在遊戲內的身高（世界單位）；個別角色可在這裡微調。
-const H_DEFAULT = 82;
+const H_DEFAULT = 82, SET_SCALE = 1.08;
 const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
+// 套裝造型（<角色>_<套裝>）：圖片用到才載入，載入完成前先畫原造型
+export const SETS = ['ice'];
+const SET_RE = new RegExp('_(' + SETS.join('|') + ')$');
+function setSprite(charId, set) {
+  const id = charId + '_' + set;
+  if (!SPRITE_SHEETS[id]) return null;
+  if (!IMG[id + '_walk']) { loadImg(id + '_walk'); loadImg(id + '_attack'); }
+  return hasSprite(id) ? id : null;
+}
 function loadImg(name) {
   if (IMG[name]) return IMG[name].p;
   const im = new Image(), rec = { im, ok: false };
@@ -263,7 +272,7 @@ function loadImg(name) {
 }
 export function loadSprites() {
   const ps = [];
-  for (const id in SPRITE_SHEETS) ps.push(loadImg(id + '_walk'), loadImg(id + '_attack'));
+  for (const id in SPRITE_SHEETS) if (!SET_RE.test(id)) ps.push(loadImg(id + '_walk'), loadImg(id + '_attack'));      // 套裝造型很多：用到才載入
   return Promise.all(ps);
 }
 const hasSprite = (id) => !!(SPRITE_SHEETS[id] && IMG[id + '_walk'] && IMG[id + '_walk'].ok && IMG[id + '_attack'].ok);
@@ -274,7 +283,7 @@ function spriteLook(g, p, id) {
   const m = SPRITE_SHEETS[id], atk = p.atk > 0, useAtk = atk || !p.moving;
   const sheet = IMG[id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk;
   const i = atk ? Math.min(3, Math.floor(p.atk * 4)) : p.moving ? Math.floor(p.t * 9) % 4 : 3;
-  const sc = (H[id] || H[id.replace(/_evo$/, '')] || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
+  const sc = (H[id] || H[id.replace(/_evo$/, '')] || (SET_RE.test(id) && (H[id.replace(SET_RE, '')] || H_DEFAULT) * SET_SCALE) || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
   g.save(); g.scale(1 / (1 + breathe), 1 + breathe); g.imageSmoothingQuality = 'high';
   g.drawImage(sheet, i * cw, 0, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
   g.restore();
@@ -295,6 +304,8 @@ export function drawChar(g, charId, pose) {
   // 造型：路線分支 / 武器進化。該造型還沒畫的話逐步退回（siege_evo → siege → 原造型）
   let sid = charId;
   if (pose.skin) { const sk = SKINS[pose.skin] || ''; for (const c of [sk, sk.replace('_evo', '')]) if (c && hasSprite(charId + '_' + c)) { sid = charId + '_' + c; break; } }
+  const set = pose.set || (typeof window !== 'undefined' && window.__SET) || '';      // 套裝外觀優先（目前只有測試開關；之後由裝備系統帶入）
+  if (set) { const q = setSprite(charId, set); if (q) sid = q; }
   if (hasSprite(sid)) spriteLook(g, pose, sid); else if (LOOKS[charId]) LOOKS[charId](g, pose); else placeholder(g, pose, def);
   g.restore();
 }
