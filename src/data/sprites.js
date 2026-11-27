@@ -515,7 +515,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    302,
    256
-  ]
+  ],
+  "one": 1
  },
  "enjidou_ice": {
   "px": 250,
@@ -526,7 +527,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    298,
    254
-  ]
+  ],
+  "one": 1
  },
  "feijie_ice": {
   "px": 250,
@@ -537,7 +539,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    281,
    255
-  ]
+  ],
+  "one": 1
  },
  "gouqi_ice": {
   "px": 250,
@@ -548,7 +551,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    248,
    267
-  ]
+  ],
+  "one": 1
  },
  "hajimi_ice": {
   "px": 250,
@@ -559,7 +563,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    256,
    254
-  ]
+  ],
+  "one": 1
  },
  "laijie_ice": {
   "px": 250,
@@ -570,7 +575,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    311,
    254
-  ]
+  ],
+  "one": 1
  },
  "laojin_ice": {
   "px": 250,
@@ -581,7 +587,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    353,
    254
-  ]
+  ],
+  "one": 1
  },
  "laoliu_ice": {
   "px": 250,
@@ -592,7 +599,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    315,
    293
-  ]
+  ],
+  "one": 1
  },
  "maomaochong_ice": {
   "px": 250,
@@ -603,7 +611,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    225,
    254
-  ]
+  ],
+  "one": 1
  },
  "moumou_ice": {
   "px": 250,
@@ -614,7 +623,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    285,
    254
-  ]
+  ],
+  "one": 1
  },
  "nongfu_ice": {
   "px": 250,
@@ -625,7 +635,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    263,
    257
-  ]
+  ],
+  "one": 1
  },
  "qiqiu_ice": {
   "px": 250,
@@ -636,7 +647,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    195,
    263
-  ]
+  ],
+  "one": 1
  },
  "shaonian_ice": {
   "px": 250,
@@ -647,7 +659,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    237,
    255
-  ]
+  ],
+  "one": 1
  },
  "shenshen_ice": {
   "px": 250,
@@ -658,7 +671,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    247,
    254
-  ]
+  ],
+  "one": 1
  },
  "tiaotiao_ice": {
   "px": 250,
@@ -669,7 +683,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    231,
    254
-  ]
+  ],
+  "one": 1
  },
  "tingge_ice": {
   "px": 250,
@@ -680,7 +695,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    218,
    254
-  ]
+  ],
+  "one": 1
  },
  "tk_ice": {
   "px": 250,
@@ -691,7 +707,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    254,
    254
-  ]
+  ],
+  "one": 1
  },
  "wangchuan_ice": {
   "px": 250,
@@ -702,7 +719,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    288,
    254
-  ]
+  ],
+  "one": 1
  },
  "xia_ice": {
   "px": 250,
@@ -713,7 +731,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    328,
    313
-  ]
+  ],
+  "one": 1
  },
  "xiaoshunzi_ice": {
   "px": 250,
@@ -724,7 +743,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    239,
    256
-  ]
+  ],
+  "one": 1
  },
  "yangdidi_ice": {
   "px": 250,
@@ -735,7 +755,8 @@ export const SPRITE_SHEETS = {
   "attack": [
    299,
    254
-  ]
+  ],
+  "one": 1
  },
  "yingzhang_ice": {
   "px": 250,
@@ -746,6 +767,7 @@ export const SPRITE_SHEETS = {
   "attack": [
    240,
    254
-  ]
+  ],
+  "one": 1
  }
 };

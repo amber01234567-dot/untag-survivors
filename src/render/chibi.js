@@ -254,12 +254,12 @@ const H_DEFAULT = 82, SET_SCALE = 1.08;
 const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 // 套裝造型（<角色>_<套裝>）：圖片用到才載入，載入完成前先畫原造型
-export const SETS = ['ice'];
+export const SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder'];
 const SET_RE = new RegExp('_(' + SETS.join('|') + ')$');
 function setSprite(charId, set) {
   const id = charId + '_' + set;
   if (!SPRITE_SHEETS[id]) return null;
-  if (!IMG[id + '_walk']) { loadImg(id + '_walk'); loadImg(id + '_attack'); }
+  if (!IMG[id]) loadImg(id);                     // 套裝造型是單一檔（走路在上、攻擊在下）
   return hasSprite(id) ? id : null;
 }
 function loadImg(name) {
@@ -275,17 +275,17 @@ export function loadSprites() {
   for (const id in SPRITE_SHEETS) if (!SET_RE.test(id)) ps.push(loadImg(id + '_walk'), loadImg(id + '_attack'));      // 套裝造型很多：用到才載入
   return Promise.all(ps);
 }
-const hasSprite = (id) => !!(SPRITE_SHEETS[id] && IMG[id + '_walk'] && IMG[id + '_walk'].ok && IMG[id + '_attack'].ok);
+const hasSprite = (id) => { const m = SPRITE_SHEETS[id]; return !!m && (m.one ? !!(IMG[id] && IMG[id].ok) : !!(IMG[id + '_walk'] && IMG[id + '_walk'].ok && IMG[id + '_attack'].ok)); };
 // 角色頭頂高度（給名字與血條定位用）
 export function charHeight(id) { const d = CHARS[id]; return (hasSprite(id) ? H[id] || H_DEFAULT : 60 * ((d && d.small) || 1)); }
 export function setAnimMode() {}
 function spriteLook(g, p, id) {
   const m = SPRITE_SHEETS[id], atk = p.atk > 0, useAtk = atk || !p.moving;
-  const sheet = IMG[id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk;
+  const sheet = IMG[m.one ? id : id + (useAtk ? '_attack' : '_walk')].im, [cw, ch] = useAtk ? m.attack : m.walk, sy = m.one && useAtk ? m.walk[1] : 0;
   const i = atk ? Math.min(3, Math.floor(p.atk * 4)) : p.moving ? Math.floor(p.t * 9) % 4 : 3;
   const sc = (H[id] || H[id.replace(/_evo$/, '')] || (SET_RE.test(id) && (H[id.replace(SET_RE, '')] || H_DEFAULT) * SET_SCALE) || H_DEFAULT) / m.px, breathe = useAtk && !atk ? Math.sin(p.t * 2.6) * 0.012 : 0;
   g.save(); g.scale(1 / (1 + breathe), 1 + breathe); g.imageSmoothingQuality = 'high';
-  g.drawImage(sheet, i * cw, 0, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
+  g.drawImage(sheet, i * cw, sy, cw, ch, -cw * sc / 2, -(ch - 2) * sc, cw * sc, ch * sc);
   g.restore();
 }
 

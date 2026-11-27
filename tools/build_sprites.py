@@ -77,6 +77,7 @@ def band_h(c, ax):
 
 BODY = {}
 EVO_RATIO = {'xia_evo': 1.0, 'gouqi_evo': 1.0, 'laoliu_evo': 1.0, 'wangchuan_evo': 1.1}
+SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder']
 manifest = {}
 ADD = '--add' in sys.argv          # 只加入這個資料夾的造型，保留原本的清單（套裝造型用）
 if ADD:
@@ -100,8 +101,14 @@ for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png')), key=lambda q: (q.en
         ratio = min(1.3, max(0.75, BODY[cid[:-4]] / band_h(af[-1][0], af[-1][1]) / ws))
         ratio = EVO_RATIO.get(cid, ratio)          # 自動估算不準的（預備姿勢是蹲姿或武器擋在身體上方）用人工確認過的值
     wsheet, wcw, wch = atlas(wf, ws); asheet, acw, ach = atlas(af, ws * ratio)
-    wsheet.save(os.path.join(OUT, cid + '_walk.png'), optimize=True); asheet.save(os.path.join(OUT, cid + '_attack.png'), optimize=True)
-    manifest[cid] = {'px': TARGET, 'walk': [wcw, wch], 'attack': [acw, ach]}
+    if cid.rsplit('_', 1)[-1] in SETS:               # 套裝造型：走路＋攻擊併成一張（上下排），一個角色一套只要下載一個檔
+        one = Image.new('RGBA', (max(wsheet.width, asheet.width), wch + ach), (0, 0, 0, 0))
+        one.alpha_composite(wsheet, (0, 0)); one.alpha_composite(asheet, (0, wch))
+        one.save(os.path.join(OUT, cid + '.png'), optimize=True)
+        manifest[cid] = {'px': TARGET, 'walk': [wcw, wch], 'attack': [acw, ach], 'one': 1}
+    else:
+        wsheet.save(os.path.join(OUT, cid + '_walk.png'), optimize=True); asheet.save(os.path.join(OUT, cid + '_attack.png'), optimize=True)
+        manifest[cid] = {'px': TARGET, 'walk': [wcw, wch], 'attack': [acw, ach]}
     print(f'{cid:12s} walk {wsheet.size} attack {asheet.size} 校正 x{ratio:.2f} 切格 {"空隙" if wc else "等分"}/{"空隙" if ac else "等分"}')
 
 with open(os.path.join(ROOT, 'src', 'data', 'sprites.js'), 'w') as f:

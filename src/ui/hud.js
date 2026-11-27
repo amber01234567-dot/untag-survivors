@@ -10,10 +10,10 @@ import { SLOT_COLORS } from '../render/renderer.js';
 import { fmt } from '../core/util.js';
 import { save } from '../core/save.js';
 import { sfx } from '../core/audio.js';
-import { icon, optIcon } from './icons.js';
+import { icon, optIcon, U } from './icons.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const ICON = (id) => new URL(`../../assets/ui/skills/${id}.png`, import.meta.url).href;
+const ICON = (id) => U('skills/' + id);
 const CAT_COL = { 武器進化: '#ffd23c', 路線分支: '#ff8a5a', 專屬武器: '#ffd76b', 副武器: '#ff8fd0', 被動: '#2de2e6', 補給: '#5dff9d' };
 
 export class Hud {
