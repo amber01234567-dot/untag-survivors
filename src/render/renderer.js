@@ -13,7 +13,7 @@ import { FXS, tinted } from './fxsprites.js';
 const PSPR = {
   bullet: ['bullet', 18, 'aim', '#ffe69a'], gatling: ['bullet', 18, 'aim', '#ffe69a'], revolver: ['bullet', 30, 'aim', '#fff1c4'], pistol: ['bullet', 15, 'aim', '#bff4ff'], dronebolt: ['bullet', 14, 'aim', '#2de2e6'],
   knife: ['knife', 24, 'aim'], cleaver: ['cleaver', 24, 'spin'], blade: ['blade', 24, 'spin'], rune: ['rune', 17, ''], syringe: ['syringe', 28, 'aim'], skewer: ['skewer', 36, 'aim'], bead: ['bead', 15, ''],
-  starwave: ['evo_starwave', 150, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
+  starwave: ['evo_starwave', 150, 'aim'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
   e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'],
@@ -81,6 +81,10 @@ export class Renderer {
     for (const p of f.projs) if (vis(p.x, p.y, 60)) this.proj(g, p, t);
     for (const [k, v] of seen) if (!v.live) seen.delete(k);
     for (const z of f.zones) if (z.len) this.beam(g, z, t);
+    for (const z of f.zones) if (ZONE_KINDS[z.k] === 'mushroom' && FXS.evo_mushroom) {      // 蕈狀雲：畫在角色之上，往上升並淡出
+      const im = FXS.evo_mushroom, big = z.aux === 1, hgt = (big ? 520 : 250) * (0.55 + 0.45 * Math.min(1, z.p * 3)), w = hgt * im.width / im.height;
+      g.globalAlpha = Math.min(1, (1 - z.p) * 2.2); g.drawImage(im, z.x - w / 2, z.y - hgt + 18, w, hgt); g.globalAlpha = 1;
+    }
     fx.draw(g);
     fx.drawSprites(g);
     this.map.drawOver(g, cam, vw, vh, t);
@@ -173,6 +177,17 @@ export class Renderer {
   summon(g, s, t) {
     const k = SUMMON_KINDS[s.k];
     const sm = k !== 'wisp' && FXS[k];
+    if (sm && k === 'bit') {                      // 浮游槍：st = 槍口方向（0-255）
+      const a = s.st / 255 * TAU, w = 36, h = w * sm.height / sm.width;
+      g.save(); g.translate(s.x, s.y); g.rotate(a); if (Math.cos(a) < 0) g.scale(1, -1); g.shadowColor = '#2de2e6'; g.shadowBlur = 8; g.drawImage(sm, -w / 2, -h / 2, w, h); g.restore(); g.shadowBlur = 0;
+      return;
+    }
+    if (sm && k === 'skull') {                    // 幽冥骷髏：咬的時候縮放一下
+      const size = 96 * (s.st === 1 ? 1.12 : 1), h = size * sm.height / sm.width, bob = Math.sin(t * 4 + s.id) * 4;
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(s.x, s.y + 40, 30, 9, 0, 0, TAU); g.fill();
+      g.save(); g.translate(s.x, s.y - bob); g.scale(s.face < 0 ? -1 : 1, 1); g.shadowColor = '#5dff8d'; g.shadowBlur = 18; g.globalAlpha = 0.93; g.drawImage(sm, -size / 2, -h / 2, size, h); g.restore(); g.shadowBlur = 0; g.globalAlpha = 1;
+      return;
+    }
     if (sm) {                                     // 圖片召喚物
       const size = { drone: 30, cat: 26, lion: 66, rat: 27, tank: 62 }[k], h = size * sm.height / sm.width, fly = k === 'drone';
       const bob = fly ? Math.sin(t * 5 + s.id) * 2 : s.st === 1 ? Math.abs(Math.sin(t * 14 + s.id)) * 3 : 0;
@@ -254,6 +269,24 @@ export class Renderer {
   zoneGround(g, z, t) {
     const k = ZONE_KINDS[z.k], { x, y, r } = z;
     switch (k) {
+      case 'doomcircle': {                            // 終焉大魔法陣：三層由外到內逐層亮起、反向旋轉，最後整個爆亮
+        const im = FXS.circle, fade = Math.min(1, (1 - z.p) * 5), end = z.p > 0.77 ? Math.min(1, (z.p - 0.77) * 8) : 0;
+        [[1, 0, 0.35], [0.66, 0.24, -0.55], [0.36, 0.48, 0.9]].forEach(([k2, at, sp], i) => {
+          const a2 = Math.min(1, Math.max(0, (z.p - at) * 6)) * fade;
+          if (a2 <= 0) return;
+          if (im) disc(g, im, x, y, r * k2, t * sp + i, a2 * (0.55 + 0.45 * end));
+          else magicCircle(g, x, y, r * k2, t * sp, '#ff2d4a', a2 * 0.8, true);
+        });
+        if (end > 0) { g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(255,40,70,${0.22 * end * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill(); g.globalCompositeOperation = 'source-over'; }
+        break;
+      }
+      case 'maw': {                                   // 幽冥巨口：巨大骷髏浮現、張口，時間到一口咬下
+        const im = FXS.skull, bite = z.on, fade = Math.min(1, (1 - z.p) * 6), grow = bite ? 1 : 0.55 + 0.45 * z.dp;
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(60,255,130,${(bite ? 0.2 : 0.07 + 0.1 * z.dp) * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
+        g.strokeStyle = `rgba(120,255,170,${0.6 * fade})`; g.lineWidth = 3; g.setLineDash([14, 10]); g.lineDashOffset = -t * 60; g.stroke(); g.setLineDash([]); g.globalCompositeOperation = 'source-over';
+        if (im) { const w = r * 1.9 * grow, h = w * im.height / im.width; g.save(); g.translate(x, y - 20 - (bite ? 0 : (1 - z.dp) * 60)); g.scale(1, bite ? 0.82 + 0.18 * fade : 1 + 0.06 * Math.sin(t * 12)); g.globalAlpha = (bite ? fade : Math.min(0.85, z.dp * 1.4)); g.shadowColor = '#5dff8d'; g.shadowBlur = 26; g.drawImage(im, -w / 2, -h / 2, w, h); g.restore(); g.globalAlpha = 1; g.shadowBlur = 0; }
+        break;
+      }
       case 'rockburst': {                             // 岩柱：預警一下後從地面頂出來，再縮回
         if (!z.on) { g.fillStyle = `rgba(255,190,70,${0.12 + 0.2 * z.dp})`; g.beginPath(); g.ellipse(x, y, r * z.dp, r * 0.7 * z.dp, 0, 0, TAU); g.fill(); break; }
         const life = (z.p - z.dp * 0) , q = Math.min(1, (1 - z.p) * 4), up = Math.min(1, (z.p * 1) * 6 + 0.2), im = FXS.evo_rockspike;

@@ -76,6 +76,7 @@ def band_h(c, ax):
     return float(h - rows.min()) if len(rows) else float(h)
 
 BODY = {}
+EVO_RATIO = {'xia_evo': 1.0, 'gouqi_evo': 1.0, 'laoliu_evo': 1.0, 'wangchuan_evo': 1.1}
 manifest = {}
 for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png')), key=lambda q: (q.endswith('_evo_walk.png'), q)):      # 原造型先處理，進化造型才有得對齊
     cid = os.path.basename(wp)[:-9]
@@ -90,7 +91,10 @@ for wp in sorted(glob.glob(os.path.join(SRC, '*_walk.png')), key=lambda q: (q.en
     else:
         BODY[cid] = float(np.median([band_h(c, ax) for c, ax, _ in wf])) * ws
     ratio = min(1.3, max(0.8, walk_h / ready_h))
-    if cid.endswith('_evo'): ratio = 1.0          # 進化造型的武器很長，包圍框高度不可靠；走路與攻擊圖是用同樣大小生成的，直接沿用
+    if cid.endswith('_evo'): ratio = 1.0          # 進化造型的武器很長，包圍框高度不可靠：先當作同樣大小，下面再用「身體柱高」校正
+    if cid.endswith('_evo') and cid[:-4] in BODY:  # 攻擊圖的預備姿勢（最後一格）也對齊到同樣的身體大小
+        ratio = min(1.3, max(0.75, BODY[cid[:-4]] / band_h(af[-1][0], af[-1][1]) / ws))
+        ratio = EVO_RATIO.get(cid, ratio)          # 自動估算不準的（預備姿勢是蹲姿或武器擋在身體上方）用人工確認過的值
     wsheet, wcw, wch = atlas(wf, ws); asheet, acw, ach = atlas(af, ws * ratio)
     wsheet.save(os.path.join(OUT, cid + '_walk.png'), optimize=True); asheet.save(os.path.join(OUT, cid + '_attack.png'), optimize=True)
     manifest[cid] = {'px': TARGET, 'walk': [wcw, wch], 'attack': [acw, ach]}

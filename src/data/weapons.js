@@ -386,6 +386,54 @@ EVO('bat', 'thunderclub', 'crit', {
   ult: { id: 'sn_thunder', name: '雷神全壘打', desc: '蓄力一棒把巨大的雷球轟出去，同時全畫面降下落雷。' },
   mod: { m: { dmg: 1.2, range: 1.2 }, s: { thunder: 3, comet: 1, ballEvery: 2, ballDmg: 2.2 } },
 });
+EVO('lasercannon', 'prismcannon', 'area', {
+  name: '極光稜鏡砲', glyph: '虹', fx: 'teal',
+  evoDesc: '細直線雷射變成寬大的彩虹光束，發射時會左右掃過一整個扇面',
+  ult: { id: 'ejd_curtain', name: '極光天幕', desc: '一道從天而降的彩虹光幕由一側橫掃到另一側，掃過整個戰場。' },
+  mod: { m: { dmg: 2.0, width: 2.3, len: 1.15, dur: 1.25 }, s: { count: 1, sweep: 0.75, burst: 1 } },
+});
+EVO('gatling', 'vulcan', 'haste', {
+  name: '火神熔彈砲', glyph: '熔', proj: 'tracer',
+  evoDesc: '子彈變成一條連續的火線，貫穿敵人並在掃過的地面留下燃燒的彈道',
+  ult: { id: 'yz_carpet', name: '燃燒地毯', desc: '呼叫轟炸機投下三排燃燒彈，把整片區域變成火海。' },
+  mod: { m: { dmg: 2.3, cd: 1.6, speed: 1.3 }, a: { pierce: 2 }, s: { count: 1, jitter: 0.1, trail: 4, projR: 10 } },
+});
+EVO('runes', 'lancearray', 'wisdom', {
+  name: '緋紅魔槍陣', glyph: '緋', proj: 'lance',
+  evoDesc: '背後展開鮮紅魔法陣，追蹤符文變成從陣中射出、貫穿整排敵人的緋紅長槍；魔法陣照樣在敵群腳下展開',
+  ult: { id: 'ss_doom', name: '終焉大魔法陣', desc: '鋪滿整個畫面的多層鮮紅魔法陣由外到內逐層亮起並束縛敵人，全部亮起後所有符文節點同時噴出紅色光柱。' },
+  mod: { m: { dmg: 1.9, speed: 2.2, life: 0.45 }, s: { count: 3, spread: 0.26, homing: 0, pierce: 99, projR: 12, back: 26 } },
+});
+EVO('wisps', 'netherskull', 'regen', {
+  name: '幽冥骷髏', glyph: '骷', beh: 'skull',
+  evoDesc: '小鬼火合體成一顆巨大的幽火綠骷髏，自己在場上游走啃咬敵人，咬死敵人時為主人回血',
+  ult: { id: 'tk_maw', name: '幽冥巨口', desc: '巨大的幽綠骷髏張口把範圍內的敵人吸過來一口吞下，血量低的敵人直接被吞噬。' },
+  mod: { m: { dmg: 3.0 }, s: { biteCd: 0.34, biteR: 74, skullSpeed: 300, leash: 430 } },
+});
+EVO('pistol', 'twinbits', 'swift', {
+  name: '浮游雙槍', glyph: '浮',
+  evoDesc: '手上的槍變成兩把漂浮在肩上的浮游槍，各自瞄準不同目標、獨立開火，子彈會追蹤',
+  ult: { id: 'hjm_array', name: '浮游砲陣', desc: '六把浮游槍展開成環繞著自己旋轉，持續向四周的敵人齊射。' },
+  mod: { m: { dmg: 2.0 }, a: { pierce: 1 }, s: { bits: 1, dual: 0, homing: 4, burst: 2 } },
+});
+EVO('knives', 'glaive', 'magnet', {
+  name: '歸鞘迴刃', glyph: '迴', proj: 'glaive',
+  evoDesc: '一把把小飛刀合成一把大型迴旋刃：飛出去後會被吸回手上，去程回程各切一次，路徑上的敵人全部貫穿',
+  ult: { id: 'wc_return', name: '萬刃歸宗', desc: '無數迴旋刃飛向四面八方，再一口氣全部吸回身上。' },
+  mod: { m: { dmg: 5.6, cd: 1.25, speed: 0.9, life: 1.5 }, s: { count: 1, pierce: 99, ret: 1, projR: 34 } },
+});
+EVO('rocket', 'doomsday', 'area', {
+  name: '末日彈頭', glyph: '核', proj: 'nuke',
+  evoDesc: '多發火箭變成一顆緩慢飛行的巨型彈頭：落地出現蕈狀雲，並留下一片持續傷害的輻射區',
+  ult: { id: 'mou_doom', name: '末日審判', desc: '一顆超大彈頭從天而降，蕈狀雲籠罩全場並留下大片輻射區。' },
+  mod: { m: { dmg: 2.3, cd: 1.9, aoe: 2.2, speed: 0.5, life: 2.0 }, s: { count: 1, nuke: 1, projR: 16 } },
+});
+EVO('siege', 'titan', 'vigor', {
+  name: '泰坦機甲', glyph: '泰', fx: 'heavy',
+  evoDesc: '機甲整體變大換色：每一記重拳落地都向外擴散一圈衝擊波，護甲與生命再提升',
+  ult: { id: 'mou_titan', name: '泰坦墜擊', desc: '機甲高高跳起砸下，衝擊波向外擴散三層並震暈敵人。' },
+  mod: { m: { dmg: 1.25, hpMul: 1.12, range: 1.15 }, a: { armorAdd: 3 }, s: { titan: 1, combo: 2 } },
+});
 EVO('revolver', 'reapersniper', 'crit', {
   name: '死神狙擊', glyph: '狙',
   evoDesc: '左輪換成長管狙擊槍：子彈變成瞬間貫穿整個畫面的狙擊光線；暴擊時在命中點引發爆炸',

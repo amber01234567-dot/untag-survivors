@@ -196,6 +196,7 @@ export function applyOption(W, p, o) {
       const i = p.weapons.findIndex((x) => x.def.id === o.replace);
       if (i < 0) return;
       for (const k of ['orbs']) if (p.weapons[i][k]) for (const e of p.weapons[i][k]) e.dead = true;
+      if (p.weapons[i].ws) for (const x of p.weapons[i].ws) if (x.ent) x.ent.dead = true;      // 舊武器的鬼火
       w = addWeapon(p, o.id); p.weapons.pop(); p.weapons[i] = w;
     } else if (!w) w = addWeapon(p, o.id); else { w.level = Math.min(w.def.maxLv, w.level + 1); w.s = weaponStats(w.def, w.level); }
     recalc(p);

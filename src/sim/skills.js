@@ -82,6 +82,87 @@ export const SKILLS = {
       W2.emit('l', tx | 0, (ty - 460) | 0, tx | 0, ty | 0, 1); W2.aoe(tx, ty, 78, d * 2.6, p, { stun: 0.6, fx: 1 });
     });
   },
+  // 嗯雞抖・極光天幕：一道直立的彩虹光幕由左到右橫掃戰場
+  ejd_curtain(W, p) {
+    const d = wdmg(p), dir = Math.cos(p.aim) >= 0 ? 1 : -1, x0 = p.x - dir * 620, H = 1300;
+    W.addZone({ kind: 'beam', owner: p, x: x0, y: p.y - H / 2, a: Math.PI / 2, len: H, w: 170, dur: 2.6, tick: 0.08, dmg: d * 1.5, burst: 1, aux: 1, hitOpt: { kb: 40 },
+      upd(W2, z, dt) { z.x = x0 + dir * 1240 * Math.min(1, z.t / z.dur); z.tk -= dt; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); } } });
+    channel(W, p, 2.6, 0.25, (W2) => W2.emit('sh', 5));
+  },
+  // 營長・燃燒地毯：三排燃燒彈，炸完留下整片火海
+  yz_carpet(W, p) {
+    const c = clusterOrAhead(W, p, 520, 260), a = p.aim + 1.57, d = wdmg(p) * 9;
+    for (let row = -1; row <= 1; row++) for (let i = -4; i <= 4; i++) {
+      const x = c.x + Math.cos(a) * i * 92 + Math.cos(p.aim) * row * 135, y = c.y + Math.sin(a) * i * 92 + Math.sin(p.aim) * row * 135;
+      W.addZone({ kind: 'airstrike', owner: p, x, y, r: 110, delay: 0.6 + (row + 1) * 0.4 + (i + 4) * 0.06, dur: 1.9 + (row + 1) * 0.4, tick: 9, onStart(W2, z) {
+        W2.aoe(z.x, z.y, z.r, d, p, { fx: 1, kb: 160, dot: 16, dotDur: 4 }); W2.emit('sh', 4);
+        W2.addZone({ kind: 'fire', owner: p, x: z.x, y: z.y, r: 78, dur: 7, tick: 0.4, dmg: d * 0.07, hitOpt: { quiet: true } }); } });
+    }
+  },
+  // 深深・終焉大魔法陣：巨大魔法陣逐層亮起並束縛敵人，最後所有節點噴出光柱
+  ss_doom(W, p) {
+    const d = wdmg(p), R = 520, x = p.x, y = p.y;
+    W.addZone({ kind: 'doomcircle', owner: p, x, y, r: R, dur: 3.9, tick: 0.3, dmg: d * 0.4, hitOpt: { slow: 0.75, slowDur: 0.6, quiet: true },
+      onEnd: () => {} });
+    channel(W, p, 3.0, 9, () => {}, (W2) => {
+      W2.hash.query(x, y, R, (e) => W2.strike(p, e, d * 9, { stun: 2, mark: 4 }));
+      for (let i = 0; i < 12; i++) { const a = i * TAU / 12, px = x + Math.cos(a) * R * 0.72, py = y + Math.sin(a) * R * 0.72 * 0.86; W2.emit('l', px | 0, (py - 520) | 0, px | 0, py | 0, 3); W2.aoe(px, py, 110, d * 4, p, { fx: 4 }); }
+      W2.emit('l', x | 0, (y - 520) | 0, x | 0, y | 0, 3); W2.emit('sh', 20); W2.emit('a', 'boom');
+    });
+  },
+  // TK哥・幽冥巨口：巨大骷髏把敵人吸過來一口吞下；低血量的一般敵人直接吞噬
+  tk_maw(W, p) {
+    const c = W.cluster(p.x, p.y, 480, 200) || { x: p.x + Math.cos(p.aim) * 160, y: p.y + Math.sin(p.aim) * 160 }, d = wdmg(p), R = 300;
+    W.addZone({ kind: 'maw', owner: p, x: c.x, y: c.y, r: R, delay: 1.1, dur: 1.9, tick: 0.1, pull: 300, dmg: 0, hitOpt: { quiet: true, slow: 0.5, slowDur: 0.3 },
+      upd(W2, z, dt) {
+        z.tk -= dt;
+        if (z.t < z.delay) { if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); } return; }
+        if (z.bit) return; z.bit = true;
+        W2.hash.query(z.x, z.y, R * 0.8, (e) => { if (!e.def.boss && !e.def.structure && e.hp < e.maxHp * 0.3) W2.killEnemy(e, p); else W2.strike(p, e, d * 4.5, { stun: 1.5 }); });
+        W2.emit('sh', 20); W2.emit('a', 'boom'); W2.heal(p, p.st.maxHp * 0.25, p);
+      } });
+  },
+  // 哈基米・浮游砲陣：六把浮游槍繞著自己旋轉齊射
+  hjm_array(W, p) {
+    addBuff(p, 'storm', { t: 5.2, haste: 0.3, ult: 1 });
+    const bits = []; for (let i = 0; i < 6; i++) bits.push(W.addSummon({ kind: 'bit', owner: p, x: p.x, y: p.y, life: 5.3 }));
+    let rot = 0, n = 0; const d = wdmg(p);
+    channel(W, p, 5.2, 0.045, (W2) => {
+      rot += 0.11; n++;
+      bits.forEach((b, i) => { const a = rot + i * TAU / 6; b.x = p.x + Math.cos(a) * 74; b.y = p.y - 26 + Math.sin(a) * 52; b.face = Math.cos(a) >= 0 ? 1 : -1; });
+      const b = bits[n % 6], t = W2.nearestEnemy(b.x, b.y, 520), a = t ? Math.atan2(t.y - 8 - b.y, t.x - b.x) : rot + (n % 6) * TAU / 6;
+      b.st = Math.round((((a % TAU) + TAU) % TAU) / TAU * 255);
+      W2.shoot(p, { kind: 'pistol', x: b.x, y: b.y, a, speed: 880, dmg: d * 1.1, life: 0.8, pierce: 2, homing: 3, r: 8 });
+    }, () => bits.forEach((b) => { b.dead = true; }));
+  },
+  // 忘川・萬刃歸宗：三波迴旋刃飛向四面八方再全部吸回
+  wc_return(W, p) {
+    const d = wdmg(p);
+    addBuff(p, 'blade', { t: 3, speed: 0.2, ult: 1 });
+    let k = 0;
+    channel(W, p, 1.3, 0.42, (W2) => { ring(W2, p, 14, 'glaive', { speed: 620, dmg: d * 0.75, pierce: 99, life: 1.5, ret: true, r: 30, kb: 60 }, k * 0.22); k++; W2.emit('sh', 6); });
+  },
+  // 哞哞（火箭）・末日審判：超大彈頭從天而降
+  mou_doom(W, p) {
+    const c = clusterOrAhead(W, p, 520, 240), d = wdmg(p), R = 430;
+    W.addZone({ kind: 'airstrike', owner: p, x: c.x, y: c.y, r: R, delay: 1.3, dur: 1.5, tick: 9 });
+    lob(W, p, 'nuke', c.x, c.y, 1.3, (W2) => {
+      W2.aoe(c.x, c.y, R, d * 5, p, { kb: 500, stun: 1.5, dot: 20, dotDur: 5, fx: 1 }); W2.emit('sh', 24); W2.emit('a', 'boom');
+      W2.addZone({ kind: 'mushroom', owner: p, x: c.x, y: c.y, r: R, dur: 2.4, tick: 9, aux: 1 });
+      W2.addZone({ kind: 'toxic', owner: p, x: c.x, y: c.y, r: R * 0.85, dur: 9, tick: 0.5, dmg: d * 0.18, hitOpt: { quiet: true, slow: 0.3, slowDur: 0.8 } });
+    }, c.x + 80, c.y - 760);
+  },
+  // 哞哞（攻城甲）・泰坦墜擊：高高跳起砸下，三層衝擊波
+  mou_titan(W, p) {
+    const a = moveDir(p), d = wdmg(p);
+    let tx = p.x, ty = p.y;
+    for (let dd = 220; dd >= 0; dd -= 20) { const x = p.x + Math.cos(a) * dd, y = p.y + Math.sin(a) * dd; if (!solidAt(W.L, x, y) && !solidAt(W.L, x + 14, y) && !solidAt(W.L, x - 14, y)) { tx = x; ty = y; break; } }
+    p.jump = { t: 0, dur: 0.7, sx: p.x, sy: p.y, tx, ty, h: 190, onLand(W2, q) {
+      [[210, 6, 0], [360, 4, 0.22], [520, 2.6, 0.44]].forEach(([r, m, delay]) => W2.addZone({ kind: 'e_slam', owner: q, x: q.x, y: q.y, r, delay, dur: delay + 0.25, tick: 9,
+        onStart: (W3, z) => { W3.aoe(z.x, z.y, r, d * m, q, { stun: 1.6, kb: 300, fx: 9 }); W3.emit('r', z.x | 0, z.y | 0, r, 3); W3.emit('sh', 14); } }));
+      q.shield = Math.max(q.shield, q.st.maxHp * 0.3);
+    } };
+  },
   // ═════ 一般技能與寶具 ═════
   // ── 老劉 ──
   ll_charge(W, p) {

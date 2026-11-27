@@ -23,9 +23,9 @@ function volley(W, p, w, a, s, extra) {
     const off = n > 1 ? (i / (n - 1) - 0.5) * spread : 0;
     const jit = s.jitter ? W.rng.range(-s.jitter, s.jitter) / 2 : 0;
     W.shoot(p, Object.assign({
-      kind: w.def.proj, a: a + off + jit, speed: s.speed, dmg: s.dmg, pierce: s.pierce || 0, life: s.life * (p.st.area * 0.5 + 0.5),
+      kind: w.def.proj, a: a + off + jit, speed: s.speed, dmg: s.dmg, pierce: s.pierce || 0, life: s.life * (p.st.area * 0.5 + 0.5), r: s.projR || 7,
       bounce: s.bounce || 0, homing: s.homing || 0, dot: s.dot, dotDur: s.dotDur, slow: s.slow, slowDur: s.slowDur, kb: s.kb || 0,
-      critAdd: s.critAdd || 0, ret: s.ret, x: p.x + Math.cos(a) * 16, y: p.y - 14 + Math.sin(a) * 16,
+      critAdd: s.critAdd || 0, ret: s.ret, x: p.x + Math.cos(a) * (16 - (s.back || 0)) - Math.sin(a) * off * 90, y: p.y - 14 - (s.back ? 14 : 0) + Math.sin(a) * (16 - (s.back || 0)) + Math.cos(a) * off * 90,
       aoe: s.aoe ? s.aoe * p.st.area : 0, fx: s.aoe ? 1 : 0,
     }, extra));
   }
@@ -91,6 +91,26 @@ function railShot(W, p, a, s) {
 }
 
 export const BEH = {
+  // 進化：幽冥骷髏 —— 一顆大骷髏自己追著敵群啃咬（不會離主人太遠）
+  skull(W, p, w, dt) {
+    const s = w.s;
+    if (!w.sk || w.sk.dead) w.sk = W.addSummon({ kind: 'skull', owner: p, x: p.x, y: p.y - 30 });
+    const k = w.sk;
+    if (p.down) return;
+    const far = dist2(k.x, k.y, p.x, p.y) > s.leash * s.leash;
+    if (!w.tg || w.tg.dead || far || (W.tickN + 7) % 30 === 0) w.tg = far ? null : (W.cluster(p.x, p.y, s.leash, 90) || null);
+    const tx = w.tg ? w.tg.x : p.x + Math.cos(W.time * 1.3) * 60, ty = w.tg ? w.tg.y : p.y - 30 + Math.sin(W.time * 1.3) * 30;
+    const dx = tx - k.x, dy = ty - k.y, d = Math.hypot(dx, dy) || 1, sp = s.skullSpeed * (far ? 2 : 1) * dt;
+    if (d > 8) { k.x += dx / d * Math.min(d, sp); k.y += dy / d * Math.min(d, sp); if (Math.abs(dx) > 4) k.face = dx > 0 ? 1 : -1; }
+    w.t -= dt * bHaste(p); k.st = w.t > s.biteCd * p.st.cd * 0.6 ? 1 : 0;
+    if (w.t > 0) return;
+    let n = 0, kills = 0;
+    W.hash.query(k.x, k.y, s.biteR * p.st.area, (e) => { n++; W.strike(p, e, s.dmg, { kb: 40, sx: k.x, sy: k.y }); if (e.dead) kills++; });
+    if (!n) return;
+    w.t = s.biteCd * p.st.cd; p.atkN++; p.atkA = Math.atan2(k.y - p.y, k.x - p.x);
+    if (kills) W.heal(p, Math.min(6, kills * 1.5), p);
+    W.emit('h', k.x | 0, k.y | 0, 6);
+  },
   // 進化：金剛法輪 —— 一個大法輪繞行；定期飛向敵群再飛回來
   wheel(W, p, w, dt) {
     const s = w.s;
@@ -156,6 +176,7 @@ export const BEH = {
       return;
     }
     swing(W, p, a, range, s.arc, s.dmg, o);
+    if (s.titan) { const cx = p.x + Math.cos(a) * range * 0.55, cy = p.y + Math.sin(a) * range * 0.55; W.aoe(cx, cy, 150 * p.st.area, s.dmg * 0.55, p, { kb: 160, fx: 9 }); W.emit('r', cx | 0, cy | 0, (190 * p.st.area) | 0, 3); W.emit('sh', 4); }      // 進化：泰坦機甲的衝擊波
     if (s.chop) {                                 // 進化：斬骨巨刀 —— 留下帶毒刀痕，命中回血
       const cx = p.x + Math.cos(a) * range * 0.6, cy = p.y + Math.sin(a) * range * 0.6;
       let n = 0; W.hash.query(cx, cy, range * 0.55, () => n++);
@@ -177,7 +198,7 @@ export const BEH = {
     if (s.starWave) W.shoot(p, { kind: 'starwave', a, speed: 680, dmg: s.dmg * s.starWave, pierce: 99, life: 1.4, r: 64, kb: 90, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：星穹光刃
     if (s.waveEvery && w.n % s.waveEvery === 0) W.shoot(p, { kind: 'wave', a, speed: 540, dmg: s.dmg * s.waveDmg, pierce: 99, life: 0.75, r: 30, kb: 60 });
     if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotDur: s.dotDur }); }
-    if (s.comet && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'thunderball', a, speed: 900, dmg: s.dmg * s.ballDmg, pierce: 99, life: 1.3, r: 24, kb: 220, stun: 0.3 });
+    if (s.comet && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'thunderball', a, speed: 630, dmg: s.dmg * s.ballDmg, pierce: 99, life: 1.86, r: 24, kb: 220, stun: 0.3 });
     else if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });
   },
 
@@ -199,10 +220,18 @@ export const BEH = {
     p.atkA = a;
     let extra = sup ? { pierce: (s.pierce || 0) + 2, slow: 0.4, slowDur: 1 } : null;
     if (s.lastAoe && w.ammo === 1) extra = { aoe: s.lastAoe, pierce: 0 };
+    if (s.nuke) extra = Object.assign(extra || {}, { onEnd: (W2, pr) => {      // 進化：末日彈頭 —— 蕈狀雲 + 輻射區
+      W2.addZone({ kind: 'mushroom', owner: p, x: pr.x, y: pr.y, r: pr.aoe, dur: 1.5, tick: 9 }); W2.emit('sh', 9);
+      W2.addZone({ kind: 'toxic', owner: p, x: pr.x, y: pr.y, r: pr.aoe * 0.8, dur: 5, tick: 0.5, dmg: s.dmg * 0.09, hitOpt: { quiet: true, slow: 0.2, slowDur: 0.8 } }); } });
+    if (s.trail && w.n % s.trail === 0) W.addZone({ kind: 'fire', owner: p, x: tgt.x, y: tgt.y, r: 48 * p.st.area, dur: 2.6, tick: 0.4, dmg: s.dmg * 0.5, hitOpt: { quiet: true } });      // 進化：火神熔彈砲的燃燒彈道
+    if (s.bits) {                                 // 進化：浮游雙槍 —— 兩把槍從肩膀位置各打各的目標
+      const t2 = W.nearestEnemy(p.x, p.y, s.range, tgt) || tgt;
+      [[tgt, -22], [t2, 22]].forEach(([t, ox]) => { const bx = p.x + ox, by = p.y - 52; volley(W, p, w, Math.atan2(t.y - 6 - by, t.x - bx), s, Object.assign({ x: bx, y: by }, extra)); });
+    } else
     if (s.rail) railShot(W, p, a, s); else
     volley(W, p, w, a, s, extra);
     if (s.dual) { const t2 = W.nearestEnemy(p.x, p.y, s.range, tgt); if (t2) volley(W, p, w, Math.atan2(t2.y - p.y, t2.x - p.x), s, extra); }
-    if (s.burst > 1) { w.burst = s.burst - 1; w.bt = 0.07; w.ba = a; w.bx = extra; }
+    if (s.burst > 1 && !s.bits) { w.burst = s.burst - 1; w.bt = 0.07; w.ba = a; w.bx = extra; }
     if (s.mag) { w.ammo--; if (w.ammo <= 0) w.reload = s.reload; }
     if (ex && EXTRA[ex]) EXTRA[ex](W, p, w, s);
     if (hip) { hip.n = (hip.n || 0) + 1; }
@@ -217,8 +246,8 @@ export const BEH = {
     w.t = s.cd * p.st.cd + s.dur; p.atkN++; p.atkA = p.aim;
     for (let i = 0; i < s.count; i++) {
       const off = s.count > 1 ? (i - (s.count - 1) / 2) * 0.5 : 0;
-      W.addZone({ kind: 'beam', owner: p, follow: p, oy: -16, a: p.aim + off, off, len, w: s.width * p.st.area, dur: s.dur, tick: 0.1, dmg: s.dmg, burst: s.burst, hitOpt: { quiet: false },
-        upd: beamUpd });
+      W.addZone({ kind: 'beam', owner: p, follow: p, oy: -16, a: p.aim + off - (s.sweep || 0), off, len, w: s.width * p.st.area, dur: s.dur, tick: 0.1, dmg: s.dmg, burst: s.burst, hitOpt: { quiet: false },
+        aux: s.sweep ? 1 : 0, sweep: s.sweep, a0: p.aim, upd: s.sweep ? sweepUpd : beamUpd });
     }
   },
 
@@ -463,6 +492,15 @@ export const BEH = {
 };
 
 // 光束：跟著持有者與瞄準方向轉動，每 0.1 秒對線上敵人造成傷害
+// 進化：極光稜鏡砲 —— 光束在發射期間由一側掃到另一側
+function sweepUpd(W, z, dt) {
+  const p = z.owner;
+  if (p.down) { z.dead = true; return; }
+  z.a = z.a0 + z.sweep * (2 * Math.min(1, z.t / z.dur) - 1);
+  z.x = p.x + Math.cos(z.a) * 22; z.y = p.y - 16 + Math.sin(z.a) * 22;
+  z.tk -= dt;
+  if (z.tk <= 0) { z.tk += z.tick; W.zoneTick(z); }
+}
 export function beamUpd(W, z, dt) {
   const p = z.owner;
   if (p.down) { z.dead = true; return; }
