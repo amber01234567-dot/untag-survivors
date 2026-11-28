@@ -431,6 +431,18 @@ export class World {
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 
+  // 龍捲風：會在場上慢慢移動、撞牆反彈的危險區，碰到的玩家持續受傷
+  addTornado(x, y, a, speed, dur, dmg) {
+    return this.addZone({ kind: 'e_tornado', team: 1, x, y, r: 70, delay: 0.9, dur: dur + 0.9, tick: 9, dmg, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, hitT: 0,
+      upd: (W, z, dt) => {
+        if (z.t < z.delay) return;
+        const nx = z.x + z.vx * dt, ny = z.y + z.vy * dt;
+        if (solidAt(W.L, nx + Math.sign(z.vx) * 40, z.y)) z.vx = -z.vx; else z.x = nx;
+        if (solidAt(W.L, z.x, ny + Math.sign(z.vy) * 40)) z.vy = -z.vy; else z.y = ny;
+        z.hitT -= dt;
+        if (z.hitT <= 0) { z.hitT = 0.45; W.playersIn(z.x, z.y, z.r, (p) => W.damagePlayer(p, z.dmg)); }
+      } });
+  }
   startGust(a, warnT, dur, k = 1) { this.wind = { a, st: 1, t: warnT, dur, vx: Math.cos(a) * GUST_SPEED * k, vy: Math.sin(a) * GUST_SPEED * k }; }
   // 毒霧：delay 秒的預警後成形，停留 dur 秒，每 0.6 秒傷害一次範圍內的玩家
   addFog(x, y, r, delay, dur, dmg) { return this.addZone({ kind: 'e_fog', team: 1, x, y, r, delay, dur: delay + dur, tick: 0.6, dmg }); }

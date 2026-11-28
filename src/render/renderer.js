@@ -491,6 +491,21 @@ export class Renderer {
         g.globalAlpha = 0.8; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x - r * 0.7, y); g.moveTo(x + r, y); g.lineTo(x + r * 0.7, y); g.moveTo(x, y - r * 0.86); g.lineTo(x, y - r * 0.6); g.moveTo(x, y + r * 0.86); g.lineTo(x, y + r * 0.6); g.stroke(); g.globalAlpha = 1;
         break;
       }
+      case 'e_tornado': {                          // 龍捲風：一圈圈旋轉的弧線，往上變寬
+        g.save(); g.translate(x, y);
+        if (!z.on) { g.strokeStyle = 'rgba(200,255,240,.8)'; g.lineWidth = 2.5; g.setLineDash([10, 8]); g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]); }
+        else {
+          g.fillStyle = 'rgba(180,240,225,.16)'; g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.fill();
+          g.lineCap = 'round';
+          for (let i = 0; i < 7; i++) {
+            const yy = -i * 22, rw = r * (0.35 + i * 0.13), a0 = t * (7 - i * 0.5) + i * 1.1;
+            g.strokeStyle = `rgba(${215 - i * 6},255,${245 - i * 4},${0.75 - i * 0.07})`; g.lineWidth = 5 - i * 0.3;
+            g.beginPath(); g.ellipse(Math.sin(t * 3 + i) * 6, yy, rw, rw * 0.3, 0, a0, a0 + 4.2); g.stroke();
+          }
+        }
+        g.restore();
+        break;
+      }
       case 'e_fog': {                              // 毒霧：預警時是虛線圈，成形後是一團翻滾的綠霧
         if (!z.on) {
           g.strokeStyle = 'rgba(150,230,80,.85)'; g.lineWidth = 2.5; g.setLineDash([12, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]);

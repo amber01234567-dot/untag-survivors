@@ -658,6 +658,62 @@ const AI = {
       for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.38 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 94, 0.9, e.dmg * 1.2); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-220, 220), q.y + W.rng.range(-220, 220), 94, 1.1, e.dmg * 1.2); } } });
     } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'kitemon' : i % 3 === 1 ? 'sparrow' : 'windling', i * 1.05, 110);
   },
+  // 天狗分身：一碰就散，存在期間每隔一下朝玩家扇出一排風刃，時間到自己消失
+  clone(W, e, dt) {
+    const ai = e.ai; ai.life = (ai.life === undefined ? 9 : ai.life) - dt;
+    if (ai.life <= 0) { W.emit('r', e.x | 0, e.y | 0, 60, 6); W.killEnemy(e, null, true); return; }
+    if (!e.tgt) return;
+    e.face = e.tgt.x > e.x ? 1 : -1;
+    ai.t = (ai.t === undefined ? 1.2 : ai.t) - dt;
+    if (ai.t <= 0) { ai.t = 2.2; const a = Math.atan2(e.tgt.y - e.y, e.tgt.x - e.x); for (let i = -2; i <= 2; i++) shootAt(W, e, 'e_wind', a + i * 0.2, 240, e.dmg, { r: 10 }); }
+  },
+  // 風車巨怪：扇葉旋轉橫掃（四道光束一步步轉動）、放出會移動的龍捲風、捶地、召喚
+  boss_millgolem(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 3.0 : 4.0; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 扇葉橫掃：四片扇葉，轉三（四）步
+      const o = W.rng.range(0, TAU), dir = ai.n % 8 < 4 ? 1 : -1, steps = p2 ? 4 : 3;
+      for (let k = 0; k < steps; k++) ai.q.push({ t: k ? 0.85 : 0, fn: () => { for (let i = 0; i < 4; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: o + dir * k * 0.42 + i * TAU / 4, len: 620, w: 62, delay: 0.75, dur: 1.0, tick: 9, dmg: e.dmg * 1.3 }); W.emit('sh', 4); } });
+    } else if (m === 2) {                        // 龍捲風
+      for (let i = 0; i < (p2 ? 4 : 3); i++) { const a = W.rng.range(0, TAU); W.addTornado(e.x + Math.cos(a) * 120, e.y + Math.sin(a) * 120, a, 130, p2 ? 8 : 6.5, e.dmg * 0.4); }
+      W.emit('sh', 4);
+    } else if (m === 3) {                        // 捶地
+      warn(W, e.x, e.y, 170, 0.75, e.dmg * 1.4); W.emit('sh', 7);
+      for (let ring = 1; ring <= (p2 ? 3 : 2); ring++) ai.q.push({ t: 0.5, fn: () => { const n = 7 + ring * 3, rr = 150 + ring * 150; for (let i = 0; i < n; i++) warn(W, e.x + Math.cos(i * TAU / n + ring) * rr, e.y + Math.sin(i * TAU / n + ring) * rr, 84, 0.8, e.dmg * 1.1); } });
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 0 ? 'millsoldier' : i % 3 === 1 ? 'dandelion' : 'windling', i * 1.05, 120);
+  },
+  // 大天狗：瞬移、羽扇風刃（扇形連發）、分身（一碰就散，會跟著放風刃）、強風加龍捲、召喚烏天狗
+  boss_tengu(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (d > 360) seek(W, e, dt, sp, p.x, p.y); else if (d < 210) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.7 * dt, (e.y - p.y) / d * sp * 0.7 * dt, e.r * 0.5);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.5 : 3.3; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 5;
+    const blades = (n, spread, sp2) => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = 0; i < n; i++) shootAt(W, e, 'e_wind', a + (i - (n - 1) / 2) * spread, sp2, e.dmg * 0.55, { r: 10 }); };
+    const blink = () => { for (let k = 0; k < 6; k++) { const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 250, ty = p.y + Math.sin(a) * 250; if (!solidAt(W.L, tx, ty)) { W.emit('r', e.x | 0, e.y | 0, 90, 6); e.x = tx; e.y = ty; e.spawnT = 0.3; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); return; } } };
+    if (m === 1) { blades(7, 0.15, 260); ai.q.push({ t: 0.4, fn: () => blades(8, 0.15, 290) }); ai.q.push({ t: 0.4, fn: () => blades(9, 0.14, 260) }); if (p2) ai.q.push({ t: 0.45, fn: () => { for (let i = 0; i < 18; i++) shootAt(W, e, 'e_wind', i * TAU / 18, 220, e.dmg * 0.55, { r: 10 }); } }); }
+    else if (m === 2) { blink(); warn(W, e.x, e.y, 170, 0.8, e.dmg * 1.3); ai.q.push({ t: 0.9, fn: () => blades(9, 0.2, 250) }); }
+    else if (m === 3) {                          // 分身：在玩家四周冒出幾個，本體同時瞬移混進去
+      const n = p2 ? 4 : 3, a0 = W.rng.range(0, TAU);
+      for (let i = 0; i < n; i++) { const a = a0 + (i + 1) * TAU / (n + 1), x = p.x + Math.cos(a) * 260, y = p.y + Math.sin(a) * 260; if (solidAt(W.L, x, y)) continue; const c = spawnEnemy(W, 'tenguclone', x, y, { zone: e.zone, noDrop: true }); c.hp = c.maxHp = 1; c.dmg = e.dmg * 0.5; }
+      const x0 = p.x + Math.cos(a0) * 260, y0 = p.y + Math.sin(a0) * 260; if (!solidAt(W.L, x0, y0)) { W.emit('r', e.x | 0, e.y | 0, 90, 6); e.x = x0; e.y = y0; e.spawnT = 0.5; }
+    } else if (m === 4) {                        // 強風 + 龍捲風
+      W.startGust(Math.atan2(p.y - e.y, p.x - e.x), 1.0, p2 ? 3.4 : 2.8, 1.2);
+      for (let i = 0; i < (p2 ? 3 : 2); i++) { const a = W.rng.range(0, TAU); W.addTornado(p.x + Math.cos(a) * 240, p.y + Math.sin(a) * 240, a + Math.PI, 120, 6, e.dmg * 0.4); }
+    } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'yamabushi' : 'crowtengu', i * 1.25, 130);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

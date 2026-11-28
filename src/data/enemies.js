@@ -123,3 +123,10 @@ E('sparrow', { name: '山雀', hp: 56, speed: 118, dmg: 14, r: 12, xp: 3, ai: 'c
 E('kitemon', { name: '紙風箏怪', hp: 60, speed: 96, dmg: 14, r: 13, xp: 4, ai: 'shooter', fly: true, proj: 'e_wind', shotCd: 2.5, shotRange: 390, shotSpeed: 260 });
 E('goat', { name: '山羊', hp: 130, speed: 80, dmg: 20, r: 15, xp: 6, ai: 'charger', kbRes: 0.5 });
 E('thunderbird', { name: '風暴大鵬', hp: 66000, speed: 70, dmg: 35, r: 52, xp: 1800, ai: 'boss_thunderbird', kbRes: 1, boss: true, fly: true });
+E('dandelion', { name: '蒲公英怪', hp: 50, speed: 110, dmg: 24, r: 13, xp: 3, ai: 'exploder', boomR: 94, fly: true });
+E('millsoldier', { name: '風車兵', hp: 370, speed: 46, dmg: 24, r: 19, xp: 12, ai: 'burst', kbRes: 0.85, proj: 'e_wind', shotCd: 4.0, shotSpeed: 185, shotCount: 8 });
+E('crowtengu', { name: '烏天狗', hp: 105, speed: 92, dmg: 19, r: 14, xp: 6, ai: 'blink', fly: true });
+E('yamabushi', { name: '山伏僧', hp: 350, speed: 52, dmg: 23, r: 18, xp: 10, ai: 'chase', kbRes: 0.8 });
+E('millgolem', { name: '風車巨怪', hp: 64000, speed: 54, dmg: 36, r: 56, xp: 1900, ai: 'boss_millgolem', kbRes: 1, boss: true });
+E('tengu', { name: '大天狗', hp: 70000, speed: 74, dmg: 37, r: 46, xp: 2100, ai: 'boss_tengu', kbRes: 1, boss: true, fly: true });
+E('tenguclone', { name: '天狗分身', hp: 1, speed: 0, dmg: 20, r: 40, xp: 0, ai: 'clone', kbRes: 1, fly: true });
