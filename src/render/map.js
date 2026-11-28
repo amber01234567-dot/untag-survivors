@@ -308,7 +308,7 @@ export class MapRenderer {
       } else if (d.t === 'lamp') {
         g.fillStyle = '#15171c'; g.fillRect(d.x - 5, d.y - 6, 10, 5);
         g.fillStyle = th.lamp; g.shadowColor = th.lamp; g.shadowBlur = 12; g.beginPath(); g.ellipse(d.x, d.y + 2, 5, 3.5, 0, 0, TAU); g.fill(); g.shadowBlur = 0;
-      } else {
+      } else if (SIGNS[L.theme] && th.neon) {            // 沒有招牌文字的場景（貼圖還沒載好時）：先不畫
         const col = th.neon[d.v % th.neon.length], flick = Math.sin(t * 9 + d.v) > -0.93 ? 1 : 0.25;
         const w = 20 + (d.v % 3) * 6;
         g.globalAlpha = flick; g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 10; g.lineWidth = 2;

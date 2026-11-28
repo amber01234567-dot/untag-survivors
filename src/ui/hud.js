@@ -111,6 +111,7 @@ export class Hud {
   // ───────── 升級三選一 ─────────
   onChoices(m) {
     if (this.mode === 'result') return;
+    if (this.choices && this.mode === 'lvup' && m.seq !== undefined && this.choices.seq === m.seq && !this.modal.classList.contains('hidden')) return;      // 房主重送的同一組選項：畫面已經在了，不用重畫
     if (!this.choices || this.mode !== 'lvup') this.seenLv = false;
     this.choices = m; this.mode = 'lvup';
     if (m.done) {

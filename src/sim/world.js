@@ -39,6 +39,7 @@ class Hash {
   }
 }
 
+const SUPPLY_BASE = 12;
 export class World {
   constructor({ stage, diff = 0, seed, players, el }) {
     this.el = el === 'none' ? null : el || CHAPTER_EL[stage.chapter] || null; this.foe = this.el ? FOE[this.el] : null;      // 章節屬性：這一關所有怪物的屬性
@@ -53,17 +54,18 @@ export class World {
     this.eid = 0; this.prid = 0; this.zid = 0; this.gid = 0; this.sid = 0;
     this.n = players.length;
     this.level = 1; this.xp = 0; this.xpNeed = this.needFor(1);
-    this.lvQueue = (stage.chapter - 1) * 2;      // 戰前補給：後面章節開場先給幾次強化，避免一級裸裝硬扛
+    const supply = Math.min((stage.chapter - 1) * 2, SUPPLY_BASE + Math.max(0, Math.floor((stage.chapter - 7) / 3)) * 2);      // 戰前補給：後面章節開場先給幾次強化，避免一級裸裝硬扛。第 7 章起每個系列只多 2 次（12、14 … 24）：新系列要靠裝備、進化、副武器變強
+    this.lvQueue = supply;
     this.coins = 0; this.kills = 0;
     this.state = 'play'; this.picks = null; this.pickT = 0; this.endT = 0; this.pickLog = [];
     this.hash = new Hash(this.L.pxW, this.L.pxH, 64);
     this.flow = new FlowField(this.L);
-    const nMul = 1 + 0.55 * (this.n - 1);
+    const nMul = 1 + 0.65 * (this.n - 1);
     this.hpMul = stage.diff * this.diff.hp * nMul;
     this.dmgMul = Math.sqrt(stage.diff) * this.diff.dmg;
     this.rateMul = this.diff.rate * (1 + 0.5 * (this.n - 1));
     players.forEach((p, i) => this.players.push(makePlayer(this, p, i)));
-    for (const p of this.players) this.lvQueue = Math.max(this.lvQueue, (stage.chapter - 1) * 2 + (p.bonus.startLv | 0));
+    for (const p of this.players) this.lvQueue = Math.max(this.lvQueue, supply + (p.bonus.startLv | 0));
     // 場地機關：位置來自關卡生成，這裡只管狀態。st: 0 待命 1 啟動中 2 運作中 3 冷卻
     const devB = Math.min(0.5, Math.max(0, ...this.players.map((p) => p.bonus.dev || 0)));
     this.devPow = 1 + devB; this.devCd = 1 - devB;
@@ -81,7 +83,7 @@ export class World {
   step(dt) {
     if (this.state === 'levelup') {
       this.pickT -= dt;
-      if (this.pickT <= 0) for (const p of this.players) if (this.picks[p.id] && !this.picks[p.id].done) this.choose(p.id, -1);
+      if (this.pickT <= 0) for (const p of this.players) if (this.picks && this.picks[p.id] && !this.picks[p.id].done) this.choose(p.id, -1);      // 最後一人選完後 picks 會被清掉，後面的人不能再讀
       return;
     }
     if (this.state !== 'play') return;
@@ -309,10 +311,10 @@ export class World {
       this.dropGem(e.x, e.y, xp);
       const r = this.rng.next();
       if (def.coins) for (let i = 0; i < 4; i++) this.drop('c', e.x + this.rng.range(-20, 20), e.y + this.rng.range(-20, 20), def.coins / 4);
-      else if (r < 0.03) this.drop('c', e.x, e.y, 2 + Math.floor(this.stage.diff * 2));
+      else if (r < 0.03) this.drop('c', e.x, e.y, 2 + Math.floor((this.stage.dens || this.stage.diff) * 2));
       else if (r < 0.038) this.drop('h', e.x, e.y, 20);
       else if (r < 0.041) this.drop('m', e.x, e.y, 0);
-      if (e.elite || def.boss) { this.drop('x', e.x, e.y, 0); for (let i = 0; i < (def.boss ? 12 : 4); i++) this.drop('c', e.x + this.rng.range(-40, 40), e.y + this.rng.range(-40, 40), 2 + Math.floor(this.stage.diff * 2)); }
+      if (e.elite || def.boss) { this.drop('x', e.x, e.y, 0); for (let i = 0; i < (def.boss ? 12 : 4); i++) this.drop('c', e.x + this.rng.range(-40, 40), e.y + this.rng.range(-40, 40), 2 + Math.floor((this.stage.dens || this.stage.diff) * 2)); }
     }
     if (def.split && !silent) for (let i = 0; i < def.splitN; i++) { const c = spawnEnemy(this, def.split, e.x + this.rng.range(-14, 14), e.y + this.rng.range(-14, 14), { zone: e.zone, instant: true }); c.kx = this.rng.range(-200, 200); c.ky = this.rng.range(-200, 200); }
     this.ctl.onKill(e);
@@ -563,7 +565,7 @@ export class World {
         continue;
       }
       d.t -= dt; d.tk -= dt;
-      const pow = this.hpMul / (1 + 0.55 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
+      const pow = this.hpMul / (1 + 0.65 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
       if (d.kind === 'ground' && d.tk <= 0) {                // 接地樁：範圍內隊友免疫麻痺，並把附近的電弧關掉
         d.tk = 0.5;
         this.playersIn(d.x, d.y, 320, (q) => { delete q.buffs.el_shock; addBuff(q, 'ground', { t: 1.0 }); });

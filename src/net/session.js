@@ -288,9 +288,11 @@ export class HostRuntime {
     const W = this.world;
     if (W.state !== 'levelup') { if (this.sent.on) { this.sent = {}; } return; }
     this.sent.on = true;
+    const resend = this.n % 180 === 0;      // 每 3 秒對還沒選的人重送一次選項：就算訊息漏接（例如剛好斷線重連），也不會讓全隊卡到逾時
     for (const p of W.players) {
       const pk = W.picks[p.id];
       if (!pk) continue;
+      if (resend && !pk.done && p.id !== this.myId) delete this.sent[p.id];
       const key = W.pickSeq + ':' + (pk.seq || 0) + ':' + pk.done;
       if (this.sent[p.id] === key) continue;
       this.sent[p.id] = key;
@@ -350,7 +352,7 @@ export class ClientRuntime {
     const ox = pr.x + pr.ex, oy = pr.y + pr.ey;
     pr.x = me.x; pr.y = me.y;
     if (!(me.fl & (1 | 8 | 16)) && s.st === 0) for (const h of this.hist) if (h.s > me.ack) moveBody(this.view.L, pr, h.dx, h.dy, 11);
-    if (pr.init) { pr.ex = ox - pr.x; pr.ey = oy - pr.y; if (Math.hypot(pr.ex, pr.ey) > 140) pr.ex = pr.ey = 0; }
+    if (pr.init) { pr.ex = ox - pr.x; pr.ey = oy - pr.y; if (Math.hypot(pr.ex, pr.ey) > 280) pr.ex = pr.ey = 0; }      // 衝刺時一格快照就能差到 100 多像素：門檻放寬，用平滑追上而不是瞬移
     pr.init = true;
   }
   applySync(sync) {

@@ -8,6 +8,7 @@ import { ENEMIES } from '../data/enemies.js';
 const RATE = { kill: 1.0, survive: 1.3, nests: 0.45, elite: 0.6, boss: 0.28, goblins: 1.0, treasure: 0 };
 export const OBJ_TEXT = { kill: '殲滅敵人', survive: '撐過時間', nests: '摧毀巢穴', elite: '擊敗菁英', boss: '擊敗首領', goblins: '攔截運鈔鼠', treasure: '寶藏' };
 
+const RANGED_AI = { shooter: 1, burst: 1, lobber: 1 };
 export class StageCtl {
   constructor(W) {
     this.W = W; this.L = W.L; this.cleared = 0; this.bossE = null; this.amb = 0;
@@ -69,7 +70,7 @@ export class StageCtl {
       W.emit('bn', ENEMIES[o.who].name, 'BOSS', 3); W.emit('a', 'boss'); W.emit('sh', 14);
     } else if (o.t === 'treasure') {
       W.drop('x', z.cx, z.cy, 0);
-      for (let i = 0; i < 4; i++) W.drop('c', z.cx + Math.cos(i * 1.57) * 50, z.cy + Math.sin(i * 1.57) * 50, 8 + Math.floor(W.stage.diff * 4));
+      for (let i = 0; i < 4; i++) W.drop('c', z.cx + Math.cos(i * 1.57) * 50, z.cy + Math.sin(i * 1.57) * 50, 8 + Math.floor((W.stage.dens || W.stage.diff) * 4));
       for (let i = 0; i < Math.round(8 * scale); i++) { const pt = this.randFloor(z); if (dist2(pt.x, pt.y, z.cx, z.cy) > 120 * 120) spawnEnemy(W, W.rng.weighted(W.stage.pool), pt.x, pt.y, { zone: z.idx }); }
       this.clearZone(z, true);
       W.emit('bn', '寶藏室', 'TREASURE', 0);
@@ -91,8 +92,9 @@ export class StageCtl {
     // 出怪
     const inZone = W.players.filter((p) => !p.down && !p.gone && zoneAt(this.L, p.x, p.y) === z.idx);
     if (!inZone.length) return;
-    const ramp = 0.7 + Math.min(1.5, z.t / 60);        // 進區後前 20 秒較緩，讓玩家先升幾級
-    const rate = 2.5 * RATE[o.t] * W.rateMul * ramp * (0.7 + W.stage.diff * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1)) * (this.L.outdoor ? 1.25 : 1);   // 戶外場地大，怪也多一些
+    const soft = W.stage.dens && this.cleared === 0 ? 0.25 : 0;      // 新系列的第一區：開場再緩一點，不要一進場就被圍
+    const ramp = 0.7 - soft + Math.min(1.5 + soft, z.t / 60);        // 進區後前 20 秒較緩，讓玩家先升幾級
+    const rate = 2.5 * RATE[o.t] * W.rateMul * (W.stage.rate || 1) * ramp * (0.7 + (W.stage.dens || W.stage.diff) * 0.15) * (0.82 + 0.09 * Math.min(4, this.cleared - 1)) * (this.L.outdoor ? 1.25 : 1);   // 戶外場地大，怪也多一些
     const cap = Math.min(280, 80 * (1 + 0.5 * (W.n - 1)) * (0.8 + RATE[o.t] * 0.4) * (this.L.outdoor ? 1.3 : 1));
     let alive = 0;
     for (const e of W.enemies) if (!e.dead && e.zone === z.idx) alive++;
@@ -102,7 +104,7 @@ export class StageCtl {
     z.wave -= dt;
     if (z.wave <= 0) {
       z.wave = 17;
-      const id = W.rng.weighted(W.stage.pool), n = Math.round((5 + W.stage.diff * 1.5) * W.rateMul * (ENEMIES[id].hp > 50 ? 0.4 : 1));
+      const id = W.rng.weighted(W.stage.pool), n = Math.round((5 + (W.stage.dens || W.stage.diff) * 1.5) * W.rateMul * (W.stage.rate || 1) * (ENEMIES[id].hp > 50 ? 0.4 : 1) * (W.stage.dens && RANGED_AI[ENEMIES[id].ai] ? 0.6 : 1));      // 新系列：整波都是遠程怪時數量打六折，不然一輪齊射太痛
       const c = this.spawnPoint(z, 330);
       if (c) for (let i = 0; i < n && alive < cap + 20; i++) { const a = i * TAU / n, x = c.x + Math.cos(a) * 44, y = c.y + Math.sin(a) * 44; if (!solidAt(this.L, x, y)) { spawnEnemy(W, id, x, y, { zone: z.idx }); alive++; } }
       if (z.t > 30 && W.rng.chance(0.5)) { const pt = this.spawnPoint(z, 330); if (pt) spawnEnemy(W, W.rng.weighted(W.stage.pool), pt.x, pt.y, { zone: z.idx, elite: true }); }

@@ -86,9 +86,11 @@ function peerJoin(code) {
 }
 
 // ── BroadcastChannel（同機多分頁） ──
+// ?lag=80：測試用，每則訊息延遲約 80ms（±25%，保持順序）再送出，模擬真實網路
+const LAG = +(qs.get('lag') || 0); let lagAt = 0;
 function bcConn(ch, me, other) {
   const conn = { onData: null, onClose: null, open: true, grace() {}, probe() {},
-    send(d) { if (conn.open) ch.postMessage({ to: other, from: me, d }); },
+    send(d) { if (!conn.open) return; if (!LAG) return ch.postMessage({ to: other, from: me, d }); const at = Math.max(lagAt, performance.now() + LAG * (0.75 + Math.random() * 0.5)); lagAt = at; setTimeout(() => { if (conn.open) ch.postMessage({ to: other, from: me, d }); }, at - performance.now()); },
     close() { if (conn.open) { ch.postMessage({ to: other, from: me, bye: 1 }); conn.open = false; } } };
   return conn;
 }

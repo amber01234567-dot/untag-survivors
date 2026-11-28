@@ -586,19 +586,19 @@ export const CHAPTERS = [
     devices: [['smoke', 4], ['boulder', 3]],
     nodes: [
       { id: '24-1', name: '大手門', kind: 'normal', layout: 'snake', diff: 7.00, pos: [0, 1], next: ['24-2', '24-3'], coins: 8500,
-        pool: [['pebble', 5], ['genin', 3], ['shurinin', 3], ['haniwa', 3]], objs: [kill(77), survive(55), kill(117)] },
+        pool: [['pebble', 5], ['genin', 2], ['shurinin', 2], ['haniwa', 2]], objs: [kill(77), survive(55), kill(117)] },
       { id: '24-2', name: '石垣迴廊', kind: 'normal', layout: 'ring', diff: 7.07, pos: [1, 0.3], next: ['24-4'], coins: 8750,
-        pool: [['genin', 4], ['shurinin', 3], ['haniwa', 3], ['stonegolem', 1]], objs: [kill(68), nests(3), survive(55), elite('stonegolem')] },
+        pool: [['genin', 3], ['shurinin', 2], ['haniwa', 2], ['stonegolem', 1]], objs: [kill(68), nests(3), survive(55), elite('stonegolem')] },
       { id: '24-3', name: '齒輪室', kind: 'normal', layout: 'hub', diff: 7.11, pos: [1, 1.7], next: ['24-4', '24-5'], coins: 8920,
-        pool: [['pebble', 4], ['haniwa', 4], ['stonegolem', 2], ['shurinin', 3]], objs: [kill(68), survive(55), nests(3), kill(120)] },
+        pool: [['pebble', 4], ['haniwa', 3], ['stonegolem', 2], ['shurinin', 2]], objs: [kill(68), survive(55), nests(3), kill(120)] },
       { id: '24-4', name: '兵糧庫', kind: 'normal', layout: 'trident', diff: 7.20, pos: [2, 0.7], next: ['24-6'], coins: 9350,
-        pool: [['genin', 4], ['shurinin', 4], ['haniwa', 3], ['stonegolem', 2]], objs: [kill(68), nests(3), survive(55), elite('genin'), kill(120)] },
+        pool: [['genin', 3], ['shurinin', 3], ['haniwa', 2], ['stonegolem', 2]], objs: [kill(68), nests(3), survive(55), elite('genin'), kill(120)] },
       { id: '24-5', name: '金藏', kind: 'bonus', layout: 'arena', diff: 7.15, pos: [2, 2], next: ['24-6'], coins: 5950,
-        pool: [['pebble', 7], ['haniwa', 4]], objs: [{ t: 'goblins', s: 85 }] },
+        pool: [['pebble', 7], ['haniwa', 3]], objs: [{ t: 'goblins', s: 85 }] },
       { id: '24-6', name: '二之丸', kind: 'elite', layout: 'cross', diff: 7.30, pos: [3, 1.2], next: ['24-B'], coins: 10370,
-        pool: [['genin', 4], ['shurinin', 4], ['stonegolem', 3], ['haniwa', 3]], objs: [nests(3), elite('stonegolem'), survive(60), kill(120)] },
+        pool: [['genin', 3], ['shurinin', 3], ['stonegolem', 3], ['haniwa', 2]], objs: [nests(3), elite('stonegolem'), survive(60), kill(120)] },
       { id: '24-B', name: '天守', kind: 'boss', layout: 'gauntlet', diff: 7.45, pos: [4, 1], next: [], coins: 16150,
-        pool: [['pebble', 5], ['genin', 3], ['shurinin', 3]], objs: [kill(120), boss('ninjamaster')] },
+        pool: [['pebble', 5], ['genin', 2], ['shurinin', 2]], objs: [kill(120), boss('ninjamaster')] },
     ],
   },
   // ───── 第九系列：雷雲尖塔（雷屬性：怪物打到會麻痺；掉落雷神太鼓）─────
@@ -670,6 +670,18 @@ export const CHAPTERS = [
   },
 ];
 
+// 新系列（第 7 章起）的怪物強度：不跟著開場補給膨脹，整體平滑遞增，再依各章實測結果補正。
+//   dens = 原本設計的關卡數值，只決定「怪的數量與金幣」；diff = 怪的血量與攻擊。
+//   基準曲線：第 7 章 6.2，每章 +0.33，第 27 章 12.8。
+//   CH_ADJ = 各章補正：地形與怪物組合讓某些章特別好打（開闊地形、近戰怪多）或特別難打（遠程怪多、地形窄），
+//            用 tools/baltest.mjs 讓機器人實測後，把通關率拉回「每個系列比前一個難一點」的目標曲線。
+//   首領關的倍率打七折次方，首領才不會變成血牛。
+const CH_ADJ = { 7: 1.38, 8: 1.05, 9: 0.7, 10: 1.7, 11: 0.82, 12: 0.9, 13: 0.93, 14: 1.45, 15: 0.7, 16: 0.7, 17: 1.07, 18: 0.83, 19: 1.05, 20: 1.45, 21: 1.45, 22: 1.45, 23: 1.12, 24: 0.75, 25: 0.8, 26: 1.45, 27: 1.3 };
+for (const ch of CHAPTERS) {
+  if (ch.id < 7) continue;
+  const k = (6.2 + 0.33 * (ch.id - 7)) * (CH_ADJ[ch.id] || 1) / ch.nodes[0].diff;
+  for (const n of ch.nodes) { n.dens = n.diff; n.diff = Math.round(n.diff * (n.kind === 'boss' ? Math.pow(k, 0.7) : k) * 100) / 100; }
+}
 export const STAGES = {};
 for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.shapes = n.shapes || ch.shapes || null; n.coinMul = ch.coinMul || 1; n.series = ch.series || 1; STAGES[n.id] = n; }
 

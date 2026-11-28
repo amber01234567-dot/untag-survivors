@@ -47,10 +47,10 @@ export const FOE = {
   ice: { slow: 0.25, dur: 1.5, text: '打到你會緩速' },
   fire: { burn: 0.25, dur: 3, text: '打到你會燃燒' },
   poison: { burn: 0.12, dur: 6, text: '打到你會中毒' },
-  gold: { dmg: 0.2, text: '攻擊力較高' },
-  wind: { speed: 0.15, text: '移動較快' },
+  gold: { dmg: 0.12, text: '攻擊力較高' },
+  wind: { speed: 0.25, text: '移動較快' },
   earth: { tough: 0.15, text: '較耐打' },
-  thunder: { shock: 0.5, dur: 0.6, cd: 4, text: '打到你會麻痺' },
+  thunder: { shock: 0.5, dur: 0.8, cd: 3, text: '打到你會麻痺' },
 };
 
 // 把一個角色穿的裝備整理成戰鬥用的摘要。gear = { acc: [el, star], top: [el, star], ... }
