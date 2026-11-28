@@ -284,6 +284,50 @@ export const CHAPTERS = [
         pool: [['ember', 5], ['lavalizard', 4], ['bombbeetle', 2], ['volturtle', 1]], objs: [kill(125), boss('lavabull')] },
     ],
   },
+  {
+    id: 11, series: 4, name: '熔岩洞窟', sub: 'MAGMA CAVERN', theme: 'lavacave', outdoor: true, hazard: 'vent',
+    shapes: { combat: [['wind', 4], ['cave', 3], ['rift', 1]], final: 'cave' },      // 空間架構：蜿蜒的 S 形坑道、洞窟
+    intro: '火山的肚子裡有路。路的兩邊是會流動的光，踩錯一步就不用再走了。',
+    devices: [['water', 4], ['barrel', 3]],
+    nodes: [
+      { id: '11-1', name: '熔岩河岸', kind: 'normal', layout: 'zig', diff: 4.75, pos: [0, 1], next: ['11-2', '11-3'], coins: 1550,
+        pool: [['ember', 5], ['lavalizard', 4], ['firebat', 3], ['bombbeetle', 2]], objs: [kill(85), survive(55), kill(120)] },
+      { id: '11-2', name: '黑曜石礦脈', kind: 'normal', layout: 'hub', diff: 4.82, pos: [1, 0.3], next: ['11-4'], coins: 1600,
+        pool: [['ember', 5], ['firebat', 4], ['bombbeetle', 3], ['obgolem', 1]], objs: [kill(75), nests(3), survive(55), elite('obgolem')] },
+      { id: '11-3', name: '硫磺坑道', kind: 'normal', layout: 'trident', diff: 4.86, pos: [1, 1.7], next: ['11-4', '11-5'], coins: 1630,
+        pool: [['lavalizard', 5], ['firebat', 3], ['volturtle', 2], ['bombbeetle', 2]], objs: [kill(75), survive(55), nests(3), kill(125)] },
+      { id: '11-4', name: '岩漿瀑布', kind: 'normal', layout: 'ring', diff: 4.95, pos: [2, 0.7], next: ['11-6'], coins: 1720,
+        pool: [['ember', 4], ['firebat', 4], ['bombbeetle', 3], ['obgolem', 2], ['volturtle', 1]], objs: [kill(75), nests(3), survive(55), elite('obgolem'), kill(125)] },
+      { id: '11-5', name: '走私者的洞', kind: 'bonus', layout: 'arena', diff: 4.9, pos: [2, 2], next: ['11-6'], coins: 1120,
+        pool: [['ember', 6], ['firebat', 3], ['lavalizard', 3]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '11-6', name: '蠍巢外圍', kind: 'elite', layout: 'cross', diff: 5.05, pos: [3, 1.2], next: ['11-B'], coins: 1950,
+        pool: [['lavalizard', 4], ['firebat', 4], ['bombbeetle', 3], ['obgolem', 2], ['volturtle', 2]], objs: [nests(3), elite('obgolem'), survive(60), kill(125)] },
+      { id: '11-B', name: '巨蠍的巢穴', kind: 'boss', layout: 'gauntlet', diff: 5.2, pos: [4, 1], next: [], coins: 3000,
+        pool: [['ember', 5], ['firebat', 4], ['bombbeetle', 2], ['obgolem', 1]], objs: [kill(125), boss('obscorp')] },
+    ],
+  },
+  {
+    id: 12, series: 4, name: '火山口神殿', sub: 'CRATER TEMPLE', theme: 'firetemple', outdoor: true, hazard: 'vent',
+    shapes: { combat: [['ringpool', 4], ['hall', 3], ['cross', 1]], final: 'hall' },      // 空間架構：繞著熔岩池的環形祭壇、柱列大廳
+    intro: '火山口上有人蓋了一座神殿，拜的東西還活著。牠醒著，而且知道有人上山了。',
+    devices: [['water', 4], ['barrel', 3]],
+    nodes: [
+      { id: '12-1', name: '朝聖階梯', kind: 'normal', layout: 'snake', diff: 5.05, pos: [0, 1], next: ['12-2', '12-3'], coins: 1800,
+        pool: [['ember', 5], ['lavalizard', 4], ['firebat', 3], ['firepriest', 2]], objs: [kill(85), survive(55), kill(125)] },
+      { id: '12-2', name: '獻祭環廊', kind: 'normal', layout: 'ring', diff: 5.12, pos: [1, 0.3], next: ['12-4'], coins: 1870,
+        pool: [['ember', 4], ['firebat', 4], ['firepriest', 3], ['whelp', 1]], objs: [kill(75), nests(3), survive(55), elite('whelp')] },
+      { id: '12-3', name: '龍雕長廊', kind: 'normal', layout: 'hub', diff: 5.16, pos: [1, 1.7], next: ['12-4', '12-5'], coins: 1900,
+        pool: [['lavalizard', 4], ['firepriest', 3], ['obgolem', 2], ['whelp', 1], ['volturtle', 2]], objs: [kill(75), survive(55), nests(3), kill(125)] },
+      { id: '12-4', name: '熔岩祭壇', kind: 'normal', layout: 'trident', diff: 5.25, pos: [2, 0.7], next: ['12-6'], coins: 2000,
+        pool: [['ember', 4], ['firebat', 3], ['firepriest', 3], ['obgolem', 2], ['whelp', 2]], objs: [kill(75), nests(3), survive(55), elite('obgolem'), kill(130)] },
+      { id: '12-5', name: '供品庫', kind: 'bonus', layout: 'arena', diff: 5.2, pos: [2, 2], next: ['12-6'], coins: 1300,
+        pool: [['ember', 6], ['firebat', 3], ['lavalizard', 3]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '12-6', name: '龍巢前庭', kind: 'elite', layout: 'cross', diff: 5.35, pos: [3, 1.2], next: ['12-B'], coins: 2250,
+        pool: [['lavalizard', 4], ['firebat', 4], ['firepriest', 3], ['whelp', 2], ['obgolem', 2]], objs: [nests(3), elite('whelp'), survive(60), kill(130)] },
+      { id: '12-B', name: '炎龍之座', kind: 'boss', layout: 'gauntlet', diff: 5.5, pos: [4, 1], next: [], coins: 3500,
+        pool: [['ember', 5], ['firebat', 4], ['firepriest', 2], ['whelp', 1]], objs: [kill(130), boss('firedragon')] },
+    ],
+  },
 ];
 
 export const STAGES = {};

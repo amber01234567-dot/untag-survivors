@@ -17,13 +17,21 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
   const ell = (ex, ey, rx, ry) => { for (let y = Math.floor(ey - ry); y <= ey + ry; y++) for (let x = Math.floor(ex - rx); x <= ex + rx; x++) if (((x + 0.5 - ex) / rx) ** 2 + ((y + 0.5 - ey) / ry) ** 2 <= 1) set(x, y); };
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
+  let pool = null;
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'wind') {                        // 蜿蜒坑道：一條寬的 S 形通道，兩個彎處各有一個較大的空間
+    const A = h / 2 - 9;
+    for (let t = 0; t <= 1; t += 0.004) ell(X + t * w, cy + A * Math.sin(t * Math.PI * 2), 6.2, 6.2);
+    ell(X + w * 0.25, cy + A, 10, 7.5); ell(X + w * 0.75, cy - A, 10, 7.5);
+  } else if (z.shape === 'ringpool') {                  // 環形祭壇：中央是熔岩池（不能走），繞著池子打
+    ell(cx, cy, w / 2, h / 2); pool = [w * 0.19, h * 0.19];
+  }
   else if (z.shape === 'rift') {                        // 熔岩裂谷：一片空地被幾條彎曲的熔岩裂縫切開，只有幾處石橋能過
     ell(cx, cy, w / 2 + 3, h / 2 + 3); rect(X + 3, Y + 3, X + w - 3, Y + h - 3);
     const crack = (vertical, at) => {
@@ -68,6 +76,11 @@ function carveShape(z, side, rng, COR, set, unset) {
   const b = COR / 2 + 1;
   if (side.U) rect(cx - b, Y, cx + b, cy); if (side.D) rect(cx - b, cy, cx + b, Y + h);
   if (side.L) rect(X, cy - b, cx, cy + b); if (side.R) rect(cx, cy - b, X + w, cy + b);
+  if (pool) {                                           // 池子最後挖：通道口到環上是通的，中心不可走
+    for (let y = Math.floor(cy - pool[1]); y <= cy + pool[1]; y++) for (let x = Math.floor(cx - pool[0]); x <= cx + pool[0]; x++) if (((x + 0.5 - cx) / pool[0]) ** 2 + ((y + 0.5 - cy) / pool[1]) ** 2 <= 1) unset(x, y);
+    return [cx, cy + (pool[1] + h / 2) / 2];             // 新的「區域中心」：池子正下方的環上（首領與目標物出現在這裡）
+  }
+  return null;
 }
 
 export function buildLevel(stage, seed) {
@@ -104,9 +117,10 @@ export function buildLevel(stage, seed) {
     else { const t = za.c[1] < zb.c[1] ? za : zb, bt = t === za ? zb : za; sides[t.idx].D = 1; sides[bt.idx].U = 1; }
   }
   for (const z of zones) {
-    if (z.shape !== 'rect') { const inb = (x, y) => x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h; carveShape(z, sides[z.idx], rng, COR, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_FLOOR; }, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_WALL; });
+    if (z.shape !== 'rect') { const inb = (x, y) => x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h; const nc = carveShape(z, sides[z.idx], rng, COR, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_FLOOR; }, (x, y) => { if (inb(x, y)) tiles[idx(x, y)] = T_WALL; });
       // 從中心往外走一遍，走不到的地板（被裂縫切掉的孤島）填回牆
-      const seen = new Set(), q = [idx(Math.floor(z.x + z.w / 2), Math.floor(z.y + z.h / 2))]; seen.add(q[0]);
+      if (nc) { z.cx = nc[0] * TILE; z.cy = nc[1] * TILE; z.pool = true; }
+      const seen = new Set(), q = [idx(Math.floor(z.cx / TILE), Math.floor(z.cy / TILE))]; seen.add(q[0]);
       for (let k = 0; k < q.length; k++) { const i = q[k], x = i % W, y = (i - x) / W; for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) { const j = idx(nx, ny); if (inb(nx, ny) && tiles[j] === T_FLOOR && !seen.has(j)) { seen.add(j); q.push(j); } } }
       for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (tiles[idx(x, y)] === T_FLOOR && !seen.has(idx(x, y))) tiles[idx(x, y)] = T_WALL;
       continue; }
@@ -180,6 +194,7 @@ export function buildLevel(stage, seed) {
       const [w, h] = shape;
       const x = rng.int(z.x + 2, z.x + z.w - 3 - w), y = rng.int(z.y + 2, z.y + z.h - 3 - h);
       if (Math.abs(x + w / 2 - midX) < 4.5 && Math.abs(y + h / 2 - midY) < 4.5) continue;            // 區域中心留空
+      if (z.pool && Math.abs(x + w / 2 - z.cx / TILE) < 5 && Math.abs(y + h / 2 - z.cy / TILE) < 4) continue;      // 環形祭壇：首領 / 目標物出現的位置留空
       if (Math.abs(y + h / 2 - midY) < 5 && (x < z.x + 7 || x + w > z.x + z.w - 7)) continue;         // 左右通道口
       if (Math.abs(x + w / 2 - midX) < 5 && (y < z.y + 7 || y + h > z.y + z.h - 7)) continue;         // 上下通道口
       if (!clearAround(x, y, w, h, 2)) continue;

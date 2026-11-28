@@ -87,3 +87,9 @@ E('lavalizard', { name: '熔岩蜥蜴', hp: 66, speed: 100, dmg: 14, r: 13, xp: 
 E('volturtle', { name: '火山龜', hp: 170, speed: 40, dmg: 21, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 460 });
 E('bombbeetle', { name: '炸彈甲蟲', hp: 46, speed: 110, dmg: 22, r: 13, xp: 3, ai: 'exploder', boomR: 92 });
 E('lavabull', { name: '熔岩蠻牛', hp: 76000, speed: 66, dmg: 29, r: 50, xp: 1050, ai: 'boss_lavabull', kbRes: 1, boss: true });
+E('firebat', { name: '火蝙蝠', hp: 52, speed: 104, dmg: 13, r: 13, xp: 4, ai: 'shooter', fly: true, proj: 'e_fire', shotCd: 2.6, shotRange: 380, shotSpeed: 240 });
+E('obgolem', { name: '黑曜石魔像', hp: 340, speed: 46, dmg: 22, r: 19, xp: 11, ai: 'burst', kbRes: 0.85, proj: 'e_fire', shotCd: 4.0, shotSpeed: 180, shotCount: 8 });
+E('firepriest', { name: '火焰祭司', hp: 96, speed: 86, dmg: 17, r: 14, xp: 6, ai: 'blink' });
+E('whelp', { name: '幼龍', hp: 430, speed: 62, dmg: 27, r: 21, xp: 13, ai: 'charger', kbRes: 0.85 });
+E('obscorp', { name: '黑曜石巨蠍', hp: 70000, speed: 60, dmg: 30, r: 50, xp: 1100, ai: 'boss_obscorp', kbRes: 1, boss: true });
+E('firedragon', { name: '炎龍', hp: 76000, speed: 58, dmg: 31, r: 56, xp: 1300, ai: 'boss_firedragon', kbRes: 1, boss: true });

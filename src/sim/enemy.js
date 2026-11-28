@@ -420,6 +420,68 @@ const AI = {
       for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'bombbeetle' : 'ember', i * 1.2, 95);
     }
   },
+  // 黑曜石巨蠍：尾刺甩熔岩彈、鉗子橫掃（面前一排）、鑽地突襲
+  boss_obscorp(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 3) {                            // 鑽在地下：無法被打，時間到從玩家腳下鑽出
+      ai.w -= dt;
+      if (ai.w <= 0) { e.x = ai.tx; e.y = ai.ty; e.st = 0; e.spawnT = 0.35; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); W.emit('sh', 9); for (let i = 0; i < 10; i++) shootAt(W, e, 'e_fire', i * TAU / 10, 210, e.dmg * 0.55, { r: 10 }); }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.8; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 尾刺熔岩彈：落在每個玩家附近
+      for (let k = 0; k < (p2 ? 4 : 3); k++) ai.q.push({ t: k ? 0.4 : 0, fn: () => { for (const q of W.alive()) warn(W, q.x + W.rng.range(-70, 70), q.y + W.rng.range(-70, 70), 98, 1.0, e.dmg * 1.2); } });
+    } else if (m === 2) {                        // 鉗子橫掃：面前一排，然後反方向再一排
+      const a = Math.atan2(p.y - e.y, p.x - e.x), sweep = (dir) => { for (let i = -2; i <= 2; i++) warn(W, e.x + Math.cos(a + i * 0.42 * dir) * 190, e.y + Math.sin(a + i * 0.42 * dir) * 190, 96, 0.55 + (i + 2) * 0.12, e.dmg * 1.3); W.emit('sh', 5); };
+      sweep(1); ai.q.push({ t: 1.2, fn: () => sweep(-1) }); if (p2) ai.q.push({ t: 1.0, fn: () => sweep(1) });
+    } else if (m === 3) {                        // 鑽地突襲
+      const tp = W.nearestPlayer(e.x, e.y, true) || p;
+      ai.tx = tp.x; ai.ty = tp.y; if (solidAt(W.L, ai.tx, ai.ty)) { ai.tx = e.x; ai.ty = e.y; }
+      W.emit('r', e.x | 0, e.y | 0, 120, 6); e.st = 3; ai.w = 1.25; e.x = -9999; e.y = -9999;
+      warn(W, ai.tx, ai.ty, 175, 1.25, e.dmg * 1.5);
+    } else {                                     // 召喚 + 火球彈幕
+      for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'obgolem' : i % 3 === 1 ? 'bombbeetle' : 'ember', i * 1.2, 100);
+      const volley = (off) => { for (let i = 0; i < 12; i++) shootAt(W, e, 'e_fire', off + i * TAU / 12, 200, e.dmg * 0.55, { r: 10 }); };
+      volley(0); ai.q.push({ t: 0.5, fn: () => volley(0.26) });
+    }
+  },
+  // 炎龍：扇形吐息（連續幾波）、俯衝（長距離衝撞留下火路）、隕石雨、召喚幼龍；半血後吐息變成掃射
+  boss_firedragon(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.7; ai.trail = 0; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1250 * dt, Math.sin(ai.a) * 1250 * dt, e.r * 0.6);
+      ai.w -= dt; ai.trail -= dt;
+      if (ai.trail <= 0) { ai.trail = 0.07; warn(W, e.x, e.y, 82, 0.65, e.dmg * 0.9); }
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 10); warn(W, e.x, e.y, 180, 0.4, e.dmg * 1.2); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.55); } }
+      return;
+    }
+    if (d > 330) seek(W, e, dt, sp * (p2 ? 1.2 : 1), p.x, p.y); else if (d < 190) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.6 * dt, (e.y - p.y) / d * sp * 0.6 * dt, e.r * 0.6);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.7 : 3.6; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 5;
+    const breath = (a, n, spread, sp2) => { for (let i = 0; i < n; i++) shootAt(W, e, 'e_fire', a + (i - (n - 1) / 2) * spread, sp2 * W.rng.range(0.9, 1.1), e.dmg * 0.55, { r: 11 }); };
+    if (m === 1 || m === 4) {                    // 吐息：對著玩家連噴幾波；半血後左右掃
+      const a0 = Math.atan2(p.y - e.y, p.x - e.x), waves = p2 ? 7 : 5;
+      for (let k = 0; k < waves; k++) ai.q.push({ t: k ? 0.22 : 0, fn: () => { const q = e.tgt || p, a = p2 ? a0 + (k - (waves - 1) / 2) * 0.22 : Math.atan2(q.y - e.y, q.x - e.x); breath(a, 7, 0.11, 270); } });
+      W.emit('sh', 4);
+    } else if (m === 2) { ai.chain = p2 ? 2 : 1; startDash(W, e, 0.9); }           // 俯衝
+    else if (m === 3) {                          // 隕石雨
+      for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.38 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 100, 0.95, e.dmg * 1.2); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-230, 230), q.y + W.rng.range(-230, 230), 100, 1.15, e.dmg * 1.2); } W.emit('sh', 3); } });
+    } else for (let i = 0; i < (p2 ? 6 : 4); i++) summon(W, e, i % 2 ? 'whelp' : 'firebat', i * 1.5, 120);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;
