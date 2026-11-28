@@ -1,4 +1,5 @@
 // 主繪製：鏡頭 → 地面層 → 地面效果 → 依 Y 排序的角色與敵人 → 子彈 / 特效 → 遮蔽層 → 光照 → 文字。
+import { CHARM, CHARM_IDS } from '../data/charms.js';
 import { VENT_PERIOD, VENT_WARN, SPIKE_PERIOD, SPIKE_WARN, SPIKE_UP, SPIKE_SIZE } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
 import { PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, BUFF_BITS, VIEW_H } from '../sim/const.js';
@@ -145,9 +146,21 @@ export class Renderer {
     if (p.fl & 4) g.translate((Math.random() - 0.5) * 3, 0);
     drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin, set: p.set ? EL_IDS[p.set - 1] : '' });
     g.restore();
+    if (p.ch && !down) this.charm(g, p, t);
     if (p.sx && !down) this.statusFx(g, p.x, p.y - p.jz, 17, 62, (p.sx & 1 ? 64 : 0) | (p.sx & 2 ? 1 : 0) | (p.sx & 4 ? 2 : 0) | (p.sx & 8 ? 8 : 0), t, p.id + 500);
     if (p.shield > 0) { g.strokeStyle = 'rgba(160,220,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(p.x, p.y - 26 - p.jz, 24, 34, 0, 0, TAU); g.stroke(); g.fillStyle = 'rgba(160,220,255,.08)'; g.fill(); }
     if (p.buffs & (BUFF_BITS.dmg | BUFF_BITS.haste)) { const c = p.buffs & BUFF_BITS.dmg ? '#ff7a5a' : '#ffe06b'; g.fillStyle = c; for (let i = 0; i < 3; i++) { const yy = ((t * 50 + i * 21 + p.id * 9) % 60); g.globalAlpha = 1 - yy / 60; g.fillRect(p.x - 16 + i * 14, p.y - 6 - yy, 2, 7); } g.globalAlpha = 1; }
+  }
+  // 御守（夥伴）：飄在角色肩膀後方，輕輕上下晃；吊繩會跟著擺
+  charm(g, p, t) {
+    const id = CHARM_IDS[p.ch - 1], c = CHARM[id]; if (!c) return;
+    const side = p.face < 0 ? 1 : -1, bob = Math.sin(t * 2.6 + p.id * 1.7) * 4, sw = Math.sin(t * 2.1 + p.id) * 0.14;
+    const x = p.x + side * 30, y = p.y - (p.jz || 0) - 62 + bob, im = FXS['charm_' + id];
+    g.save(); g.translate(x, y); g.rotate(sw);
+    g.globalAlpha = 0.28; g.fillStyle = c.color; g.beginPath(); g.arc(0, 4, 17, 0, TAU); g.fill(); g.globalAlpha = 1;
+    if (im) { const h = 38, w = h * im.width / im.height; g.drawImage(im, -w / 2, -h / 2, w, h); }
+    else { g.fillStyle = c.color; g.strokeStyle = '#12151c'; g.lineWidth = 2; g.beginPath(); g.roundRect(-9, -10, 18, 24, 4); g.fill(); g.stroke(); g.strokeStyle = '#f3e6b0'; g.beginPath(); g.arc(0, -14, 4, 0, TAU); g.stroke(); }
+    g.restore();
   }
   // 聊天對話框：講話的人頭上冒出來，3.5 秒後消失
   say(id, text) { (this.bubbles || (this.bubbles = new Map())).set(id, { s: text.length > 18 ? text.slice(0, 17) + '…' : text, t0: performance.now() }); }

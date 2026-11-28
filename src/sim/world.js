@@ -356,7 +356,7 @@ export class World {
   }
   heal(p, amount, src, overheal) {
     if (p.down || p.gone) return;
-    amount *= src ? src.st.heal : 1;
+    amount *= (src ? src.st.heal : 1) * (p.st.healIn || 1);
     const before = p.hp;
     p.hp = Math.min(p.st.maxHp, p.hp + amount);
     const done = p.hp - before, extra = amount - done;

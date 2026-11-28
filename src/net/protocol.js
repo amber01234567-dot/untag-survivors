@@ -1,12 +1,13 @@
 // 快照：World → 精簡物件 (snapOf) → 二進位 (encode) → 物件 (decode)
 // 房主自己也走同一個 snapOf → View 的路徑，所以房主與客戶端的畫面邏輯完全一致。
+import { CHARM_IDS } from '../data/charms.js';
 import { buffBits, bHaste } from '../sim/player.js';
 import { SKINS } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
 
-export const PROTO = 13;
+export const PROTO = 14;
 const STATES = ['play', 'levelup', 'won', 'lost'];
-const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set', 'sx'];
+const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set', 'sx', 'ch'];
 
 export function snapOf(W) {
   const s = {
@@ -25,6 +26,7 @@ export function snapOf(W) {
       cdP: Math.max(0, Math.round(p.skillCd / (p.def.skill.cd * p.st.cd) * 100)), ult: Math.floor(p.ult / p.ultMax * 100),
       buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd), skin: Math.max(0, SKINS.indexOf((p.weapons[0] && p.weapons[0].def.skin) || '')),
       set: p.gs && p.gs.set ? EL_IDS.indexOf(p.gs.set) + 1 : 0,
+      ch: p.bonus.charm ? CHARM_IDS.indexOf(p.bonus.charm[0]) + 1 : 0,      // 御守（0 = 沒帶）
       sx: (p.buffs.el_slow ? 1 : 0) | (p.burnT > 0 ? (W.el === 'poison' ? 4 : 2) : 0) | (p.buffs.el_shock ? 8 : 0),      // 屬性狀態：1 緩速 2 燃燒 4 中毒 8 麻痺
     });
   }

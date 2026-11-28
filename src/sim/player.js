@@ -1,6 +1,7 @@
 import { CHARS } from '../data/characters.js';
 import { WEAPONS, SUB_WEAPONS, weaponStats } from '../data/weapons.js';
 import { PASSIVES, emptyBonus } from '../data/upgrades.js';
+import { charmVal, HEAL_CD } from '../data/charms.js';
 import { moveBody, solidAt } from './levelgen.js';
 import { dist2 } from '../core/util.js';
 import { BEH } from './weapons.js';
@@ -46,6 +47,11 @@ export function recalc(p) {
   if (gs && gs.acc === 'gold') s.dmg += ACC.gold.dmg * gs.accMul;
   if (gs && gs.acc === 'wind') s.speed *= 1 + ACC.wind.speed * gs.accMul;
   if (gs && gs.acc === 'earth') s.armor += Math.round(ACC.earth.armor * gs.accMul);
+  // 御守（夥伴）：效果乘在既有數值上
+  const cm = p.bonus.charm, cv = cm && charmVal(cm[0], cm[1]);
+  s.healIn = 1;
+  if (cv && cm[0] === 'charge') s.ultRate *= 1 + cv.a;
+  if (cv && cm[0] === 'heal') s.healIn = 1 + cv.a;
   for (const w of p.weapons) { if (w.s.armorAdd) s.armor += w.s.armorAdd; if (w.s.hpMul) s.maxHp *= w.s.hpMul; }
   s.maxHp = Math.round(s.maxHp);
   p.st = s;
@@ -102,8 +108,18 @@ export function updatePlayer(W, p, dt) {
   if (p.burnT > 0) { p.burnT -= dt; if (p.hp > 1) { p.hp = Math.max(1, p.hp - p.burn * dt); p.hurt = Math.max(p.hurt, 0.05); } }      // 燃燒 / 中毒：不會直接致死
   p.invuln -= dt; p.hurt -= dt; if (p.stealth > 0) p.stealth -= dt;
   let regen = p.st.regen;
+  // 癒療守：定時幫血量最低的隊友回血（不含自己；自己吃的是「受到的回復加成」）
+  if (p.bonus.charm && p.bonus.charm[0] === 'heal' && !p.down) {
+    p.charmT = (p.charmT === undefined ? HEAL_CD * 0.5 : p.charmT) - dt;
+    if (p.charmT <= 0) {
+      let best = null, bh = 0.999;
+      for (const q of W.players) { if (q === p || q.down || q.gone) continue; const h = q.hp / q.st.maxHp; if (h < bh && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < 700 * 700) { bh = h; best = q; } }
+      if (best) { p.charmT = HEAL_CD; W.heal(best, best.st.maxHp * charmVal('heal', p.bonus.charm[1]).b, p); W.emit('l', p.x | 0, (p.y - 40) | 0, best.x | 0, (best.y - 30) | 0, 2); W.emit('r', best.x | 0, best.y | 0, 46, 2); }
+      else p.charmT = 1;
+    }
+  }
   for (const k in p.buffs) { const b = p.buffs[k]; b.t -= dt; if (b.regen) regen += b.regen; if (b.t <= 0) { const end = b.onEnd; delete p.buffs[k]; if (end) end(W, p); } }
-  if (regen > 0 && p.hp < p.st.maxHp) p.hp = Math.min(p.st.maxHp, p.hp + regen * dt);
+  if (regen > 0 && p.hp < p.st.maxHp) p.hp = Math.min(p.st.maxHp, p.hp + regen * (p.st.healIn || 1) * dt);
 
   // 移動
   let mx = p.in.mx, my = p.in.my;

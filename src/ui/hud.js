@@ -1,4 +1,6 @@
 // 遊戲內介面：血條、經驗、目標、隊友、技能鈕、升級三選一、暫停、結算。
+import { CHARM, charmDesc } from '../data/charms.js';
+import { recalc } from '../sim/player.js';
 import { CHARS, ROLES } from '../data/characters.js';
 import { WEAPONS, EVO_NEED } from '../data/weapons.js';
 import { PASSIVES } from '../data/upgrades.js';
@@ -131,6 +133,11 @@ export class Hud {
     else if (a === 'reroll' && this.choices && this.choices.rerolls > 0) this.rt.reroll();
     else if (a === 'resume') this.togglePause();
     else if (a === 'settest') { window.__SET = v || ''; this.togglePause(); }
+    else if (a === 'charmtest') {      // 測試：直接換御守（單人）
+      const W = this.rt.world, p = W && W.player(this.rt.myId);
+      if (p) { const [id, st] = (v || '').split(':'); p.bonus.charm = id ? [id, +st] : null; recalc(p); this.charmTest = v || ''; this.app.toast(id ? `${CHARM[id].name} ${st} 星：${charmDesc(id, +st)}` : '已取下御守'); }
+      this.togglePause();
+    }
     else if (a === 'evotest') { this.togglePause(); this.app.grantEvoReady(); }
     else if (a === 'quit') { this.closeModal(); this.app.quitGame(); }
     else if (a === 'lobby') { this.closeModal(); this.app.endGame(); }
@@ -148,6 +155,7 @@ export class Hud {
       <div class="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（攻擊全自動）<br><kbd>空白鍵</kbd> 技能：${this.def.skill.name}<br><kbd>Q</kbd> 寶具：${(this.ultDef || this.def.ult).name}<br>倒地的隊友：靠近 3 秒即可救起</div>
       ${solo ? '' : '<div class="dim" style="font-size:11px">連線遊戲不會暫停</div>'}
       ${window.__TEST ? `<div class="settest"><span>測試套裝：</span>${[['', '無'], ['ice', '冰'], ['fire', '火'], ['poison', '毒'], ['gold', '金'], ['wind', '風'], ['earth', '土'], ['thunder', '雷']].map(([v, n]) => `<button class="btn sm${(window.__SET || '') === v ? ' on' : ''}" data-a="settest" data-v="${v}">${n}</button>`).join('')}</div>` : ''}
+      ${solo && window.__TEST ? `<div class="settest"><span>測試御守：</span>${[['', '無'], ['charge:1', '蓄力 1★'], ['charge:5', '蓄力 5★'], ['heal:1', '癒療 1★'], ['heal:5', '癒療 5★']].map(([v, n]) => `<button class="btn sm${(this.charmTest || '') === v ? ' on' : ''}" data-a="charmtest" data-v="${v}">${n}</button>`).join('')}</div>` : ''}
       ${solo && window.__TEST ? '<button class="btn" data-a="evotest" style="border-color:#ffd23c;color:#ffd23c">測試：直接達成進化條件</button>' : ''}
       <button class="btn primary" data-a="resume">繼續</button><button class="btn danger" data-a="quit">${this.app.session.mode === 'client' ? '離開房間' : '放棄關卡'}</button></div>`);
   }
