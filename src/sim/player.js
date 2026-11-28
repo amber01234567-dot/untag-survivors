@@ -123,6 +123,7 @@ export function updatePlayer(W, p, dt) {
     const sp = p.st.speed * bSpeed(p);
     moveBody(L, p, mx * sp * dt, my * sp * dt, 11);
   }
+  if (W.wind && W.wind.st === 2 && !p.jump && !p.dash && !p.buffs.chime) moveBody(L, p, W.wind.vx * dt, W.wind.vy * dt, 11);      // 陣風推人
 
   // 自動瞄準最近的敵人
   const tgt = W.nearestEnemy(p.x, p.y, 640);

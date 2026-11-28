@@ -210,8 +210,9 @@ const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, 
   snowling: 2.6, frostwolf: 2.7, pengu: 2.8, icecrab: 2.7, snowman: 3, captain: 3.1, icewalrus: 2.8, frostwisp: 2.7, snowowl: 2.8, iceguard: 3, icegolem: 3.2, icequeen: 3.3,
   ember: 2.7, lavalizard: 2.6, volturtle: 2.9, bombbeetle: 2.6, lavabull: 2.9, firebat: 2.7, obgolem: 3, firepriest: 2.9, whelp: 2.8, obscorp: 3, firedragon: 3.4,
   mudling: 2.6, mosquito: 2.7, toad: 2.8, rotter: 3.1, bogfrog: 3, sporeshroom: 2.7, sporeflower: 3.1, wraith: 2.9, skelarcher: 2.9, sporemother: 3.2, plaguelord: 3.5,
-  coinling: 2.6, swordsman: 2.9, crossbow: 2.7, lionling: 2.7, stonelion: 3, shieldman: 3, dingmon: 2.8, goldguard: 3.1, mimic: 2.7, general: 3.5, emperor: 3.3 };
-const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7', icemine: 'nest8', icepalace: 'nest9', ashfoot: 'nest10', lavacave: 'nest11', firetemple: 'nest12', swamp: 'nest13', fungus: 'nest14', graveyard: 'nest15', goldroad: 'nest16', tomb: 'nest17', goldhall: 'nest18' };
+  coinling: 2.6, swordsman: 2.9, crossbow: 2.7, lionling: 2.7, stonelion: 3, shieldman: 3, dingmon: 2.8, goldguard: 3.1, mimic: 2.7, general: 3.5, emperor: 3.3,
+  windling: 2.6, sparrow: 2.6, kitemon: 2.9, goat: 2.8, thunderbird: 3 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7', icemine: 'nest8', icepalace: 'nest9', ashfoot: 'nest10', lavacave: 'nest11', firetemple: 'nest12', swamp: 'nest13', fungus: 'nest14', graveyard: 'nest15', goldroad: 'nest16', tomb: 'nest17', goldhall: 'nest18', skyisle: 'nest19' };
 const IMG = {};
 let theme = 'slums';
 const cache = new Map();

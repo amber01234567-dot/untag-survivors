@@ -117,3 +117,9 @@ E('goldguard', { name: '金甲親衛', hp: 360, speed: 48, dmg: 24, r: 19, xp: 1
 E('mimic', { name: '寶箱怪', hp: 60, speed: 112, dmg: 25, r: 14, xp: 4, ai: 'exploder', boomR: 96, coins: 2 });
 E('general', { name: '兵俑將軍', hp: 68000, speed: 60, dmg: 34, r: 50, xp: 1600, ai: 'boss_general', kbRes: 1, boss: true });
 E('emperor', { name: '黃金帝王', hp: 68000, speed: 70, dmg: 35, r: 56, xp: 1800, ai: 'boss_emperor', kbRes: 1, boss: true });
+// ───── 第七系列：浮空風島（風屬性：移動較快）─────
+E('windling', { name: '風精', hp: 22, speed: 150, dmg: 9, r: 10, xp: 2, ai: 'swarm', fly: true });
+E('sparrow', { name: '山雀', hp: 56, speed: 118, dmg: 14, r: 12, xp: 3, ai: 'chase', fly: true });
+E('kitemon', { name: '紙風箏怪', hp: 60, speed: 96, dmg: 14, r: 13, xp: 4, ai: 'shooter', fly: true, proj: 'e_wind', shotCd: 2.5, shotRange: 390, shotSpeed: 260 });
+E('goat', { name: '山羊', hp: 130, speed: 80, dmg: 20, r: 15, xp: 6, ai: 'charger', kbRes: 0.5 });
+E('thunderbird', { name: '風暴大鵬', hp: 66000, speed: 70, dmg: 35, r: 52, xp: 1800, ai: 'boss_thunderbird', kbRes: 1, boss: true, fly: true });

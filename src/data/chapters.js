@@ -57,6 +57,7 @@ export const SERIES = [
   { id: 4, name: '熔岩火山', sub: 'MAGMA VOLCANO', el: 'fire' },
   { id: 5, name: '瘴氣毒沼', sub: 'MIASMA MIRE', el: 'poison' },
   { id: 6, name: '黃金神殿', sub: 'GOLDEN TEMPLE', el: 'gold' },
+  { id: 7, name: '浮空風島', sub: 'SKY ISLES', el: 'wind' },
 ];
 
 export const DIFFS = [
@@ -462,6 +463,29 @@ export const CHAPTERS = [
         pool: [['swordsman', 3], ['mimic', 4], ['goldguard', 3], ['shieldman', 2]], objs: [nests(3), elite('goldguard'), survive(60), kill(135)] },
       { id: '18-B', name: '黃金王座', kind: 'boss', layout: 'gauntlet', diff: 6.45, pos: [4, 1], next: [], coins: 7600,
         pool: [['coinling', 5], ['mimic', 3], ['crossbow', 3]], objs: [kill(135), boss('emperor')] },
+    ],
+  },
+  // ───── 第七系列：浮空風島（風屬性：怪物移動較快；掉落天狗行者）─────
+  {
+    id: 19, series: 7, name: '雲海棧道', sub: 'CLOUD SEA TRAIL', theme: 'skyisle', outdoor: true, hazard: 'gust',
+    shapes: { combat: [['skyisles', 4], ['cave', 2]], final: 'round' },      // 空間架構：長繩橋相連的浮島群、不規則空地；首領在圓形峰頂
+    intro: '王殿的屋頂上面還有路。雲在腳底下，風從四面八方來，橋只有一條繩子那麼可靠。',
+    devices: [['chime', 4], ['boulder', 3]],
+    nodes: [
+      { id: '19-1', name: '登雲梯', kind: 'normal', layout: 'snake', diff: 6.05, pos: [0, 1], next: ['19-2', '19-3'], coins: 4600,
+        pool: [['windling', 6], ['sparrow', 4], ['kitemon', 2]], objs: [kill(85), survive(55), kill(130)] },
+      { id: '19-2', name: '松風崖', kind: 'normal', layout: 'ring', diff: 6.12, pos: [1, 0.3], next: ['19-4'], coins: 4750,
+        pool: [['windling', 5], ['sparrow', 4], ['goat', 2], ['kitemon', 2]], objs: [kill(75), nests(3), survive(55), elite('goat')] },
+      { id: '19-3', name: '風鈴谷', kind: 'normal', layout: 'hub', diff: 6.16, pos: [1, 1.7], next: ['19-4', '19-5'], coins: 4800,
+        pool: [['windling', 5], ['sparrow', 4], ['kitemon', 3], ['goat', 1]], objs: [kill(75), survive(55), nests(3), kill(135)] },
+      { id: '19-4', name: '千尋繩橋', kind: 'normal', layout: 'trident', diff: 6.25, pos: [2, 0.7], next: ['19-6'], coins: 5050,
+        pool: [['windling', 4], ['sparrow', 4], ['goat', 3], ['kitemon', 3]], objs: [kill(75), nests(3), survive(55), elite('kitemon'), kill(135)] },
+      { id: '19-5', name: '採雲人小屋', kind: 'bonus', layout: 'arena', diff: 6.2, pos: [2, 2], next: ['19-6'], coins: 3200,
+        pool: [['windling', 7], ['sparrow', 3], ['goat', 1]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '19-6', name: '鷹巢岩', kind: 'elite', layout: 'cross', diff: 6.35, pos: [3, 1.2], next: ['19-B'], coins: 5600,
+        pool: [['windling', 4], ['sparrow', 4], ['goat', 3], ['kitemon', 3]], objs: [nests(3), elite('goat'), survive(60), kill(135)] },
+      { id: '19-B', name: '大鵬峰頂', kind: 'boss', layout: 'gauntlet', diff: 6.5, pos: [4, 1], next: [], coins: 8700,
+        pool: [['windling', 5], ['sparrow', 4], ['goat', 2], ['kitemon', 2]], objs: [kill(135), boss('thunderbird')] },
     ],
   },
 ];

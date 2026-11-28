@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -25,6 +25,14 @@ function carveShape(z, side, rng, COR, set, unset) {
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
   let pool = null;
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'skyisles') {                    // 浮島群：幾座大小不一的浮島，用又長又直的繩橋相連
+    const sy1 = rng.range(-0.16, 0.16) * h, sy2 = rng.range(-0.16, 0.16) * h;
+    const isl = [[cx, cy, 5.5, 4.5], [X + 7, cy + sy1, 6, rng.range(6, 7.5)], [X + w - 7, cy + sy2, 6, rng.range(6, 7.5)], [cx + rng.range(-8, 8), Y + 5.5, rng.range(5.5, 7), 4.5], [cx + rng.range(-8, 8), Y + h - 5.5, rng.range(5.5, 7), 4.5]];
+    for (const [ex, ey, rx, ry] of isl) ell(ex, ey, rx, ry);
+    const bridge = (p, q) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); for (let t = 0; t <= 1; t += 0.5 / d) ell(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, 2.7, 2.7); };
+    for (let i = 1; i < isl.length; i++) bridge(isl[0], isl[i]);
+    bridge(isl[1], isl[3]); bridge(isl[2], isl[4]);
+  }
   else if (z.shape === 'courtyard') {                   // 回字殿：外圈迴廊包著中央正殿，中間一圈牆，四面各開一扇門
     rect(X, Y, X + w, Y + h);
     const ix0 = X + 10, ix1 = X + w - 10, iy0 = Y + 9, iy1 = Y + h - 9;
@@ -101,8 +109,9 @@ function carveShape(z, side, rng, COR, set, unset) {
     rect(X, Y, X + w, Y + h);
   }
   // 中心與通道口一定相通
-  if (z.shape !== 'bog') rect(cx - 5, cy - 5, cx + 5, cy + 5);
-  const b = z.shape === 'bog' ? 3.2 : COR / 2 + 1;      // 沼澤：通道口到中央也是一條棧道，不是大通道
+  const thin = z.shape === 'bog' || z.shape === 'skyisles';
+  if (!thin) rect(cx - 5, cy - 5, cx + 5, cy + 5);
+  const b = thin ? 3.2 : COR / 2 + 1;      // 沼澤：通道口到中央也是一條棧道，不是大通道
   if (side.U) rect(cx - b, Y, cx + b, cy); if (side.D) rect(cx - b, cy, cx + b, Y + h);
   if (side.L) rect(X, cy - b, cx, cy + b); if (side.R) rect(cx, cy - b, X + w, cy + b);
   if (pool) {                                           // 池子最後挖：通道口到環上是通的，中心不可走

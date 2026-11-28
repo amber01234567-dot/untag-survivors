@@ -631,6 +631,33 @@ const AI = {
       else { for (let i = 0; i < 6; i++) summon(W, e, i % 2 ? 'goldguard' : 'mimic', i * 1.05, 130); for (let i = 0; i < 16; i++) shootAt(W, e, 'e_gold', i * TAU / 16, 210, e.dmg * 0.55, { r: 11 }); }
     }
   },
+  // 風暴大鵬：連續俯衝、扇翅強風（把玩家往外吹，同時羽毛彈幕）、羽毛雨、召喚
+  boss_thunderbird(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.6; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1300 * dt, Math.sin(ai.a) * 1300 * dt, e.r * 0.5);
+      ai.w -= dt;
+      if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 8); for (let i = 0; i < 10; i++) shootAt(W, e, 'e_wind', i * TAU / 10, 210, e.dmg * 0.5, { r: 10 }); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.5); } }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.7; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) { ai.chain = p2 ? 3 : 2; startDash(W, e, 0.75); }
+    else if (m === 2) {                          // 扇翅：一陣朝玩家方向吹的強風，風裡夾著一排排羽毛
+      const a = Math.atan2(p.y - e.y, p.x - e.x);
+      W.startGust(a, 1.0, p2 ? 3.2 : 2.6, 1.25);
+      for (let k = 0; k < (p2 ? 5 : 4); k++) ai.q.push({ t: k ? 0.55 : 1.0, fn: () => { for (let i = -4; i <= 4; i++) shootAt(W, e, 'e_wind', a + i * 0.17 + (k % 2) * 0.085, 250, e.dmg * 0.5, { r: 10 }); } });
+    } else if (m === 3) {                        // 羽毛雨
+      for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.38 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 94, 0.9, e.dmg * 1.2); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-220, 220), q.y + W.rng.range(-220, 220), 94, 1.1, e.dmg * 1.2); } } });
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'kitemon' : i % 3 === 1 ? 'sparrow' : 'windling', i * 1.05, 110);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

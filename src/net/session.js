@@ -376,7 +376,10 @@ export class ClientRuntime {
       if (me && last.st === 0 && !(me.fl & (1 | 8 | 16))) {
         let { mx, my } = this.in; const l = Math.hypot(mx, my);
         if (l > 1) { mx /= l; my /= l; }
-        if (l > 0.1) { const bx = pr.x, by = pr.y; moveBody(this.view.L, pr, mx * me.spd * SIM_DT, my * me.spd * SIM_DT, 11); dx = pr.x - bx; dy = pr.y - by; }
+        const bx = pr.x, by = pr.y, wd = last.L && last.L.w;
+        if (l > 0.1) moveBody(this.view.L, pr, mx * me.spd * SIM_DT, my * me.spd * SIM_DT, 11);
+        if (wd && wd[2] === 2 && !(me.fl & 64)) moveBody(this.view.L, pr, wd[0] * SIM_DT, wd[1] * SIM_DT, 11);      // 陣風也要一起預測，畫面才不會抖
+        dx = pr.x - bx; dy = pr.y - by;
       }
       this.hist.push({ s: this.seq, dx, dy });
       if (this.hist.length > 240) this.hist.shift();

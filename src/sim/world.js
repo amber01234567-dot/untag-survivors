@@ -1,5 +1,5 @@
 // 權威模擬世界（只在房主 / 單人端執行）。客戶端只收快照，不跑這個檔案。
-import { TILE, PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, VENT_PERIOD, VENT_WARN, VENT_R } from './const.js';
+import { TILE, PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, VENT_PERIOD, VENT_WARN, VENT_R, GUST_SPEED } from './const.js';
 import { RNG, TAU, clamp, dist2, angDiff, lerpAngle } from '../core/util.js';
 import { buildLevel, moveBody, blocksShot, solidAt, FlowField } from './levelgen.js';
 import { DIFFS } from '../data/chapters.js';
@@ -92,6 +92,14 @@ export class World {
         const ph = (this.time + v.ph) % VENT_PERIOD, prev = (this.time - dt + v.ph) % VENT_PERIOD;
         if (ph >= VENT_PERIOD - VENT_WARN && prev < VENT_PERIOD - VENT_WARN) warn(this, v.x, v.y, VENT_R, VENT_WARN, 15 * this.dmgMul);
       }
+    }
+    if (this.wind) {                                              // 陣風：st 1 = 預警（箭頭），st 2 = 吹（推動玩家，見 updatePlayer）
+      const w = this.wind; w.t -= dt;
+      if (w.t <= 0) { if (w.st === 1) { w.st = 2; w.t = w.dur; this.emit('a', 'gate'); } else this.wind = null; }
+    }
+    if (this.stage.hazard === 'gust') {                          // 場地危險：每隔一段時間颳一陣固定方向的強風
+      this.hazT = (this.hazT === undefined ? 8 : this.hazT) - dt;
+      if (this.hazT <= 0 && !this.wind) { this.hazT = this.rng.range(9, 12); if (this.L.zones.some((z) => z.state === 'active')) this.startGust(this.rng.int(0, 7) * Math.PI / 4, 1.6, 3.5); }
     }
     if (this.stage.hazard === 'arrows') {                        // 場地危險：箭雨。一整條貫穿區域的長條地帶（直或橫），預警後落下
       this.hazT = (this.hazT === undefined ? 7 : this.hazT) - dt;
@@ -423,6 +431,7 @@ export class World {
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 
+  startGust(a, warnT, dur, k = 1) { this.wind = { a, st: 1, t: warnT, dur, vx: Math.cos(a) * GUST_SPEED * k, vy: Math.sin(a) * GUST_SPEED * k }; }
   // 毒霧：delay 秒的預警後成形，停留 dur 秒，每 0.6 秒傷害一次範圍內的玩家
   addFog(x, y, r, delay, dur, dmg) { return this.addZone({ kind: 'e_fog', team: 1, x, y, r, delay, dur: delay + dur, tick: 0.6, dmg }); }
   // ───────── 區域效果 ─────────
@@ -477,7 +486,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 }, chime: { arm: 0.7, run: 10, cd: 30 }, boulder: { arm: 0.7, run: 0.6, cd: 24 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -486,12 +495,21 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！', chime: '風鈴響起！', boulder: '落石滾下！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
       const pow = this.hpMul / (1 + 0.55 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
-      if (d.kind === 'ballista' && d.tk <= 0) {              // 弩砲：射速慢、每發很痛、會貫穿
+      if (d.kind === 'chime' && d.tk <= 0) {                 // 風鈴塔：移動速度大幅提升，並且不受陣風影響
+        d.tk = 0.5;
+        this.playersIn(d.x, d.y, 340, (q) => addBuff(q, 'chime', { t: 1.0, speed: 0.35 }));
+        this.emit('r', d.x | 0, d.y | 0, 340, 1);
+      } else if (d.kind === 'boulder' && d.tk <= 0) {         // 落石機關：一排滾石朝最近的敵人方向滾過去，碾過路徑上的敵人
+        d.tk = 99;
+        const e = this.nearestEnemy(d.x, d.y, 900), a = e ? Math.atan2(e.y - d.y, e.x - d.x) : 0;
+        for (let i = -1; i <= 1; i++) this.shoot(null, { kind: 'baseball', x: d.x - Math.sin(a) * i * 60, y: d.y + Math.cos(a) * i * 60, a, speed: 460, dmg: 150 * pow, life: 2.0, pierce: 99, r: 30, kb: 300 });
+        this.emit('sh', 6);
+      } else if (d.kind === 'ballista' && d.tk <= 0) {              // 弩砲：射速慢、每發很痛、會貫穿
         d.tk = 0.55;
         const e = this.nearestEnemy(d.x, d.y, 620);
         if (e) this.shoot(null, { kind: 'lance', x: d.x, y: d.y - 30, a: Math.atan2(e.y - e.r * 0.5 - d.y + 30, e.x - d.x), speed: 1000, dmg: 52 * pow, life: 0.8, pierce: 6, r: 12 });
