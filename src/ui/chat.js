@@ -3,13 +3,13 @@
 //   戰鬥中訊息 8 秒後淡出；講話的人頭上會冒對話框（renderer.say）。
 import { SLOT_COLORS } from '../render/renderer.js';
 
-export const QUICK = ['集合！', '救我！', '小心！', '衝啊！', '等我一下', '謝謝', '打得好', '抱歉'];
+export const QUICK = ['集合！', '救我！', '小心！', '衝啊！', '等我一下', '謝謝', '打得好', '抱歉', '有夠雷！', '電話！'];
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MAX_LINES = 40;
 
 export class Chat {
   constructor(app) {
-    this.app = app; this.open = false; this.lines = []; this.where = '';
+    this.app = app; this.open = false; this.lines = []; this.where = ''; this.layout = '';      // layout：'panel' = 大廳的固定面板（電腦）；'float' = 浮動（戰鬥中，以及手機的大廳）
     const el = this.el = document.createElement('div'); el.id = 'chat'; el.className = 'hidden';
     el.innerHTML = `<div class="clog"></div>
       <div class="cbox hidden"><div class="cquick">${QUICK.map((q, i) => `<button data-q="${i}">${q}</button>`).join('')}</div>
@@ -19,7 +19,7 @@ export class Chat {
     this.log = el.querySelector('.clog'); this.box = el.querySelector('.cbox'); this.inp = el.querySelector('.cin');
     el.querySelector('.cbtn').addEventListener('click', () => this.toggle());
     el.querySelector('.csend').addEventListener('click', () => this.submit());
-    el.querySelector('.cquick').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if (b) { this.send(QUICK[+b.dataset.q]); if (this.where === 'game') this.toggle(false); } });
+    el.querySelector('.cquick').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if (b) { this.send(QUICK[+b.dataset.q]); if (this.layout === 'float') this.toggle(false); } });
     this.inp.addEventListener('keydown', (e) => {
       e.stopPropagation();
       if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); if (this.inp.value.trim()) this.submit(); else this.toggle(false); }
@@ -37,21 +37,22 @@ export class Chat {
   sync() {
     const app = this.app, multi = app.session.mode !== 'solo' && app.session.lobby.players.length > 0;
     const where = !multi ? '' : app.rt ? 'game' : app.screens.cur === 'lobby' ? 'lobby' : '';
-    if (where !== this.where) {
-      this.where = where; this.el.className = where ? 'in-' + where : 'hidden';
-      if (!where) { this.toggle(false); if (!multi) { this.lines = []; this.log.innerHTML = ''; } }
-      if (where === 'lobby') this.toggle(false);
+    const layout = !where ? '' : where === 'lobby' && innerWidth >= 900 && innerHeight >= 560 ? 'panel' : 'float';      // 手機 / 小視窗的大廳放不下固定面板：改成和戰鬥中一樣的浮動聊天
+    if (where !== this.where || layout !== this.layout) {
+      this.where = where; this.layout = layout; this.el.className = where ? (layout === 'panel' ? 'in-lobby' : 'in-game') + (where === 'lobby' ? ' at-lobby' : '') : 'hidden';
+      if (!where && !multi) { this.lines = []; this.log.innerHTML = ''; }
+      this.toggle(false);
       this.render();
     }
-    if (where === 'game') { const now = performance.now(); for (const n of this.log.children) n.classList.toggle('old', !this.open && now - +n.dataset.t > 8000); }
+    if (layout === 'float') { const now = performance.now(); for (const n of this.log.children) n.classList.toggle('old', !this.open && now - +n.dataset.t > 8000); }
   }
   toggle(v) {
     this.open = v === undefined ? !this.open : v;
-    this.box.classList.toggle('hidden', !this.open && this.where !== 'lobby');
+    this.box.classList.toggle('hidden', !this.open && this.layout !== 'panel');
     this.el.classList.toggle('open', this.open);
     if (this.open) { const inp = this.app.input; inp.keys.clear(); inp.btn = 0; this.inp.focus(); } else { this.inp.blur(); }
   }
-  submit() { const s = this.inp.value.trim(); this.inp.value = ''; if (s) this.send(s); if (this.where === 'game') this.toggle(false); }
+  submit() { const s = this.inp.value.trim(); this.inp.value = ''; if (s) this.send(s); if (this.layout === 'float') this.toggle(false); else this.inp.focus(); }
   send(s) { this.app.session.sendChat(s); }
   // session 的 'chat' 事件
   onMsg(id, s) {
@@ -65,6 +66,6 @@ export class Chat {
   render() {
     this.log.innerHTML = this.lines.map((l) => (l.sys ? `<div class="sys" data-t="${l.t}">${esc(l.s)}</div>` : `<div data-t="${l.t}"><b style="color:${l.col}">${esc(l.name)}</b>${esc(l.s)}</div>`)).join('');
     this.log.scrollTop = this.log.scrollHeight;
-    this.box.classList.toggle('hidden', !this.open && this.where !== 'lobby');
+    this.box.classList.toggle('hidden', !this.open && this.layout !== 'panel');
   }
 }

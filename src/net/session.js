@@ -196,7 +196,7 @@ export class Session {
   }
   isAway(pid) { const lp = this.lobby.players.find((p) => p.id === pid); return !!(lp && lp.away); }
   note(s) { this.broadcast(JSON.stringify({ t: 'note', s })); this.fire('note', s); }
-  // 聊天：客戶端送給房主，房主檢查後轉發給所有人（含自己）。每人 0.7 秒最多一則、最長 60 字
+  // 聊天：客戶端送給房主，房主檢查後轉發給所有人（含自己）。可連發 4 則，之後每 1.2 秒一則；最長 60 字
   sendChat(s) {
     s = cleanChat(s);
     if (!s || this.mode === 'solo') return;
@@ -205,9 +205,11 @@ export class Session {
   }
   relayChat(pid, s) {
     s = cleanChat(s);
-    const t = Date.now(), last = this.chatT.get(pid) || 0;
-    if (!s || t - last < 700) return;
-    this.chatT.set(pid, t);
+    if (!s) return;
+    const t = Date.now(), b = this.chatT.get(pid) || { n: 4, t };      // 防洗頻：可以連發 4 則，之後每 1.2 秒補一則
+    b.n = Math.min(4, b.n + (t - b.t) / 1200); b.t = t; this.chatT.set(pid, b);
+    if (b.n < 1) return;
+    b.n -= 1;
     this.broadcast(JSON.stringify({ t: 'chat', id: pid, s })); this.fire('chat', pid, s);
   }
   syncLobby() { this.broadcast(JSON.stringify({ t: 'lobby', lobby: this.lobby })); this.fire('lobby'); }

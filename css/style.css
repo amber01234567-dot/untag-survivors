@@ -501,4 +501,5 @@ body.touch #chat .cbtn span { display: none; }
 #chat.in-game .clog div.old { opacity: 0; }
 #chat.in-game.open .clog div.old { opacity: .75; }
 #chat.in-game.open .cbtn { display: none; }
-@media (max-width: 760px) { #chat.in-lobby { display: none; } }
+#chat.in-game.at-lobby { bottom: max(10px, env(safe-area-inset-bottom)); z-index: 30; }
+#chat.in-game.at-lobby.open { background: rgba(6, 8, 13, .93); border: 1px solid var(--gold-line, #6b5a2e); border-radius: 4px; padding: 8px; }
