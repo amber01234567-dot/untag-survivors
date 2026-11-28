@@ -6,12 +6,13 @@ import { WEAPONS, SUB_WEAPONS } from '../data/weapons.js';
 import { EL, EL_IDS, SLOTS, ARMOR_SLOTS, MAX_STAR, DROP, gearId } from '../data/gear.js';
 
 import { CHARMS, CHARM, CHARM_MAX, CHARM_PRICE, CHARM_DROP } from '../data/charms.js';
+import { SKIN, skinOnSale } from '../data/skins.js';
 const KEY = 'untag_survivors_save';
 export const SAVE_VERSION = 2;
 const DEV = new URLSearchParams(location.search).get('dev') === '1' || (typeof window !== 'undefined' && !!window.__TEST);
 
 function fresh() {
-  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, subSel: [], charms: {}, charmSel: '', unlocked: [], cleared: {}, char: 'tingge',
+  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, subSel: [], charms: {}, charmSel: '', skins: [], skinSel: {}, unlocked: [], cleared: {}, char: 'tingge',
     settings: { sfx: 0.5, music: 0.35, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
 }
 function migrate(s) {
@@ -46,6 +47,8 @@ function sanitize(s) {
   const ev = {}; for (const c in s.evos) if (CHARS[c] && Array.isArray(s.evos[c])) ev[c] = s.evos[c].filter((w) => WEAPONS[w] && WEAPONS[w].evoOf); s.evos = ev;
   const es = {}; for (const c in s.evoSel) if (ev[c] && ev[c].includes(s.evoSel[c])) es[c] = s.evoSel[c]; s.evoSel = es;
   { const cm = {}; if (obj(s.charms)) for (const id in s.charms) if (CHARM[id]) cm[id] = int(s.charms[id], 0, CHARM_MAX); s.charms = cm; if (!cm[s.charmSel]) s.charmSel = ''; }
+  s.skins = Array.isArray(s.skins) ? [...new Set(s.skins.filter((id) => SKIN[id]))] : [];
+  { const ss = {}; if (obj(s.skinSel)) for (const c in s.skinSel) if (CHARS[c] && s.skins.includes(s.skinSel[c])) ss[c] = s.skinSel[c]; s.skinSel = ss; }
   s.subSel = s.subSel.filter((id) => SUB_WEAPONS.includes(id)).slice(0, 4);
   s.unlocked = s.unlocked.filter((id) => CHARS[id]);
   for (const k of ['sfx', 'music']) s.settings[k] = Math.max(0, Math.min(1, +s.settings[k] || 0));
@@ -77,6 +80,11 @@ export const save = {
   buyCharm(id) { const c = this.charmCost(id); if (!CHARM[id] || !c || this.data.coins < c) return false; this.data.coins -= c; this.addCharm(id); this.write(); return true; },
   setCharm(id) { this.data.charmSel = id && this.charmStar(id) ? id : ''; this.write(); },
   charmEquipped() { const id = this.data.charmSel, st = id ? this.charmStar(id) : 0; return st ? [id, st] : null; },
+  // ── 獨立造型：買一次全角色通用；每個角色各自選穿哪一套 ──
+  skinOwned(id) { return this.data.skins.includes(id); },
+  buySkin(id) { const s = SKIN[id]; if (!s || this.skinOwned(id) || !skinOnSale(s) || this.data.coins < s.price) return false; this.data.coins -= s.price; this.data.skins.push(id); this.write(); return true; },
+  skinFor(charId) { const id = this.data.skinSel[charId]; return id && this.skinOwned(id) ? id : ''; },
+  setSkin(charId, id) { if (id && this.skinOwned(id)) this.data.skinSel[charId] = id; else delete this.data.skinSel[charId]; this.write(); },
   // ── 存檔匯出 / 匯入 ──
   // 存檔碼 = "LUHAI1." + base64(JSON) + "." + 檢查碼。換瀏覽器、換裝置、清快取前先匯出，之後貼回來就能接續。
   exportCode() {
@@ -187,7 +195,7 @@ export const save = {
     for (const t of TALENTS) { const lv = this.talent(t.id); if (lv) t.apply(b, lv); }
     const r = this.rank(charId);
     b.hp += r * MASTERY.perRank.hp; b.dmg += r * MASTERY.perRank.dmg;
-    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId); b.subs = this.subPool(); b.charm = this.charmEquipped();
+    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId); b.subs = this.subPool(); b.charm = this.charmEquipped(); b.cos = this.skinFor(charId);
     return b;
   },
   // 結算：回傳這一場拿到的東西

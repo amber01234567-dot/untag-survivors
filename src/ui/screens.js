@@ -10,6 +10,8 @@ import { portrait, hasLook, loadSet } from '../render/chibi.js';
 import { ELEMENTS, EL, SLOTS, ARMOR_SLOTS, MAX_STAR, ACC, ADV, FOE, BEATS, BEATEN_BY, RESIST_PER_PIECE, SET_MUL, gearSummary, gearName, starMul } from '../data/gear.js';
 import { SLOT_COLORS } from '../render/renderer.js';
 import { CHARMS, CHARM, CHARM_MAX, charmDesc } from '../data/charms.js';
+import { SKINS, SKIN, skinOnSale, saleText } from '../data/skins.js';
+import { SPRITE_SHEETS } from '../data/sprites.js';
 import { save, DEV } from '../core/save.js';
 import { sfx, setVolume, setMusicVolume } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
@@ -102,6 +104,10 @@ export class Screens {
         case 'shop': this.back = this.cur; this.show('shop'); break;
         case 'charmbuy': { const was = save.charmStar(v); if (save.buyCharm(v)) { sfx('chest'); app.toast(was ? `${CHARM[v].name} 升到 ${was + 1} 星` : `取得 ${CHARM[v].name}`); if (ses.lobby.players.length) ses.updateMe(); } else app.toast('金幣不足'); this.refresh(); break; }
         case 'charmset': save.setCharm(save.data.charmSel === v ? '' : v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
+        case 'shoptab': this.shopTab = v; this.show('shop'); if (v === 'skin') this.loadSkinPics(); break;
+        case 'skinchar': this.sel = v; this.show('shop'); this.loadSkinPics(); break;
+        case 'skinbuy': if (save.buySkin(v)) { sfx('chest'); app.toast('取得造型：' + SKIN[v].name); } else app.toast('金幣不足'); this.refresh(); break;
+        case 'skinset': { const c = CHARS[this.sel] ? this.sel : save.data.char; save.setSkin(c, save.skinFor(c) === v ? '' : v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'backup': this.back = 'home'; this.bkMsg = ''; this.show('backup'); break;
         case 'bkcopy': {
           const code = save.exportCode(), ta = this.el.querySelector('#bkout');
@@ -132,6 +138,12 @@ export class Screens {
     const st = save.data.settings; setVolume(st.sfx); setMusicVolume(st.music);
     this.sel = save.data.char; this.bkIn = ''; this.bkMsg = '✓ 匯入完成' + (DEV ? '（測試模式不會寫入瀏覽器，重新整理後會還原）' : '');
     this.app.toast('存檔已匯入'); this.show('backup');
+  }
+  // 造型預覽圖用到才載入：載好後重畫一次
+  loadSkinPics() {
+    const ch = CHARS[this.sel] ? this.sel : save.data.char, key = 'skin:' + ch;
+    if (this._skinKey === key) return; this._skinKey = key;
+    Promise.all(SKINS.map((s) => loadSet(ch, s.id))).then(() => { if (this.cur === 'shop' && this.shopTab === 'skin') this.refresh(); });
   }
   tabFromSel() { this.tab = STAGES[this.app.session.lobby.sel.stage].chapter; }
 
@@ -304,6 +316,7 @@ export class Screens {
   // ───────── 天賦 ─────────
   // ───────── 商城 ─────────
   shop() {
+    if (this.shopTab === 'skin') return this.shopSkins();
     const sel = save.data.charmSel, coins = save.data.coins;
     const cards = CHARMS.map((c) => {
       const st = save.charmStar(c.id), max = st >= CHARM_MAX, cost = save.charmCost(c.id), on = sel === c.id;
@@ -320,7 +333,27 @@ export class Screens {
     }).join('');
     return `<div class="page">
       <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">商城</div><div class="dim" style="font-size:12px">御守：出戰時帶 1 個，全角色共用。重複購買或首領掉落都會升星</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${coins}</div></div>
-      <div class="chtabs" style="padding:0 0 0 2px"><button class="chtab on">御守</button><button class="chtab" disabled>造型（製作中）</button></div>
+      <div class="chtabs" style="padding:0 0 0 2px"><button class="chtab on" data-a="shoptab" data-v="charm">御守</button><button class="chtab" data-a="shoptab" data-v="skin">造型</button></div>
+      <div class="shopgrid scroll">${cards}</div></div>`;
+  }
+  shopSkins() {
+    const coins = save.data.coins, ch = CHARS[this.sel] ? this.sel : save.data.char, cur = save.skinFor(ch);
+    const cards = SKINS.map((s) => {
+      const own = save.skinOwned(s.id), ready = !!SPRITE_SHEETS[ch + '_' + s.id], sale = skinOnSale(s), on = cur === s.id;
+      return `<div class="shopc skinc panel ${on ? 'on' : ''}" style="--c:${s.brand ? '#e9e2cf' : s.limited ? '#ff6a6a' : '#3df2d2'}">
+        <div class="pic big">${ready ? `<i data-p="${ch}" data-s="150" data-set="${s.id}"></i>` : '<span class="dim">這個角色的圖還在畫</span>'}</div>
+        <div class="nm">${s.name}</div>
+        ${s.limited ? `<div class="nx" style="color:#ff9a9a">${saleText(s)}</div>` : ''}
+        <div class="acts">
+          ${own ? (ready ? `<button class="btn small ${on ? 'primary' : ''}" data-a="skinset" data-v="${s.id}">${on ? '穿著中（點擊脫下）' : '穿上'}</button>` : '<span class="dim">已擁有</span>')
+            : sale ? `<button class="btn small" data-a="skinbuy" data-v="${s.id}" ${coins < s.price ? 'disabled' : ''}>購買 <span class="coin">${s.price}</span></button>` : '<span class="dim">目前未販售</span>'}
+        </div></div>`;
+    }).join('');
+    const chars = CHAR_LIST.filter((c) => save.isUnlocked(c.id)).map((c) => `<button class="chtab ${c.id === ch ? 'on' : ''}" data-a="skinchar" data-v="${c.id}">${c.name}</button>`).join('');
+    return `<div class="page">
+      <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">商城</div><div class="dim" style="font-size:12px">造型：純外觀，買一次全角色都能穿；穿著時屬性套裝的效果照常生效</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${coins}</div></div>
+      <div class="chtabs" style="padding:0 0 0 2px"><button class="chtab" data-a="shoptab" data-v="charm">御守</button><button class="chtab on" data-a="shoptab" data-v="skin">造型</button></div>
+      <div class="chtabs skinchars scroll" style="padding:0 0 0 2px">${chars}</div>
       <div class="shopgrid scroll">${cards}</div></div>`;
   }
   // ───────── 存檔備份（匯出 / 匯入）─────────

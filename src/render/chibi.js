@@ -2,6 +2,7 @@
 // 新增角色外觀：在 LOOKS 加一個同名函式即可；沒有外觀的角色會畫成剪影佔位。
 //
 // pose = { t 時間, moving 是否移動, atk 攻擊動畫進度 0..1 (0=無), aim 相對朝向的瞄準角, down 倒地, cast 施法閃光 0..1 }
+import { SKINS as SKINS_COS } from '../data/skins.js';
 import { SKINS } from '../sim/const.js';
 import { ROLES, CHARS } from '../data/characters.js';
 import { SPRITE_SHEETS } from '../data/sprites.js';
@@ -253,11 +254,12 @@ function placeholder(g, p, def) {
 const H_DEFAULT = 82;
 // 套裝體型倍率：背飾（旗、鼓環、砲、羽扇）會把圖撐高，身體要補回來才會和其他套一樣大
 const SET_SCALE = { ice: 1, fire: 1, poison: 1, gold: 1.13, wind: 1.07, earth: 1, thunder: 1.17 };
+for (const s of SKINS_COS) if (s.scale) SET_SCALE[s.id] = s.scale;      // 獨立造型
 const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laojin: 70, nongfu: 96, moumou: 96, laoliu: 76 };
 const IMG = {};
 // 套裝造型（<角色>_<套裝>）：圖片用到才載入，載入完成前先畫原造型
 export const SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder'];
-const SET_RE = new RegExp('_(' + SETS.join('|') + ')$');
+const SET_RE = new RegExp('_(' + SETS.concat(SKINS_COS.map((s) => s.id)).join('|') + ')$');
 function setSprite(charId, set) {
   const id = charId + '_' + set;
   if (!SPRITE_SHEETS[id]) return null;

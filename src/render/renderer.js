@@ -1,4 +1,5 @@
 // 主繪製：鏡頭 → 地面層 → 地面效果 → 依 Y 排序的角色與敵人 → 子彈 / 特效 → 遮蔽層 → 光照 → 文字。
+import { SKIN_IDS } from '../data/skins.js';
 import { CHARM, CHARM_IDS } from '../data/charms.js';
 import { VENT_PERIOD, VENT_WARN, SPIKE_PERIOD, SPIKE_WARN, SPIKE_UP, SPIKE_SIZE } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
@@ -144,7 +145,7 @@ export class Renderer {
     if (p.buffs & BUFF_BITS.stealth) g.globalAlpha = 0.4;
     else if ((p.buffs & BUFF_BITS.invuln) && !down && Math.sin(t * 30) > 0.3) g.globalAlpha = 0.6;
     if (p.fl & 4) g.translate((Math.random() - 0.5) * 3, 0);
-    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin, set: p.set ? EL_IDS[p.set - 1] : '' });
+    drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin, set: p.cos ? SKIN_IDS[p.cos - 1] : p.set ? EL_IDS[p.set - 1] : '' });
     g.restore();
     if (p.ch && !down) this.charm(g, p, t);
     if (p.sx && !down) this.statusFx(g, p.x, p.y - p.jz, 17, 62, (p.sx & 1 ? 64 : 0) | (p.sx & 2 ? 1 : 0) | (p.sx & 4 ? 2 : 0) | (p.sx & 8 ? 8 : 0), t, p.id + 500);

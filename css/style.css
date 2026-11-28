@@ -516,3 +516,7 @@ body.touch #chat .cbtn span { display: none; }
 .shopc .ds { font-size: 12.5px; line-height: 1.55; min-height: 3.1em; }
 .shopc .nx { font-size: 11.5px; line-height: 1.5; color: #8f9ab2; }
 .shopc .acts { margin-top: auto; padding-top: 6px; display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.shopc .pic.big { width: 160px; height: 160px; }
+.shopc .pic.big canvas { width: 150px !important; height: 150px !important; }
+.skinchars { flex-wrap: nowrap; overflow-x: auto; max-height: 44px; flex: 0 0 auto; }
+.skinchars .chtab { flex: 0 0 auto; padding: 6px 12px; font-size: 12px; }
