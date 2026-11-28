@@ -781,6 +781,7 @@ const AI = {
       const ox = e.x, oy = e.y;
       for (let k = 0; k < 8; k++) { const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 230, ty = p.y + Math.sin(a) * 230; if (!solidAt(W.L, tx, ty)) { e.x = tx; e.y = ty; break; } }
       W.emit('r', ox | 0, oy | 0, 110, 6); W.emit('t', ox | 0, (oy - 50) | 0, '替身術！', 3); e.spawnT = 0.35; W.emit('sp', e.x | 0, e.y | 0, e.r | 0);
+      W.addZone({ kind: 'e_log', team: 1, x: ox, y: oy, r: 40, delay: 99, dur: 0.75, tick: 9, dmg: 0 });      // 留在原地的替身木樁（純顯示）
       warn(W, ox, oy, 150, 0.7, e.dmg * 1.3);                                    // 原地留下的替身木樁爆開
       ai.q = ai.q || []; ai.q.push({ t: 0.45, fn: () => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = -3; i <= 3; i++) shootAt(W, e, 'e_rock', a + i * 0.13, 290, e.dmg * 0.55, { r: 10 }); } });
     } else if (ai.subHp - e.hp > e.maxHp * 0.06) ai.subHp = e.hp + e.maxHp * 0.06;

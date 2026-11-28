@@ -323,7 +323,7 @@ export function buildLevel(stage, seed) {
   const spikes = [];
   if (stage.hazard === 'spikes') for (const z of zones) {
     if (z.kind !== 'combat' && z.kind !== 'final') continue;
-    for (let i = 0, tries = 0; i < (z.kind === 'final' ? 5 : 4) && tries < 160; tries++) {
+    for (let i = 0, tries = 0; i < (z.kind === 'final' ? 2 : 4) && tries < 160; tries++) {      // 首領區只放兩片，留空間給首領的招式
       const x = rng.int(z.x + 3, z.x + z.w - 9), y = rng.int(z.y + 3, z.y + z.h - 7);          // 一片 = 6x4 格（每塊地磚 2x2 格）
       if (Math.abs(x + 3 - z.cx / TILE) < 5 && Math.abs(y + 2 - z.cy / TILE) < 4) continue;
       if (!clearAround(x, y, 6, 4, 1)) continue;
@@ -334,7 +334,7 @@ export function buildLevel(stage, seed) {
     }
     // 窄道放不下大片的：補幾片 2 塊一組的小地刺（4x2 格，直的或橫的），讓每個戰鬥區至少有 4 處
     let have = new Set(spikes.filter((q) => q.zone === z.idx).map((q) => q.gx + ',' + q.gy)).size;
-    for (let tries = 0; have < 4 && tries < 240; tries++) {
+    for (let tries = 0; have < (z.kind === 'final' ? 2 : 4) && tries < 240; tries++) {
       const vert = rng.next() < 0.5, w2 = vert ? 2 : 4, h2 = vert ? 4 : 2;
       const x = rng.int(z.x + 2, z.x + z.w - 3 - w2), y = rng.int(z.y + 2, z.y + z.h - 3 - h2);
       if (Math.abs(x + w2 / 2 - z.cx / TILE) < 4 && Math.abs(y + h2 / 2 - z.cy / TILE) < 4) continue;

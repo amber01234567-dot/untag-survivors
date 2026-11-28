@@ -17,7 +17,7 @@ export const ZONE_KINDS = [
   'mine', 'rune', 'runebig', 'blackhole', 'fire', 'frost', 'beam', 'pulse', 'heal', 'grill',
   'e_warn', 'e_slam', 'e_beam', 'garbage', 'seal', 'whirl', 'bell', 'airstrike', 'mark', 'shadow', 'toxic', 'decoy', 'aura', 'dragonfire', 'crack', 'zero',
   'skyblade', 'reticle', 'bigwheel', 'rockburst', 'chopmark', 'cleaverfall', 'doomcircle', 'maw', 'mushroom', 'gravball', 'cashnado', 'breath', 'dragonpass', 'peel',
-  'e_fog', 'e_tornado', 'e_web', 'e_caltrop',
+  'e_fog', 'e_tornado', 'e_web', 'e_caltrop', 'e_log',
 ];
 // 角色造型索引（快照用，只能往後加）：對應 assets/sprites/<角色>_<造型>_*.png
 export const SKINS = ['', 'siege', 'evo', 'siege_evo'];

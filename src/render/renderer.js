@@ -493,6 +493,10 @@ export class Renderer {
         g.globalAlpha = 0.8; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x - r * 0.7, y); g.moveTo(x + r, y); g.lineTo(x + r * 0.7, y); g.moveTo(x, y - r * 0.86); g.lineTo(x, y - r * 0.6); g.moveTo(x, y + r * 0.86); g.lineTo(x, y + r * 0.6); g.stroke(); g.globalAlpha = 1;
         break;
       }
+      case 'e_log': {                              // 替身木樁
+        const im = FXS.sub_log; if (im) { const h = 86, w = h * im.width / im.height, k = Math.min(1, (1 - z.p) * 5); g.globalAlpha = k; g.drawImage(im, x - w / 2, y - h + 14, w, h); g.globalAlpha = 1; }
+        break;
+      }
       case 'e_web': {                              // 蜘蛛網：預警圈裡畫出放射狀的網
         g.save(); g.translate(x, y); g.scale(1, 0.86);
         g.fillStyle = 'rgba(235,235,225,.12)'; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();
