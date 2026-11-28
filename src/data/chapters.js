@@ -56,6 +56,7 @@ export const SERIES = [
   { id: 3, name: '永凍冰原', sub: 'FROZEN TUNDRA', el: 'ice' },      // 系列三起：一個系列一種屬性，掉該屬性的套裝
   { id: 4, name: '熔岩火山', sub: 'MAGMA VOLCANO', el: 'fire' },
   { id: 5, name: '瘴氣毒沼', sub: 'MIASMA MIRE', el: 'poison' },
+  { id: 6, name: '黃金神殿', sub: 'GOLDEN TEMPLE', el: 'gold' },
 ];
 
 export const DIFFS = [
@@ -396,10 +397,33 @@ export const CHAPTERS = [
         pool: [['mudling', 5], ['wraith', 3], ['skelarcher', 3]], objs: [kill(130), boss('plaguelord')] },
     ],
   },
+  // ───── 第六系列：黃金神殿（金屬性：怪物攻擊力較高；掉落黃金武將；金幣 +50%）─────
+  {
+    id: 16, series: 6, name: '黃金古道', sub: 'GOLDEN APPROACH', theme: 'goldroad', outdoor: true, hazard: 'arrows', coinMul: 1.5,
+    shapes: { combat: [['avenue', 4], ['hall', 2]], final: 'hall' },      // 空間架構：兩側有小廣場的參道、柱列大廳；首領在牌樓廣場
+    intro: '瘴氣散開之後，露出一條鋪到天邊的石板路。路的盡頭在發光，路的兩邊站滿了不該會動的東西。',
+    devices: [['drum', 4], ['ballista', 3]],
+    nodes: [
+      { id: '16-1', name: '山門', kind: 'normal', layout: 'snake', diff: 5.55, pos: [0, 1], next: ['16-2', '16-3'], coins: 3100,
+        pool: [['coinling', 6], ['swordsman', 4], ['crossbow', 2]], objs: [kill(85), survive(55), kill(130)] },
+      { id: '16-2', name: '石獅道', kind: 'normal', layout: 'ring', diff: 5.62, pos: [1, 0.3], next: ['16-4'], coins: 3200,
+        pool: [['coinling', 5], ['swordsman', 4], ['lionling', 2], ['crossbow', 2]], objs: [kill(75), nests(3), survive(55), elite('lionling')] },
+      { id: '16-3', name: '銀杏林', kind: 'normal', layout: 'hub', diff: 5.66, pos: [1, 1.7], next: ['16-4', '16-5'], coins: 3250,
+        pool: [['coinling', 5], ['swordsman', 4], ['crossbow', 3], ['lionling', 1]], objs: [kill(75), survive(55), nests(3), kill(130)] },
+      { id: '16-4', name: '千燈參道', kind: 'normal', layout: 'trident', diff: 5.75, pos: [2, 0.7], next: ['16-6'], coins: 3400,
+        pool: [['coinling', 4], ['swordsman', 4], ['lionling', 3], ['crossbow', 3]], objs: [kill(75), nests(3), survive(55), elite('swordsman'), kill(135)] },
+      { id: '16-5', name: '香油錢庫', kind: 'bonus', layout: 'arena', diff: 5.7, pos: [2, 2], next: ['16-6'], coins: 2200,
+        pool: [['coinling', 7], ['swordsman', 3], ['lionling', 1]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '16-6', name: '碑林', kind: 'elite', layout: 'cross', diff: 5.85, pos: [3, 1.2], next: ['16-B'], coins: 3800,
+        pool: [['coinling', 4], ['swordsman', 4], ['lionling', 3], ['crossbow', 3]], objs: [nests(3), elite('lionling'), survive(60), kill(135)] },
+      { id: '16-B', name: '牌樓廣場', kind: 'boss', layout: 'gauntlet', diff: 6.0, pos: [4, 1], next: [], coins: 5900,
+        pool: [['coinling', 5], ['swordsman', 4], ['lionling', 2], ['crossbow', 2]], objs: [kill(135), boss('stonelion')] },
+    ],
+  },
 ];
 
 export const STAGES = {};
-for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.shapes = n.shapes || ch.shapes || null; n.series = ch.series || 1; STAGES[n.id] = n; }
+for (const ch of CHAPTERS) for (const n of ch.nodes) { n.chapter = ch.id; n.theme = ch.theme; n.outdoor = !!ch.outdoor; n.devices = ch.devices || null; n.hazard = ch.hazard || null; n.shapes = n.shapes || ch.shapes || null; n.coinMul = ch.coinMul || 1; n.series = ch.series || 1; STAGES[n.id] = n; }
 
 export const NODE_KINDS = {
   normal: { name: '戰鬥', glyph: '戰' }, elite: { name: '菁英', glyph: '菁' },

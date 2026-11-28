@@ -105,3 +105,9 @@ E('wraith', { name: '亡靈', hp: 100, speed: 88, dmg: 18, r: 14, xp: 6, ai: 'bl
 E('skelarcher', { name: '骷髏射手', hp: 78, speed: 60, dmg: 14, r: 14, xp: 5, ai: 'shooter', proj: 'e_spore', shotCd: 2.4, shotRange: 400, shotSpeed: 260 });
 E('sporemother', { name: '孢子母菇', hp: 64000, speed: 0, dmg: 32, r: 58, xp: 1300, ai: 'boss_sporemother', kbRes: 1, boss: true });
 E('plaguelord', { name: '瘟疫領主', hp: 70000, speed: 62, dmg: 33, r: 48, xp: 1500, ai: 'boss_plaguelord', kbRes: 1, boss: true });
+// ───── 第六系列：黃金神殿（金屬性：攻擊力較高）─────
+E('coinling', { name: '金幣怪', hp: 23, speed: 146, dmg: 9, r: 10, xp: 2, ai: 'swarm' });
+E('swordsman', { name: '持刀兵俑', hp: 72, speed: 98, dmg: 14, r: 13, xp: 3, ai: 'chase' });
+E('crossbow', { name: '弓弩兵俑', hp: 76, speed: 56, dmg: 14, r: 14, xp: 4, ai: 'shooter', proj: 'e_gold', shotCd: 2.5, shotRange: 400, shotSpeed: 270 });
+E('lionling', { name: '小石獅', hp: 110, speed: 78, dmg: 19, r: 14, xp: 5, ai: 'charger', kbRes: 0.4 });
+E('stonelion', { name: '鎮殿石獅', hp: 64000, speed: 62, dmg: 33, r: 50, xp: 1500, ai: 'boss_stonelion', kbRes: 1, boss: true });

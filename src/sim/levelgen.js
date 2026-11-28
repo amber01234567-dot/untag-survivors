@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -25,6 +25,14 @@ function carveShape(z, side, rng, COR, set, unset) {
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
   let pool = null;
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'avenue') {                      // 參道：一條寬的橫向大道，兩側是一格一格的小廣場，各用一段短頸連到大道
+    const ah = 10, pw = 7, step = 9, nk = 3, pd = Math.floor(h / 2 - ah / 2 - nk - 1);
+    rect(X, cy - ah / 2, X + w, cy + ah / 2);
+    for (let k = 0; k < 2; k++) for (const fx of [cx - COR / 2 - 2 - pw - k * step, cx + COR / 2 + 2 + k * step]) for (const sy of [-1, 1]) {      // 每側四格，正中央留給上下通道
+      const y0 = sy < 0 ? cy - ah / 2 - nk - pd : cy + ah / 2 + nk;
+      rect(fx, y0, fx + pw, y0 + pd); rect(fx + pw / 2 - 2, sy < 0 ? cy - ah / 2 - nk : cy + ah / 2, fx + pw / 2 + 2, sy < 0 ? cy - ah / 2 : cy + ah / 2 + nk);
+    }
+  }
   else if (z.shape === 'bog') {                         // 沼澤群島：中央一塊陸地，周圍一圈小島，用木棧道（6 格寬）串成網，中間是毒水
     const isl = [[cx, cy, 7, 6]], n = 6, a0 = rng.range(0, 6.28);
     for (let i = 0; i < n; i++) { const a = a0 + i * 6.283 / n + rng.range(-0.18, 0.18); isl.push([cx + Math.cos(a) * w * 0.38, cy + Math.sin(a) * h * 0.37, rng.range(5.5, 7), rng.range(4.5, 5.5)]); }

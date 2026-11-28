@@ -554,6 +554,33 @@ const AI = {
       warn(W, e.x, e.y, 190, 0.85, e.dmg * 1.4);
     } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 0 ? 'skelarcher' : i % 3 === 1 ? 'wraith' : 'mudling', i * 1.05, 120);
   },
+  // 鎮殿石獅：飛撲（跳起砸下，可連撲）、震地吼（由內往外的衝擊圈）、滾繡球（幾顆又大又慢的球）、召喚小石獅
+  boss_stonelion(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    const jump = () => { const tp = W.nearestPlayer(e.x, e.y, true) || p; ai.tx = tp.x; ai.ty = tp.y; if (solidAt(W.L, ai.tx, ai.ty)) { ai.tx = e.x; ai.ty = e.y; } W.emit('r', e.x | 0, e.y | 0, 110, 6); e.st = 3; ai.w = 0.95; e.x = -9999; e.y = -9999; warn(W, ai.tx, ai.ty, 175, 0.95, e.dmg * 1.5); };
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 3) {
+      ai.w -= dt;
+      if (ai.w <= 0) { e.x = ai.tx; e.y = ai.ty; e.st = 0; e.spawnT = 0.3; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); W.emit('sh', 10); if (ai.hops > 0) { ai.hops--; ai.q.push({ t: 0.55, fn: jump }); } }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.3 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.7; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) { ai.hops = p2 ? 3 : 2; jump(); }
+    else if (m === 2) {                          // 震地吼
+      warn(W, e.x, e.y, 160, 0.7, e.dmg * 1.3); W.emit('sh', 7);
+      for (let ring = 1; ring <= (p2 ? 4 : 3); ring++) ai.q.push({ t: 0.45, fn: () => { const n = 6 + ring * 3, rr = 130 + ring * 140; for (let i = 0; i < n; i++) warn(W, e.x + Math.cos(i * TAU / n + ring * 0.4) * rr, e.y + Math.sin(i * TAU / n + ring * 0.4) * rr, 82, 0.75, e.dmg * 1.1); W.emit('sh', 4); } });
+    } else if (m === 3) {                        // 滾繡球：又大又慢的球，朝玩家方向散開
+      const a = Math.atan2(p.y - e.y, p.x - e.x), n = p2 ? 7 : 5;
+      for (let i = 0; i < n; i++) shootAt(W, e, 'e_gold', a + (i - (n - 1) / 2) * 0.34, 150, e.dmg * 0.9, { r: 24 });
+      ai.q.push({ t: 0.8, fn: () => { for (let i = 0; i < n + 1; i++) shootAt(W, e, 'e_gold', a + (i - n / 2) * 0.34, 150, e.dmg * 0.9, { r: 24 }); } });
+    } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'lionling' : 'coinling', i * 1.2, 100);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

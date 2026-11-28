@@ -18,11 +18,11 @@ const PSPR = {
   starwave: ['evo_starwave', 150, 'aim'], kamikaze: ['drone', 26, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
-  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'],
+  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'],
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
-const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）" };
+const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a", drum: "#ff6a4a", ballista: "#ffd24d" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）", drum: "戰鼓（靠近敲響）", ballista: "弩砲（靠近啟動）" };
 
 export class Renderer {
   constructor(canvas, L, myId, roster) {

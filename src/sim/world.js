@@ -93,6 +93,19 @@ export class World {
         if (ph >= VENT_PERIOD - VENT_WARN && prev < VENT_PERIOD - VENT_WARN) warn(this, v.x, v.y, VENT_R, VENT_WARN, 15 * this.dmgMul);
       }
     }
+    if (this.stage.hazard === 'arrows') {                        // 場地危險：箭雨。一整條貫穿區域的長條地帶（直或橫），預警後落下
+      this.hazT = (this.hazT === undefined ? 7 : this.hazT) - dt;
+      if (this.hazT <= 0) {
+        this.hazT = this.rng.range(6, 8.5);
+        const z = this.L.zones.find((q) => q.state === 'active'), ps = this.alive();
+        if (z && ps.length) for (let i = 0; i < 2; i++) {
+          const p = ps[this.rng.int(0, ps.length - 1)], horiz = i === 0 ? this.rng.next() < 0.5 : !this._arH; this._arH = horiz;
+          const off = i ? this.rng.range(-170, 170) : this.rng.range(-30, 30);
+          if (horiz) this.addZone({ kind: 'e_beam', team: 1, x: z.x * TILE, y: p.y + off, a: 0, len: z.w * TILE, w: 120, delay: 1.5 + i * 0.35, dur: 1.75 + i * 0.35, tick: 9, dmg: 16 * this.dmgMul });
+          else this.addZone({ kind: 'e_beam', team: 1, x: p.x + off, y: z.y * TILE, a: Math.PI / 2, len: z.h * TILE, w: 120, delay: 1.5 + i * 0.35, dur: 1.75 + i * 0.35, tick: 9, dmg: 16 * this.dmgMul });
+        }
+      }
+    }
     if (this.stage.hazard === 'fog') {                           // 場地危險：毒霧。先出現預警圈，成形後停留幾秒，站在裡面持續受傷並中毒
       this.hazT = (this.hazT === undefined ? 7 : this.hazT) - dt;
       if (this.hazT <= 0) {
@@ -464,7 +477,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -473,12 +486,20 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
       const pow = this.hpMul / (1 + 0.55 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
-      if (d.kind === 'turret' && d.tk <= 0) {
+      if (d.kind === 'ballista' && d.tk <= 0) {              // 弩砲：射速慢、每發很痛、會貫穿
+        d.tk = 0.55;
+        const e = this.nearestEnemy(d.x, d.y, 620);
+        if (e) this.shoot(null, { kind: 'lance', x: d.x, y: d.y - 30, a: Math.atan2(e.y - e.r * 0.5 - d.y + 30, e.x - d.x), speed: 1000, dmg: 52 * pow, life: 0.8, pierce: 6, r: 12 });
+      } else if (d.kind === 'drum' && d.tk <= 0) {           // 戰鼓：範圍內隊友攻擊與攻速提升
+        d.tk = 0.6;
+        this.playersIn(d.x, d.y, 340, (q) => addBuff(q, 'drum', { t: 1.1, dmg: 0.35, haste: 0.25 }));
+        this.emit('r', d.x | 0, d.y | 0, 340, 1); if (((d.t * 10) | 0) % 12 === 0) this.emit('sh', 2);
+      } else if (d.kind === 'turret' && d.tk <= 0) {
         d.tk = 0.13;
         const e = this.nearestEnemy(d.x, d.y, 540);
         if (e) this.shoot(null, { kind: 'gatling', x: d.x, y: d.y - 30, a: Math.atan2(e.y - e.r * 0.5 - d.y + 30, e.x - d.x) + this.rng.range(-0.05, 0.05), speed: 900, dmg: 11 * pow, life: 0.7, pierce: 1, r: 8 });
