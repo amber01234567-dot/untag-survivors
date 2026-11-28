@@ -29,7 +29,7 @@ function volley(W, p, w, a, s, extra) {
     const jit = s.jitter ? W.rng.range(-s.jitter, s.jitter) / 2 : 0;
     W.shoot(p, Object.assign({
       kind: w.def.proj, a: a + off + jit, speed: s.speed, dmg: s.dmg, pierce: s.pierce || 0, life: s.life * (p.st.area * 0.5 + 0.5), r: s.projR || 7,
-      bounce: s.bounce || 0, homing: s.homing || 0, dot: s.dot, dotDur: s.dotDur, slow: s.slow, slowDur: s.slowDur, kb: s.kb || 0,
+      bounce: s.bounce || 0, homing: s.homing || 0, dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, slow: s.slow, slowDur: s.slowDur, kb: s.kb || 0,
       critAdd: s.critAdd || 0, ret: s.ret, x: p.x + Math.cos(a) * (16 - (s.back || 0)) - Math.sin(a) * off * 90, y: p.y - 14 - (s.back ? 14 : 0) + Math.sin(a) * (16 - (s.back || 0)) + Math.cos(a) * off * 90,
       aoe: s.aoe ? s.aoe * p.st.area : 0, fx: s.aoe ? 1 : 0,
     }, extra));
@@ -83,7 +83,7 @@ export function spawnKebab(W, p, x, y, s, dur, big) {
     if (m.ct <= 0) {
       m.ct = s.sliceCd * (big ? 0.55 : 1);
       const e = big ? null : W2.randomEnemies(m.x, m.y, s.sliceR * p.st.area, 1)[0];
-      if (big || e) { const a = e ? Math.atan2(e.y - m.y + 40, e.x - m.x) : m.rot * 1.7; W2.shoot(p, { kind: 'meatslice', x: m.x, y: m.y - 46, a, speed: 560, dmg: s.dmg * (big ? 1.3 : 1), pierce: big ? 3 : 1, life: 0.75, r: 12, dot: s.dot, dotDur: s.dotDur, kb: 30 }); }
+      if (big || e) { const a = e ? Math.atan2(e.y - m.y + 40, e.x - m.x) : m.rot * 1.7; W2.shoot(p, { kind: 'meatslice', x: m.x, y: m.y - 46, a, speed: 560, dmg: s.dmg * (big ? 1.3 : 1), pierce: big ? 3 : 1, life: 0.75, r: 12, dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, kb: 30 }); }
     }
     if (m.ht <= 0) { m.ht = 0.5; const R = s.towerR * p.st.area * (big ? 1.8 : 1); W2.playersIn(m.x, m.y, R, (q) => { W2.heal(q, (big ? q.st.maxHp * 0.03 : s.towerHeal * 0.5) , p); if (big) addBuff(q, 'bbq', { t: 1.2, dmg: 0.4 }); }); }
   };
@@ -124,7 +124,7 @@ export const BEH = {
     if (w.t > 0 || p.down) return;
     w.t = s.chainTick;
     const R = s.chainR * (p.st.area * 0.5 + 0.5), es = W.enemiesIn(p.x, p.y, R).slice().sort((a, b) => dist2(a.x, a.y, p.x, p.y) - dist2(b.x, b.y, p.x, p.y)).slice(0, s.chainN + (s.count > 1 ? 1 : 0));
-    for (const e of es) { W.strike(p, e, s.dmg, { dot: s.dot, dotDur: s.dotDur, quiet: W.rng.next() < 0.5 }); W.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); }
+    for (const e of es) { W.strike(p, e, s.dmg, { dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, quiet: W.rng.next() < 0.5 }); W.emit('l', p.x | 0, (p.y - 18) | 0, e.x | 0, (e.y - e.r * 0.5) | 0, 5); }
     if (es.length) { w.n++; if (w.n % 3 === 0) { p.atkN++; p.atkA = Math.atan2(es[0].y - p.y, es[0].x - p.x); } }
     let best = null, bv = 0.999;
     for (const q of W.players) { if (q.gone || q.down || dist2(q.x, q.y, p.x, p.y) > s.healRange * s.healRange) continue; const v = q.hp / q.st.maxHp; if (v < bv) { bv = v; best = q; } }
@@ -169,7 +169,7 @@ export const BEH = {
     if (Math.abs(dx) > 4) c.face = dx > 0 ? 1 : -1;
     if (tgt && d <= reach + 10 && c.bt <= 0) {
       c.bt = s.cd; c.st = 2 | twinBit;
-      W.aoe(tgt.x, tgt.y, s.pounceR * p.st.area, s.dmg * (p.buffs.twin ? 1.8 : 1), p, { dot: s.dot || 8, dotDur: s.dotDur || 3, kb: 120, sx: c.x, sy: c.y, noFx: true });
+      W.aoe(tgt.x, tgt.y, s.pounceR * p.st.area, s.dmg * (p.buffs.twin ? 1.8 : 1), p, { dot: s.dot || 8, dotEl: 3, dotDur: s.dotDur || 3, kb: 120, sx: c.x, sy: c.y, noFx: true });
       W.emit('s', tgt.x | 0, tgt.y | 0, Math.round(Math.atan2(dy, dx) * 100), (s.pounceR * 1.1) | 0, 628, 3); p.atkN++; p.atkA = Math.atan2(tgt.y - p.y, tgt.x - p.x);
     }
     w.pt = (w.pt === undefined ? s.purrCd : w.pt) - dt;
@@ -251,7 +251,7 @@ export const BEH = {
     if (!tgt) return;
     w.t = s.cd * p.st.cd; w.n++;
     const a = Math.atan2(tgt.y - p.y, tgt.x - p.x), fx = FX[w.def.fx] || 0;
-    const o = { kb: s.kb, dot: s.dot, dotDur: s.dotDur, fx, critAdd: p.buffs.stealth ? 1 : 0 };
+    const o = { kb: s.kb, dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, fx, critAdd: p.buffs.stealth ? 1 : 0 };
     p.atkN++; p.atkA = a;
     if (s.fist) {                                 // 進化：殘影巨拳 —— 拳影飛出去打，左右手交替；每 N 拳一記重拳
       const big = w.n % s.combo === 0 || !!p.buffs.limit, side = w.n % 2 ? 1 : -1, k = big ? 1.7 : 1;
@@ -264,7 +264,7 @@ export const BEH = {
       const cx = p.x + Math.cos(a) * 60, cy = p.y + Math.sin(a) * 60;
       W.aoe(cx, cy, 95 * p.st.area, s.dmg, p, Object.assign({}, o, { fx: 9 })); W.emit('sh', 4);
       const fan = w.n % s.combo === 0 ? [-0.5, 0, 0.5] : [0];
-      for (const off of fan) fissure(W, p, cx, cy, a + off, s.quakeLen * (p.st.area * 0.5 + 0.5), s.dmg * 0.9, { stun: s.comboStun || 0.4, dot: s.dot, dotDur: s.dotDur });
+      for (const off of fan) fissure(W, p, cx, cy, a + off, s.quakeLen * (p.st.area * 0.5 + 0.5), s.dmg * 0.9, { stun: s.comboStun || 0.4, dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur });
       return;
     }
     swing(W, p, a, range, s.arc, s.dmg, o);
@@ -273,7 +273,7 @@ export const BEH = {
       const cx = p.x + Math.cos(a) * range * 0.6, cy = p.y + Math.sin(a) * range * 0.6;
       let n = 0; W.hash.query(cx, cy, range * 0.55, () => n++);
       if (n) W.heal(p, Math.min(10, 2 + n * 1.5), p);
-      W.addZone({ kind: 'chopmark', owner: p, x: cx, y: cy, a, r: range * 0.5, dur: 3.2, tick: 0.5, dmg: s.dmg * 0.09, hitOpt: { dot: s.dot, dotDur: s.dotDur, slow: 0.25, slowDur: 0.8, quiet: true } });
+      W.addZone({ kind: 'chopmark', owner: p, x: cx, y: cy, a, r: range * 0.5, dur: 3.2, tick: 0.5, dmg: s.dmg * 0.09, hitOpt: { dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, slow: 0.25, slowDur: 0.8, quiet: true } });
       W.emit('sh', 5);
     }
     if (s.thunder) {                              // 進化：雷霆金剛棒 —— 命中的敵人頭上劈下落雷
@@ -289,7 +289,7 @@ export const BEH = {
     }
     if (s.starWave) W.shoot(p, { kind: 'starwave', a, speed: 680, dmg: s.dmg * s.starWave, pierce: 99, life: 1.4, r: 64, kb: 90, x: p.x + Math.cos(a) * 30, y: p.y - 14 + Math.sin(a) * 30 });   // 進化：星穹光刃
     if (s.waveEvery && w.n % s.waveEvery === 0) W.shoot(p, { kind: 'wave', a, speed: 540, dmg: s.dmg * s.waveDmg, pierce: 99, life: 0.75, r: 30, kb: 60 });
-    if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotDur: s.dotDur }); }
+    if (s.throwEvery && w.n % s.throwEvery === 0) { const c = 1 + (s.throwCount || 0); for (let i = 0; i < c; i++) W.shoot(p, { kind: 'cleaver', a: a + (c > 1 ? (i / (c - 1) - 0.5) * 0.6 : 0), speed: 480, dmg: s.dmg * s.throwDmg, pierce: 4, life: 0.8, r: 14, dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur }); }
     if (s.comet && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'thunderball', a, speed: 630, dmg: s.dmg * s.ballDmg, pierce: 99, life: 1.86, r: 24, kb: 220, stun: 0.3 });
     else if (s.ballEvery && w.n % s.ballEvery === 0) W.shoot(p, { kind: 'baseball', a, speed: 760, dmg: s.dmg * s.ballDmg, bounce: 2 + (s.ballBounce || 0), life: 1.2, r: 9, kb: 160 });
   },
@@ -467,7 +467,7 @@ export const BEH = {
       const reach = tgt ? tgt.r + 16 : 8;
       if (d > reach) { const m = Math.min(d - reach + 1, sp * dt); c.x += dx / d * m; c.y += dy / d * m; c.st = 1; } else c.st = 0;
       if (Math.abs(dx) > 4) c.face = dx > 0 ? 1 : -1;
-      if (tgt && d <= reach + 6 && c.bt <= 0) { c.bt = s.cd; c.st = 2; W.strike(p, tgt, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 40, sx: c.x, sy: c.y }); W.emit('s', c.x | 0, c.y | 0, Math.round(Math.atan2(dy, dx) * 100), 30, 160, 6); }
+      if (tgt && d <= reach + 6 && c.bt <= 0) { c.bt = s.cd; c.st = 2; W.strike(p, tgt, s.dmg, { dot: s.dot, dotEl: s.dotEl || 3, dotDur: s.dotDur, kb: 40, sx: c.x, sy: c.y }); W.emit('s', c.x | 0, c.y | 0, Math.round(Math.atan2(dy, dx) * 100), 30, 160, 6); }
     }
     w.pt = (w.pt === undefined ? s.purrCd : w.pt) - dt;
     if (w.pt > 0 || p.down) return;
@@ -514,7 +514,7 @@ export const BEH = {
     const a = Math.atan2(tgt.y - p.y, tgt.x - p.x); p.atkA = a;
     if (s.dragon) {                               // 進化：真龍顯現 —— 手臂上的小火龍朝敵人吐出扇形龍息
       const bx = p.x + Math.cos(a) * 22, by = p.y - 22 + Math.sin(a) * 14, ba = Math.atan2(tgt.y - by, tgt.x - bx), R = s.breathR * p.st.area;
-      swingFrom(W, p, bx, by, ba, R, s.breathArc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 60 });
+      swingFrom(W, p, bx, by, ba, R, s.breathArc, s.dmg, { dot: s.dot, dotEl: 1, dotDur: s.dotDur, kb: 60 });
       W.addZone({ kind: 'breath', owner: p, x: bx, y: by, a: ba, r: R, dur: 0.42, tick: 9, aux: Math.round(s.breathArc * 50) });
       return;
     }
@@ -565,7 +565,7 @@ export const BEH = {
     const ts = W.randomEnemies(p.x, p.y, s.range, s.count);
     if (!ts.length) return;
     w.t = s.cd * p.st.cd;
-    for (const e of ts) { W.emit('l', e.x | 0, (e.y - 420) | 0, e.x | 0, e.y | 0, 1); W.aoe(e.x, e.y, s.aoe * p.st.area, s.dmg, p, { fx: 7, stun: 0.15 }); }
+    for (const e of ts) { W.emit('l', e.x | 0, (e.y - 420) | 0, e.x | 0, e.y | 0, 1); W.aoe(e.x, e.y, s.aoe * p.st.area, s.dmg, p, { fx: 7, stun: 0.15, shk: 1 }); }
   },
 
   molotov(W, p, w, dt) {
@@ -602,12 +602,12 @@ export const BEH = {
     if (!e) return;
     w.t = s.cd * p.st.cd; w.n++;
     if (s.bolt && w.n % s.bolt === 0) {
-      for (const q of W.randomEnemies(p.x, p.y, 620, 14)) { W.emit('l', q.x | 0, (q.y - 420) | 0, q.x | 0, q.y | 0, 1); W.strike(p, q, s.dmg * 1.2, { stun: 0.3 }); }
+      for (const q of W.randomEnemies(p.x, p.y, 620, 14)) { W.emit('l', q.x | 0, (q.y - 420) | 0, q.x | 0, q.y | 0, 1); W.strike(p, q, s.dmg * 1.2, { stun: 0.3, shk: 1 }); }
       W.emit('sh', 3); return;
     }
     let px = p.x, py = p.y - 30, dmg = s.dmg; const hit = new Set();
     for (let k = 0; k <= s.jumps && e; k++) {
-      hit.add(e.id); W.emit('l', px | 0, py | 0, e.x | 0, e.y | 0, 0); W.strike(p, e, dmg, { stun: 0.12 });
+      hit.add(e.id); W.emit('l', px | 0, py | 0, e.x | 0, e.y | 0, 0); W.strike(p, e, dmg, { stun: 0.12, shk: 1 });
       px = e.x; py = e.y; dmg *= s.falloff;
       let best = null, bd = s.jumpR * s.jumpR;
       W.hash.query(px, py, s.jumpR, (q) => { if (q.dead || hit.has(q.id)) return; const d = (q.x - px) ** 2 + (q.y - py) ** 2; if (d < bd) { bd = d; best = q; } });
@@ -625,7 +625,7 @@ export const BEH = {
     const a0 = Math.atan2(tgt.y - p.y, tgt.x - p.x), R = s.r * p.st.area;
     for (let k = 0; k <= s.twin; k++) {
       const a = a0 + k * Math.PI, bx = p.x + Math.cos(a) * 18, by = p.y - 18 + Math.sin(a) * 12;
-      swingFrom(W, p, bx, by, a, R, s.arc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 40 });
+      swingFrom(W, p, bx, by, a, R, s.arc, s.dmg, { dot: s.dot, dotEl: 1, dotDur: s.dotDur, kb: 40 });
       W.addZone({ kind: 'breath', owner: p, x: bx, y: by, a, r: R, dur: 0.42, tick: 9, aux: Math.round(s.arc * 50) });
     }
   },
@@ -639,7 +639,7 @@ export const BEH = {
     w.t = s.cd * p.st.cd;
     for (let i = 0; i < s.count; i++) {
       const tx = c.x + (i ? W.rng.range(-110, 110) : 0), ty = c.y + (i ? W.rng.range(-110, 110) : 0), r = s.r * p.st.area;
-      W.addZone({ kind: 'spore', owner: p, x: tx, y: ty, r, dur: s.dur, tick: 0.5, dmg: s.dmg, hitOpt: { quiet: true, corr: 1.2, corrV: s.vuln },
+      W.addZone({ kind: 'spore', owner: p, x: tx, y: ty, r, dur: s.dur, tick: 0.5, dmg: s.dmg, hitOpt: { quiet: true, corr: 1.2, corrV: s.vuln, dot: s.dmg * 0.3, dotEl: 2, dotDur: 2 },
         onEnd: s.burst ? (W2, z) => { W2.aoe(z.x, z.y, r * 1.25, s.dmg * 4, p, { fx: 3, corr: 2, corrV: s.vuln }); } : null });
       W.emit('r', tx | 0, ty | 0, r | 0, 2);
     }
@@ -654,7 +654,7 @@ export const BEH = {
     w.t = s.cd * p.st.cd;
     for (let i = 0; i < s.count; i++) {
       const e = ts[i % ts.length];
-      W.shoot(p, { kind: 'e_gold', a: Math.atan2(e.y - p.y + 14, e.x - p.x) + (i >= ts.length ? 0.25 : 0), speed: s.speed, dmg: s.dmg, life: 0.9, r: 9, bounce: s.bounce,
+      W.shoot(p, { kind: 'coindart', a: Math.atan2(e.y - p.y + 14, e.x - p.x) + (i >= ts.length ? 0.25 : 0), speed: s.speed, dmg: s.dmg, life: 0.9, r: 9, bounce: s.bounce,
         onHit: s.coin ? (W2, pr, q) => { if (q.dead && !q.def.boss && W2.rng.next() < s.coin) W2.drop('c', q.x, q.y, 1); } : null });
     }
   },
@@ -704,7 +704,7 @@ export const BEH = {
     const r = s.r * p.st.area;
     if (!W.nearestEnemy(p.x, p.y, r * 0.9)) return;
     w.t = s.cd * p.st.cd;
-    W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg, { slow: s.slow, slowDur: s.slowDur, stun: s.freeze }));
+    W.hash.query(p.x, p.y, r, (e) => W.strike(p, e, s.dmg, { slow: s.slow, slowDur: s.slowDur, stun: s.freeze, frz: 1 }));
     W.emit('r', p.x | 0, p.y | 0, r | 0, 5);
   },
 };

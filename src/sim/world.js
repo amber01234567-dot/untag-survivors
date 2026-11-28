@@ -248,11 +248,11 @@ export class World {
   // 武器配件的屬性效果（每次打擊觸發；連鎖閃電自己不會再觸發）
   accProc(p, e, d) {
     const el = p.gs.acc, a = ACC[el], m = p.gs.accMul;
-    if (el === 'fire') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; }
+    if (el === 'fire') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; e.dotEl = 1; }
     else if (el === 'ice') {
       e.slowF = Math.max(e.slowT > 0 ? e.slowF : 0, Math.min(0.6, a.slow * m)); e.slowT = Math.max(e.slowT, a.slowDur);
-      if (!e.def.boss && !(e.chillCd > 0) && ++e.chill >= a.hits) { e.chill = 0; e.chillCd = a.freezeCd; e.stunT = Math.max(e.stunT, a.freeze * (e.elite ? 0.5 : 1)); this.emit('t', e.x | 0, (e.y - e.r - 8) | 0, '凍結', 1); }
-    } else if (el === 'poison') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; e.corr = a.dur; e.corrV = a.vuln * m; }
+      if (!e.def.boss && !(e.chillCd > 0) && ++e.chill >= a.hits) { e.chill = 0; e.chillCd = a.freezeCd; e.stunT = Math.max(e.stunT, a.freeze * (e.elite ? 0.5 : 1)); e.frzT = e.stunT; this.emit('t', e.x | 0, (e.y - e.r - 8) | 0, '凍結', 1); }
+    } else if (el === 'poison') { e.dot = Math.max(e.dot, d * a.dot * m); e.dotT = Math.max(e.dotT, a.dur); e.dotP = p; e.dotEl = 2; e.corr = a.dur; e.corrV = a.vuln * m; }
     else if (el === 'earth') { if (this.rng.next() < a.kbChance * m) { const dx = e.x - p.x, dy = e.y - p.y, l = Math.hypot(dx, dy) || 1, k = a.kb * (1 - (e.def.kbRes || 0)) * (e.elite ? 0.5 : 1); e.kx += dx / l * k; e.ky += dy / l * k; } }
     else if (el === 'thunder') {
       if (this.rng.next() < a.chance * m) {
@@ -260,9 +260,10 @@ export class World {
         this.hash.query(e.x, e.y, a.range, (q) => {
           if (q === e || q.dead || n >= a.targets) return;
           n++; this.emit('l', px | 0, py | 0, q.x | 0, q.y | 0, 0);
-          this.damageEnemy(q, d * a.frac, p, false, { stun: a.stun, quiet: false });
+          this.damageEnemy(q, d * a.frac, p, false, { stun: a.stun, shk: 1, quiet: false });
         });
         if (!e.def.boss) e.stunT = Math.max(e.stunT, a.stun * (e.elite ? 0.5 : 1));
+        e.shkT = 0.5;
       }
     }
   }
@@ -285,10 +286,12 @@ export class World {
         const k = o.kb * res * (e.elite ? 0.5 : 1);
         e.kx += nx * k; e.ky += ny * k;
       }
-      if (o.dot) { e.dot = Math.max(e.dot, o.dot * (p ? p.st.dmg : 1)); e.dotT = Math.max(e.dotT, o.dotDur || 3); e.dotP = p; }
+      if (o.dot) { e.dot = Math.max(e.dot, o.dot * (p ? p.st.dmg : 1)); e.dotT = Math.max(e.dotT, o.dotDur || 3); e.dotP = p; e.dotEl = o.dotEl || 1; }
       if (o.corr) { e.corr = Math.max(e.corr || 0, o.corr); e.corrV = Math.max(e.corrV || 0, o.corrV || 0); }
       if (o.slow) { e.slowF = Math.max(e.slowT > 0 ? e.slowF : 0, o.slow); e.slowT = Math.max(e.slowT, o.slowDur || 1.5); }
       if (o.stun && !e.def.boss) e.stunT = Math.max(e.stunT, o.stun * (e.elite ? 0.5 : 1));
+      if (o.frz && o.stun && !e.def.boss) e.frzT = e.stunT;
+      if (o.shk) e.shkT = Math.max(e.shkT, 0.5);
       if (o.stun && e.def.boss) { e.slowF = 0.5; e.slowT = Math.max(e.slowT, o.stun); }
       if (o.mark) e.mark = Math.max(e.mark, o.mark);
     }
@@ -454,7 +457,7 @@ export class World {
     }
   }
   projEnd(pr) {
-    if (pr.aoe && pr.team === 0) this.aoe(pr.x, pr.y, pr.aoe, pr.aoeDmg || pr.dmg, pr.owner, { fx: pr.fx || 0, dot: pr.dot, dotDur: pr.dotDur, kb: 120, critAdd: pr.critAdd });
+    if (pr.aoe && pr.team === 0) this.aoe(pr.x, pr.y, pr.aoe, pr.aoeDmg || pr.dmg, pr.owner, { fx: pr.fx || 0, dot: pr.dot, dotEl: pr.dotEl, dotDur: pr.dotDur, kb: 120, critAdd: pr.critAdd });
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 

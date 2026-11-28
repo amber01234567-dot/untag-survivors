@@ -30,7 +30,7 @@ W('greataxe', {
 });
 W('cleaver', {
   name: '垃圾菜刀', glyph: '刀', beh: 'melee', fx: 'toxic',
-  base: { dmg: 13, cd: 0.38, range: 72, arc: 1.9, kb: 40, dot: 8, dotDur: 3, throwEvery: 5, throwDmg: 1.6 },
+  base: { dmg: 13, cd: 0.38, range: 72, arc: 1.9, kb: 40, dot: 8, dotEl: 2, dotDur: 3, throwEvery: 5, throwDmg: 1.6 },
   lv: [
     ['傷害 +25%', { m: { dmg: 1.25 } }],
     ['毒素傷害 +60%', { m: { dot: 1.6 } }],
@@ -155,7 +155,7 @@ W('knives', {
 // ───────── 輔助 ─────────
 W('syringe', {
   name: '針筒', glyph: '針', beh: 'gun', proj: 'syringe', extra: 'heal',
-  base: { dmg: 18, cd: 0.48, count: 1, speed: 680, pierce: 1, life: 0.8, range: 440, dot: 16, dotDur: 3,
+  base: { dmg: 18, cd: 0.48, count: 1, speed: 680, pierce: 1, life: 0.8, range: 440, dot: 16, dotEl: 2, dotDur: 3,
     healCd: 3.5, healAmt: 12, healCount: 1, healRange: 620 },
   lv: [
     ['治療量 +35%', { m: { healAmt: 1.35 } }],
@@ -173,7 +173,7 @@ W('skewer', {
   lv: [
     ['傷害 +25%', { m: { dmg: 1.25 } }],
     ['一次刺出 3 串', { a: { count: 2 } }],
-    ['炭火：命中造成燃燒', { s: { dot: 12, dotDur: 3 } }],
+    ['炭火：命中造成燃燒', { s: { dot: 12, dotEl: 1, dotDur: 3 } }],
     ['烤肉出爐更快 (-30%)', { m: { foodCd: 0.7 } }],
     ['烤肉串回復量 +60%，並提升攻擊力', { m: { foodHeal: 1.6 }, s: { foodDmg: 0.15 } }],
     ['傷害 +35%、射程 +30%', { m: { dmg: 1.35, life: 1.3, range: 1.3 } }],
@@ -255,7 +255,7 @@ W('rocket', {
     ['傷害 +30%', { m: { dmg: 1.3 } }],
     ['雙發齊射', { a: { count: 1 } }],
     ['冷卻 -20%', { m: { cd: 0.8 } }],
-    ['爆炸造成燃燒', { s: { dot: 14, dotDur: 3 } }],
+    ['爆炸造成燃燒', { s: { dot: 14, dotEl: 1, dotDur: 3 } }],
     ['傷害 +40%，三發齊射', { m: { dmg: 1.4 }, a: { count: 1 } }],
   ],
 });
@@ -295,7 +295,7 @@ W('dragonfire', {
     ['光環範圍 +25%', { m: { auraR: 1.25 } }],
     ['光環同時提升 10% 攻速', { s: { buffHaste: 0.1 } }],
     ['一次發射 2 顆火球', { a: { count: 1 } }],
-    ['傷害加成提升至 28%，火球造成燃燒', { s: { buffDmg: 0.28, dot: 12, dotDur: 3 } }],
+    ['傷害加成提升至 28%，火球造成燃燒', { s: { buffDmg: 0.28, dot: 12, dotEl: 1, dotDur: 3 } }],
   ],
 });
 

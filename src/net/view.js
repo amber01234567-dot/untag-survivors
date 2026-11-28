@@ -69,7 +69,7 @@ export class View {
     out.enemies.length = 0;
     for (const e of b.en) {
       const q = a.em.get(e.id);
-      if (q && Math.abs(q.x - e.x) + Math.abs(q.y - e.y) < 90) out.enemies.push({ id: e.id, d: e.d, x: lerp(q.x, e.x, al), y: lerp(q.y, e.y, al), hp: e.hp, fl: e.fl, st: e.st });
+      if (q && Math.abs(q.x - e.x) + Math.abs(q.y - e.y) < 90) out.enemies.push({ id: e.id, d: e.d, x: lerp(q.x, e.x, al), y: lerp(q.y, e.y, al), hp: e.hp, fl: e.fl, st: e.st, sx: e.sx });
       else out.enemies.push(e);
     }
     out.projs.length = 0;

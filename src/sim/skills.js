@@ -273,7 +273,7 @@ export const SKILLS = {
     W.emit('r', p.x | 0, p.y | 0, 60, 0);
   },
   gq_empire(W, p) {
-    W.addZone({ kind: 'garbage', owner: p, x: p.x, y: p.y, r: 250, dur: 10, tick: 0.5, dmg: wdmg(p) * 0.9, hitOpt: { slow: 0.5, slowDur: 0.8, dot: 10, dotDur: 3, quiet: true } });
+    W.addZone({ kind: 'garbage', owner: p, x: p.x, y: p.y, r: 250, dur: 10, tick: 0.5, dmg: wdmg(p) * 0.9, hitOpt: { slow: 0.5, slowDur: 0.8, dot: 10, dotEl: 2, dotDur: 3, quiet: true } });
     for (let i = 0; i < 14; i++) { const a = i * TAU / 14, d = 50 + (i % 3) * 34; minion(W, p, 'rat', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, { life: 12, speed: 300, dmg: wdmg(p) * 0.9, cd: 0.5, dot: 8 }); }
     W.emit('sh', 10);
   },

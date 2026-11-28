@@ -18,7 +18,7 @@ const PSPR = {
   starwave: ['evo_starwave', 150, 'aim'], kamikaze: ['drone', 26, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
-  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], e_wind: ['orb', 16, '', '#8ff0d8'], e_rock: ['orb', 17, '', '#c79a5a'], e_spark: ['orb', 16, '', '#ffe65a'],
+  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], coindart: ['coindart', 24, 'spin'], e_wind: ['orb', 16, '', '#8ff0d8'], e_rock: ['orb', 17, '', '#c79a5a'], e_spark: ['orb', 16, '', '#ffe65a'],
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
@@ -144,6 +144,7 @@ export class Renderer {
     if (p.fl & 4) g.translate((Math.random() - 0.5) * 3, 0);
     drawChar(g, info.charId, { t: t + p.id * 1.7, moving: !!(p.fl & 2) && !down, atk: a.atkT < dur ? a.atkT / dur : 0, aim, down: !!down, flip, skin: p.skin, set: p.set ? EL_IDS[p.set - 1] : '' });
     g.restore();
+    if (p.sx && !down) this.statusFx(g, p.x, p.y - p.jz, 17, 62, (p.sx & 1 ? 64 : 0) | (p.sx & 2 ? 1 : 0) | (p.sx & 4 ? 2 : 0) | (p.sx & 8 ? 8 : 0), t, p.id + 500);
     if (p.shield > 0) { g.strokeStyle = 'rgba(160,220,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(p.x, p.y - 26 - p.jz, 24, 34, 0, 0, TAU); g.stroke(); g.fillStyle = 'rgba(160,220,255,.08)'; g.fill(); }
     if (p.buffs & (BUFF_BITS.dmg | BUFF_BITS.haste)) { const c = p.buffs & BUFF_BITS.dmg ? '#ff7a5a' : '#ffe06b'; g.fillStyle = c; for (let i = 0; i < 3; i++) { const yy = ((t * 50 + i * 21 + p.id * 9) % 60); g.globalAlpha = 1 - yy / 60; g.fillRect(p.x - 16 + i * 14, p.y - 6 - yy, 2, 7); } g.globalAlpha = 1; }
   }
@@ -177,7 +178,66 @@ export class Renderer {
     else g.drawImage(sp.c, e.x - sp.ox * sc, e.y + fy - sp.oy * sc, sp.w * sc, sp.h * sc);
     g.globalAlpha = 1;
     if (e.fl & 4) { g.fillStyle = 'rgba(140,210,255,.35)'; g.beginPath(); g.ellipse(e.x, e.y - 2, def.r * sc, def.r * sc * 0.4, 0, 0, TAU); g.fill(); }
-    if (e.fl & 16) { g.fillStyle = '#9dff3c'; g.beginPath(); g.arc(e.x - def.r * 0.5, e.y - def.r * 2 - ((t * 20 + e.id) % 8), 1.8, 0, TAU); g.arc(e.x + def.r * 0.4, e.y - def.r * 1.6 - ((t * 20 + e.id * 3) % 8), 1.4, 0, TAU); g.fill(); }
+    if (e.sx) this.statusFx(g, e.x, e.y + fy, def.r * sc, (sp.oy || def.r * 2) * sc, e.sx, t, e.id);
+  }
+  // ───────── 屬性狀態特效（怪物與玩家共用）─────────
+  // sx：1 燃燒 2 中毒 4 凍結 8 觸電 16 腐蝕 32 流血 64 受寒（緩速）。(x, y) = 腳底，r = 半寬，h = 身高
+  statusFx(g, x, y, r, h, sx, t, id) {
+    if (sx & 64) {                                 // 受寒：腳下一圈霜 + 飄落的雪花
+      g.fillStyle = 'rgba(150,220,255,.3)'; g.beginPath(); g.ellipse(x, y, r * 1.5, r * 0.6, 0, 0, TAU); g.fill();
+      g.strokeStyle = 'rgba(235,250,255,1)'; g.lineWidth = 2; g.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        const ph = (t * 0.7 + i * 0.37 + id * 0.13) % 1, fx = x + Math.sin(i * 2.3 + id + ph * 3) * r * 1.1, fy = y - h * (1 - ph), q = 4.5;
+        g.globalAlpha = Math.min(1, ph * 4, (1 - ph) * 3); g.beginPath();
+        for (let k = 0; k < 3; k++) { const a = k * 1.047 + ph * 2; g.moveTo(fx - Math.cos(a) * q, fy - Math.sin(a) * q); g.lineTo(fx + Math.cos(a) * q, fy + Math.sin(a) * q); }
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    if (sx & 16) {                                 // 腐蝕：腳下紫色黏液 + 身上往下滴的紫色液滴
+      g.fillStyle = 'rgba(160,80,220,.32)'; g.beginPath(); g.ellipse(x, y + 1, r * 1.25, r * 0.5, 0, 0, TAU); g.fill();
+      g.fillStyle = '#c58bff';
+      for (let i = 0; i < 3; i++) { const ph = (t * 1.1 + i * 0.33 + id * 0.21) % 1, dx = x + (i - 1) * r * 0.6, dy = y - h * 0.75 + ph * h * 0.6; g.globalAlpha = 1 - ph; g.beginPath(); g.ellipse(dx, dy, 1.8, 2.6 + ph * 2, 0, 0, TAU); g.fill(); }
+      g.globalAlpha = 1;
+    }
+    if (sx & 2) {                                  // 中毒：往上冒的綠色泡泡
+      for (let i = 0; i < 4; i++) {
+        const ph = (t * 0.9 + i * 0.25 + id * 0.17) % 1, bx = x + Math.sin(i * 1.9 + id) * r * 0.8 + Math.sin(ph * 6 + i) * 2, by = y - h * 0.35 - ph * h * 0.75, br = 2.8 + (i % 2) * 1.5;
+        g.globalAlpha = Math.min(1, (1 - ph) * 2.5); g.fillStyle = 'rgba(157,255,60,.85)'; g.beginPath(); g.arc(bx, by, br, 0, TAU); g.fill();
+        g.fillStyle = 'rgba(240,255,200,.9)'; g.beginPath(); g.arc(bx - br * 0.3, by - br * 0.3, br * 0.35, 0, TAU); g.fill();
+      }
+      g.globalAlpha = 1;
+    }
+    if (sx & 32) {                                 // 流血：往下掉的紅色血滴
+      g.fillStyle = '#ff4a5a';
+      for (let i = 0; i < 2; i++) { const ph = (t * 1.4 + i * 0.5 + id * 0.29) % 1, dx = x + (i ? r * 0.5 : -r * 0.45), dy = y - h * 0.6 + ph * ph * h * 0.55; g.globalAlpha = 1 - ph * 0.8; g.beginPath(); g.moveTo(dx, dy - 4); g.quadraticCurveTo(dx + 2.6, dy + 1, dx, dy + 2.6); g.quadraticCurveTo(dx - 2.6, dy + 1, dx, dy - 4); g.fill(); }
+      g.globalAlpha = 1;
+    }
+    if (sx & 1) {                                  // 燃燒：身上竄動的小火苗
+      for (let i = 0; i < 3; i++) {
+        const fl = 0.8 + 0.2 * Math.sin(t * 17 + i * 2.1 + id), fw = (r * 0.36 + 4.5) * fl, fh = fw * (2.1 + 0.5 * Math.sin(t * 11 + i * 1.3 + id)), fx = x + (i - 1) * r * 0.62, fy = y - h * (0.12 + (i % 2) * 0.34), sw = Math.sin(t * 9 + i * 2 + id) * fw * 0.35;
+        g.fillStyle = 'rgba(255,110,30,.9)'; g.beginPath(); g.moveTo(fx - fw, fy); g.quadraticCurveTo(fx - fw * 1.1, fy - fh * 0.5, fx + sw, fy - fh); g.quadraticCurveTo(fx + fw * 1.1, fy - fh * 0.5, fx + fw, fy); g.quadraticCurveTo(fx, fy + fw * 0.7, fx - fw, fy); g.fill();
+        g.fillStyle = 'rgba(255,225,90,.95)'; g.beginPath(); g.moveTo(fx - fw * 0.5, fy); g.quadraticCurveTo(fx - fw * 0.55, fy - fh * 0.3, fx + sw * 0.5, fy - fh * 0.58); g.quadraticCurveTo(fx + fw * 0.55, fy - fh * 0.3, fx + fw * 0.5, fy); g.quadraticCurveTo(fx, fy + fw * 0.4, fx - fw * 0.5, fy); g.fill();
+      }
+    }
+    if (sx & 4) {                                  // 凍結：整隻包在冰塊裡
+      const w = r * 1.35 + 5, top = y - h - 5;
+      g.fillStyle = 'rgba(170,228,255,.5)'; g.strokeStyle = 'rgba(235,250,255,.95)'; g.lineWidth = 2; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(x - w, y + 3); g.lineTo(x - w * 1.08, y - h * 0.45); g.lineTo(x - w * 0.55, top + 5); g.lineTo(x + w * 0.2, top); g.lineTo(x + w * 0.95, top + h * 0.22); g.lineTo(x + w * 1.08, y - h * 0.3); g.lineTo(x + w * 0.9, y + 3); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - w * 0.6, y - h * 0.3); g.lineTo(x - w * 0.3, top + h * 0.18); g.moveTo(x + w * 0.35, y - h * 0.12); g.lineTo(x + w * 0.6, y - h * 0.5); g.stroke();
+    }
+    if (sx & 8) {                                  // 觸電：身邊亂竄的電弧
+      const seed = Math.floor(t * 14) * 7 + id * 13; let n = seed;
+      const rnd = () => { n = (n * 9301 + 49297) % 233280; return n / 233280; };
+      g.globalCompositeOperation = 'lighter'; g.lineCap = 'round'; g.lineJoin = 'round';
+      for (let i = 0; i < 2; i++) {
+        let ax = x + (rnd() - 0.5) * r * 2.2, ay = y - h * (0.15 + rnd() * 0.75);
+        g.beginPath(); g.moveTo(ax, ay);
+        for (let k = 0; k < 3; k++) { ax += (rnd() - 0.5) * r * 1.5; ay += (rnd() - 0.5) * h * 0.4; g.lineTo(ax, ay); }
+        g.strokeStyle = 'rgba(190,120,255,.7)'; g.lineWidth = 4; g.stroke(); g.strokeStyle = '#fff6b0'; g.lineWidth = 1.6; g.stroke();
+      }
+      g.globalCompositeOperation = 'source-over';
+    }
   }
   enemyOverlay(g, e, t) {
     const def = ENEMY_LIST[e.d], el = e.fl & 1, top = e.y - def.r * (el ? 3.4 : 2.5) - 8;

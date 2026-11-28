@@ -4,9 +4,9 @@ import { buffBits, bHaste } from '../sim/player.js';
 import { SKINS } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
 
-export const PROTO = 12;
+export const PROTO = 13;
 const STATES = ['play', 'levelup', 'won', 'lost'];
-const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set'];
+const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set', 'sx'];
 
 export function snapOf(W) {
   const s = {
@@ -25,13 +25,15 @@ export function snapOf(W) {
       cdP: Math.max(0, Math.round(p.skillCd / (p.def.skill.cd * p.st.cd) * 100)), ult: Math.floor(p.ult / p.ultMax * 100),
       buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd), skin: Math.max(0, SKINS.indexOf((p.weapons[0] && p.weapons[0].def.skin) || '')),
       set: p.gs && p.gs.set ? EL_IDS.indexOf(p.gs.set) + 1 : 0,
+      sx: (p.buffs.el_slow ? 1 : 0) | (p.burnT > 0 ? (W.el === 'poison' ? 4 : 2) : 0) | (p.buffs.el_shock ? 8 : 0),      // 屬性狀態：1 緩速 2 燃燒 4 中毒 8 麻痺
     });
   }
   for (const e of W.enemies) {
     if (e.dead) continue;
     s.en.push({ id: e.id, d: e.def.idx, x: e.x, y: e.y, hp: Math.max(0, Math.min(1, e.hp / e.maxHp)),
       fl: (e.elite ? 1 : 0) | (e.flash > 0 ? 2 : 0) | (e.slowT > 0 ? 4 : 0) | (e.stunT > 0 ? 8 : 0) | (e.dotT > 0 ? 16 : 0) | (e.face < 0 ? 32 : 0) | (e.spawnT > 0 ? 64 : 0) | (e.mark > 0 ? 128 : 0),
-      st: e.st });
+      st: e.st,
+      sx: (e.dotT > 0 ? (e.dotEl === 2 ? 2 : e.dotEl === 3 ? 32 : 1) : 0) | (e.frzT > 0 && e.stunT > 0 ? 4 : 0) | (e.shkT > 0 ? 8 : 0) | (e.corr > 0 ? 16 : 0) });      // 狀態：1 燃燒 2 中毒 4 凍結 8 觸電 16 腐蝕 32 流血
   }
   for (const p of W.projs) if (!p.dead) s.pr.push({ id: p.id, k: p.k, x: p.x, y: p.y, a: p.a, aux: p.aux | 0, tm: p.team });
   for (const z of W.zones) {
@@ -63,7 +65,7 @@ export function encode(s, events) {
   const hb = te.encode(JSON.stringify(head));
   w.u8(1); w.u32(hb.length); w.bytes(hb);
   w.u16(s.en.length);
-  for (const e of s.en) { w.u16(e.id); w.u8(e.d); w.u16(q8(e.x)); w.u16(q8(e.y)); w.u8(Math.round(e.hp * 255)); w.u8(e.fl); w.u8(e.st); }
+  for (const e of s.en) { w.u16(e.id); w.u8(e.d); w.u16(q8(e.x)); w.u16(q8(e.y)); w.u8(Math.round(e.hp * 255)); w.u8(e.fl); w.u8(e.st); w.u8(e.sx); }
   w.u16(s.pr.length);
   for (const p of s.pr) { w.u16(p.id); w.u8(p.k | (p.tm ? 128 : 0)); w.u16(q8(p.x)); w.u16(q8(p.y)); w.u8(Math.round((((p.a % 6.2832) + 6.2832) % 6.2832) / 6.2832 * 255)); w.u8(p.aux); }
   return w.buf.slice(0, w.o);
@@ -79,7 +81,7 @@ export function decode(buf) {
   s.z = h.z.map((a) => ({ id: a[0], k: a[1], x: a[2], y: a[3], r: a[4], p: a[5] / 100, on: a[6], dp: a[7] / 100, a: a[8] / 100, len: a[9], w: a[10], aux: a[11] }));
   s.s = h.s.map((a) => ({ id: a[0], k: a[1], x: a[2], y: a[3], face: a[4], st: a[5] }));
   let n = dv.getUint16(o, true); o += 2;
-  for (let i = 0; i < n; i++, o += 10) s.en.push({ id: dv.getUint16(o, true), d: dv.getUint8(o + 2), x: dv.getUint16(o + 3, true) / 8, y: dv.getUint16(o + 5, true) / 8, hp: dv.getUint8(o + 7) / 255, fl: dv.getUint8(o + 8), st: dv.getUint8(o + 9) });
+  for (let i = 0; i < n; i++, o += 11) s.en.push({ id: dv.getUint16(o, true), d: dv.getUint8(o + 2), x: dv.getUint16(o + 3, true) / 8, y: dv.getUint16(o + 5, true) / 8, hp: dv.getUint8(o + 7) / 255, fl: dv.getUint8(o + 8), st: dv.getUint8(o + 9), sx: dv.getUint8(o + 10) });
   n = dv.getUint16(o, true); o += 2;
   for (let i = 0; i < n; i++, o += 9) { const k = dv.getUint8(o + 2); s.pr.push({ id: dv.getUint16(o, true), k: k & 127, tm: k >> 7, x: dv.getUint16(o + 3, true) / 8, y: dv.getUint16(o + 5, true) / 8, a: dv.getUint8(o + 7) / 255 * 6.2832, aux: dv.getUint8(o + 8) }); }
   return s;
