@@ -614,6 +614,89 @@ export const BEH = {
       e = best;
     }
   },
+  // 龍息瓶：朝最近的敵人噴一口扇形火焰並點燃；滿級前後各噴一口
+  dragonbreath(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const tgt = W.nearestEnemy(p.x, p.y, s.range * p.st.area);
+    if (!tgt) return;
+    w.t = s.cd * p.st.cd;
+    const a0 = Math.atan2(tgt.y - p.y, tgt.x - p.x), R = s.r * p.st.area;
+    for (let k = 0; k <= s.twin; k++) {
+      const a = a0 + k * Math.PI, bx = p.x + Math.cos(a) * 18, by = p.y - 18 + Math.sin(a) * 12;
+      swingFrom(W, p, bx, by, a, R, s.arc, s.dmg, { dot: s.dot, dotDur: s.dotDur, kb: 40 });
+      W.addZone({ kind: 'breath', owner: p, x: bx, y: by, a, r: R, dur: 0.42, tick: 9, aux: Math.round(s.arc * 50) });
+    }
+  },
+  // 孢子雲：往敵人最多的地方丟一團毒雲，雲裡的敵人持續受傷並被腐蝕（承受更多傷害）；滿級雲散時爆開
+  spore(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const c = W.cluster(p.x, p.y, s.range);
+    if (!c) return;
+    w.t = s.cd * p.st.cd;
+    for (let i = 0; i < s.count; i++) {
+      const tx = c.x + (i ? W.rng.range(-110, 110) : 0), ty = c.y + (i ? W.rng.range(-110, 110) : 0), r = s.r * p.st.area;
+      W.addZone({ kind: 'spore', owner: p, x: tx, y: ty, r, dur: s.dur, tick: 0.5, dmg: s.dmg, hitOpt: { quiet: true, corr: 1.2, corrV: s.vuln },
+        onEnd: s.burst ? (W2, z) => { W2.aoe(z.x, z.y, r * 1.25, s.dmg * 4, p, { fx: 3, corr: 2, corrV: s.vuln }); } : null });
+      W.emit('r', tx | 0, ty | 0, r | 0, 2);
+    }
+  },
+  // 飛錢鏢：擲出會在敵人之間彈跳的銅錢；滿級擊殺有機率多掉金幣
+  coindart(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const ts = W.randomEnemies(p.x, p.y, s.range, s.count);
+    if (!ts.length) return;
+    w.t = s.cd * p.st.cd;
+    for (let i = 0; i < s.count; i++) {
+      const e = ts[i % ts.length];
+      W.shoot(p, { kind: 'e_gold', a: Math.atan2(e.y - p.y + 14, e.x - p.x) + (i >= ts.length ? 0.25 : 0), speed: s.speed, dmg: s.dmg, life: 0.9, r: 9, bounce: s.bounce,
+        onHit: s.coin ? (W2, pr, q) => { if (q.dead && !q.def.boss && W2.rng.next() < s.coin) W2.drop('c', q.x, q.y, 1); } : null });
+    }
+  },
+  // 旋風陣：放出一道會追著敵人跑的旋風，把小怪吸進去持續絞傷
+  cyclone(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    if (!W.nearestEnemy(p.x, p.y, s.range)) return;
+    w.t = s.cd * p.st.cd;
+    for (let i = 0; i < s.count; i++) {
+      const a = W.rng.range(0, 6.2832);
+      W.addZone({ kind: 'cyclone', owner: p, x: p.x + Math.cos(a) * 30, y: p.y + Math.sin(a) * 30, r: s.r * p.st.area, dur: s.dur, tick: 0.3, dmg: s.dmg, pull: s.pull, hitOpt: { quiet: true }, seekT: i * 0.2, vx: 0, vy: 0,
+        upd(W2, z, dt2) {
+          z.seekT -= dt2;
+          if (z.seekT <= 0) { z.seekT = 0.4; const c = W2.cluster(z.x, z.y, 360) || W2.nearestEnemy(z.x, z.y, 500); if (c) { const d = Math.hypot(c.x - z.x, c.y - z.y) || 1, v = d < 20 ? 0 : s.speed; z.vx = (c.x - z.x) / d * v; z.vy = (c.y - z.y) / d * v; } else { z.vx = z.vy = 0; } }
+          const nx = z.x + z.vx * dt2, ny = z.y + z.vy * dt2;
+          if (!solidAt(W2.L, nx, z.y)) z.x = nx;
+          if (!solidAt(W2.L, z.x, ny)) z.y = ny;
+          z.tk -= dt2; if (z.tk <= 0) { z.tk += z.tick; W2.zoneTick(z); }
+        } });
+    }
+  },
+  // 岩刺陣：身邊一圈岩刺破土而出，把敵人頂開並暈眩；滿級外圈再一圈
+  rockspike(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    const R = s.ring * p.st.area;
+    if (!W.nearestEnemy(p.x, p.y, R * (s.outer ? 1.9 : 1.25))) return;
+    w.t = s.cd * p.st.cd; w.n++;
+    const x = p.x, y = p.y;
+    for (let k = 0; k <= s.outer; k++) {
+      const n = s.count + k * 4, rr = R * (1 + k * 0.7);
+      for (let i = 0; i < n; i++) {
+        const a = i * 6.2832 / n + w.n * 0.5 + k * 0.3, rx = x + Math.cos(a) * rr, ry = y + Math.sin(a) * rr * 0.86;
+        if (solidAt(W.L, rx, ry)) continue;
+        W.addZone({ kind: 'rockburst', owner: p, x: rx, y: ry, r: s.r * p.st.area, delay: 0.08 + k * 0.18, dur: 0.85 + k * 0.18, tick: 9, dmg: s.dmg, hitOpt: { stun: s.stun, kb: 150, sx: x, sy: y }, aux: i % 5 });
+      }
+    }
+    W.emit('sh', 2);
+  },
   nova(W, p, w, dt) {
     const s = w.s;
     w.t -= dt * bHaste(p);

@@ -515,6 +515,56 @@ W('sub_drum', {
     ['連鎖 +2，每第 4 下改成全畫面落雷', { a: { jumps: 2 }, s: { bolt: 4 } }],
   ],
 });
+W('sub_dragonbreath', {
+  name: '龍息瓶', glyph: '息', beh: 'dragonbreath', sub: true, el: 'fire', unlock: '12-B',
+  base: { dmg: 16, cd: 2.6, r: 190, arc: 1.0, range: 230, dot: 5, dotDur: 3, twin: 0 },
+  lv: [
+    ['噴射距離 +20%', { m: { r: 1.2, range: 1.2 } }],
+    ['傷害 +40%，燃燒更痛', { m: { dmg: 1.4, dot: 1.4 } }],
+    ['冷卻 -25%，火焰更寬', { m: { cd: 0.75, arc: 1.25 } }],
+    ['前後各噴一口，傷害 +25%', { s: { twin: 1 }, m: { dmg: 1.25 } }],
+  ],
+});
+W('sub_spore', {
+  name: '孢子雲', glyph: '孢', beh: 'spore', sub: true, el: 'poison', unlock: '14-B',
+  base: { dmg: 6, cd: 5.0, r: 95, dur: 4.5, range: 380, vuln: 0.08, count: 1, burst: 0 },
+  lv: [
+    ['雲霧範圍 +25%', { m: { r: 1.25 } }],
+    ['傷害 +45%', { m: { dmg: 1.45 } }],
+    ['一次放出 2 團', { a: { count: 1 } }],
+    ['腐蝕加深（承受傷害 +14%），雲散時爆開', { s: { vuln: 0.14, burst: 1 } }],
+  ],
+});
+W('sub_coindart', {
+  name: '飛錢鏢', glyph: '錢', beh: 'coindart', sub: true, el: 'gold', unlock: '18-B',
+  base: { dmg: 15, cd: 1.7, count: 1, bounce: 2, speed: 620, range: 420, coin: 0 },
+  lv: [
+    ['彈跳 +2', { a: { bounce: 2 } }],
+    ['傷害 +35%', { m: { dmg: 1.35 } }],
+    ['一次擲出 2 枚', { a: { count: 1 } }],
+    ['彈跳 +2，擊殺有機率多掉金幣', { a: { bounce: 2 }, s: { coin: 0.1 } }],
+  ],
+});
+W('sub_cyclone', {
+  name: '旋風陣', glyph: '旋', beh: 'cyclone', sub: true, el: 'wind', unlock: '20-B',
+  base: { dmg: 7, cd: 5.5, r: 70, dur: 3.5, speed: 150, pull: 160, range: 420, count: 1 },
+  lv: [
+    ['旋風範圍 +25%', { m: { r: 1.25 } }],
+    ['傷害 +45%', { m: { dmg: 1.45 } }],
+    ['持續時間 +40%，吸力更強', { m: { dur: 1.4, pull: 1.4 } }],
+    ['一次放出 2 道旋風', { a: { count: 1 } }],
+  ],
+});
+W('sub_rockspike', {
+  name: '岩刺陣', glyph: '岩', beh: 'rockspike', sub: true, el: 'earth', unlock: '22-B',
+  base: { dmg: 22, cd: 4.0, count: 6, ring: 105, r: 44, stun: 0.5, outer: 0 },
+  lv: [
+    ['岩刺 +2，範圍 +15%', { a: { count: 2 }, m: { ring: 1.15 } }],
+    ['傷害 +40%', { m: { dmg: 1.4 } }],
+    ['冷卻 -25%，暈眩延長', { m: { cd: 0.75, stun: 1.5 } }],
+    ['外圈再冒出一圈岩刺', { s: { outer: 1 } }],
+  ],
+});
 export const SUB_WEAPONS = Object.values(WEAPONS).filter((w) => w.sub).map((w) => w.id);
 
 export function weaponStats(def, level) {

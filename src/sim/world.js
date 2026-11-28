@@ -286,6 +286,7 @@ export class World {
         e.kx += nx * k; e.ky += ny * k;
       }
       if (o.dot) { e.dot = Math.max(e.dot, o.dot * (p ? p.st.dmg : 1)); e.dotT = Math.max(e.dotT, o.dotDur || 3); e.dotP = p; }
+      if (o.corr) { e.corr = Math.max(e.corr || 0, o.corr); e.corrV = Math.max(e.corrV || 0, o.corrV || 0); }
       if (o.slow) { e.slowF = Math.max(e.slowT > 0 ? e.slowF : 0, o.slow); e.slowT = Math.max(e.slowT, o.slowDur || 1.5); }
       if (o.stun && !e.def.boss) e.stunT = Math.max(e.stunT, o.stun * (e.elite ? 0.5 : 1));
       if (o.stun && e.def.boss) { e.slowF = 0.5; e.slowT = Math.max(e.slowT, o.stun); }

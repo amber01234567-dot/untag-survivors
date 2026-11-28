@@ -516,7 +516,7 @@ export class Renderer {
         g.restore();
         break;
       }
-      case 'e_tornado': {                          // 龍捲風：一圈圈旋轉的弧線，往上變寬
+      case 'e_tornado': case 'cyclone': {                          // 龍捲風：一圈圈旋轉的弧線，往上變寬
         g.save(); g.translate(x, y);
         if (!z.on) { g.strokeStyle = 'rgba(200,255,240,.8)'; g.lineWidth = 2.5; g.setLineDash([10, 8]); g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]); }
         else {
@@ -531,7 +531,7 @@ export class Renderer {
         g.restore();
         break;
       }
-      case 'e_fog': {                              // 毒霧：預警時是虛線圈，成形後是一團翻滾的綠霧
+      case 'e_fog': case 'spore': {                              // 毒霧：預警時是虛線圈，成形後是一團翻滾的綠霧
         if (!z.on) {
           g.strokeStyle = 'rgba(150,230,80,.85)'; g.lineWidth = 2.5; g.setLineDash([12, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]);
           g.fillStyle = 'rgba(120,210,60,.16)'; g.beginPath(); g.ellipse(x, y, r * z.dp, r * z.dp * 0.86, 0, 0, TAU); g.fill();
