@@ -549,10 +549,14 @@ body.touch #chat .cbtn span { display: none; }
 .rnode.cleared .badge { border-color: var(--gold2); }
 .rnode.sel .badge { transform: scale(1.14); box-shadow: 0 0 0 3px #fff, 0 0 24px var(--c); }
 .rnode:hover .badge { transform: scale(1.08); }
-/* A：世界地圖 */
-.wworld { position: relative; flex: 1; min-height: 300px; background-size: 100% 100%; background-position: center; border: 1px solid rgba(201, 164, 90, .45); }
-.wworld::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(4, 5, 9, .6)); pointer-events: none; }
-.whint { position: absolute; left: 12px; top: 10px; font-family: var(--serif); font-weight: 900; font-size: 15px; letter-spacing: .12em; color: #f1e7cf; text-shadow: 0 2px 6px #000; z-index: 2; }
+/* A：世界地圖。地圖固定 16:9，在面板裡置中、盡量放大；房主在世界地圖畫面時右邊的關卡資訊先收起來 */
+.lobby-grid.world .mapwrap { grid-column: 2 / 4; }
+.lobby-grid.world .info { display: none; }
+.wframe { flex: 1; min-height: 0; display: grid; place-items: center; container-type: size; }
+.wworld { position: relative; aspect-ratio: 16 / 9; width: min(100cqw, 100cqh * 16 / 9); background-size: 100% 100%; border: 1px solid rgba(201, 164, 90, .45); box-shadow: 0 8px 30px rgba(0, 0, 0, .6); }
+.wworld::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 60%, rgba(4, 5, 9, .45)); pointer-events: none; }
+.whint { position: absolute; left: 22px; top: 18px; font-family: var(--serif); font-weight: 900; font-size: 20px; letter-spacing: .14em; color: #f1e7cf; text-shadow: 0 2px 8px #000, 0 0 3px #000; z-index: 3; pointer-events: none; }
+.whint i { display: block; font-style: normal; font-family: var(--sans); font-weight: 400; font-size: 12px; letter-spacing: .1em; color: #c9d1e2; margin-top: 2px; }
 .wmark { position: absolute; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--text); }
 .wmark .pin { width: 46px; height: 46px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: grid; place-items: center; background: var(--c); border: 3px solid #fff; box-shadow: 0 5px 12px rgba(0, 0, 0, .7); transition: .15s; }
 .wmark .pin span { transform: rotate(45deg); font-family: var(--serif); font-weight: 900; font-size: 19px; color: #10141d; }
@@ -562,7 +566,7 @@ body.touch #chat .cbtn span { display: none; }
 .wmark:hover .pin, .wmark.cur .pin { transform: rotate(-45deg) scale(1.18); box-shadow: 0 0 20px var(--c), 0 5px 12px rgba(0, 0, 0, .7); }
 .wmark.cur .pin { animation: pulse 1.6s infinite; }
 .wmark.locked { cursor: default; } .wmark.locked .pin { background: #4a5266; border-color: #8f9ab2; } .wmark.locked .lab { opacity: .7; }
-.zhead { display: flex; align-items: center; gap: 14px; padding-right: 230px; }
+.zhead { display: flex; align-items: center; gap: 14px; }
 .zhead h2, .banner h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: 22px; letter-spacing: .08em; color: #f1e7cf; }
 .zhead .sub, .banner .sub { font-size: 10px; letter-spacing: .3em; color: var(--c); }
 /* B：系列橫幅 */
@@ -578,3 +582,12 @@ body.touch #chat .cbtn span { display: none; }
 .banner .dots button.on { background: var(--c); transform: scale(1.35); box-shadow: 0 0 8px var(--c); }
 .banner .dots button:disabled { opacity: .3; cursor: default; }
 @media (max-width: 900px) { .rnode .badge { width: 40px; height: 40px; } .rnode .badge span { font-size: 16px; } .rnode .nm { font-size: 10.5px; } .zhead { padding-right: 0; flex-wrap: wrap; } .banner { flex-basis: 104px; } .banner .btxt h2 { font-size: 20px; } .wmark .pin { width: 34px; height: 34px; } .wmark .lab b { font-size: 12px; } }
+@media (max-width: 980px) {
+  .lobby-grid.world .mapwrap { grid-column: auto; }
+  .lobby-grid { grid-template-rows: none; grid-auto-rows: max-content; }
+  .mapwrap.mapa { overflow: visible; }
+  .mapa .wframe { flex: none; height: min(54vw, 78vh); }
+  .mapa .route { flex: none; height: 330px; }
+  .whint { font-size: 15px; left: 16px; top: 14px; } .whint i { display: none; }
+  .wmark .lab { padding: 1px 6px 2px; } .wmark .lab i { font-size: 9px; }
+}
