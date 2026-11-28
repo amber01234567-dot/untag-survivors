@@ -110,6 +110,7 @@ export class Renderer {
     g.setTransform(sc, 0, 0, sc, Math.round(-cam.x * sc), Math.round(-cam.y * sc));
     for (const e of f.enemies) if (vis(e.x, e.y)) this.enemyOverlay(g, e, t);
     for (const p of f.players) if (!(p.fl & 32)) this.playerLabel(g, p, t);
+    if (this.bubbles && this.bubbles.size) for (const p of f.players) if (!(p.fl & 32)) this.bubble(g, p);
     if (f.hud && f.hud.L && f.hud.L.w) this.gust(g, f.hud.L.w, t);
     if (fx.tint) { const k = fx.tint.life / fx.tint.max, a = Math.min(1, k * 5, (1 - k) * 8) * 0.5; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(20,0,40,${a})`; g.fillRect(0, 0, this.cv.width, this.cv.height); g.fillStyle = `rgba(255,30,60,${a * 0.18})`; g.fillRect(0, 0, this.cv.width, this.cv.height); g.setTransform(sc, 0, 0, sc, Math.round(-cam.x * sc), Math.round(-cam.y * sc)); }
     fx.drawTexts(g);
@@ -147,6 +148,23 @@ export class Renderer {
     if (p.sx && !down) this.statusFx(g, p.x, p.y - p.jz, 17, 62, (p.sx & 1 ? 64 : 0) | (p.sx & 2 ? 1 : 0) | (p.sx & 4 ? 2 : 0) | (p.sx & 8 ? 8 : 0), t, p.id + 500);
     if (p.shield > 0) { g.strokeStyle = 'rgba(160,220,255,.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(p.x, p.y - 26 - p.jz, 24, 34, 0, 0, TAU); g.stroke(); g.fillStyle = 'rgba(160,220,255,.08)'; g.fill(); }
     if (p.buffs & (BUFF_BITS.dmg | BUFF_BITS.haste)) { const c = p.buffs & BUFF_BITS.dmg ? '#ff7a5a' : '#ffe06b'; g.fillStyle = c; for (let i = 0; i < 3; i++) { const yy = ((t * 50 + i * 21 + p.id * 9) % 60); g.globalAlpha = 1 - yy / 60; g.fillRect(p.x - 16 + i * 14, p.y - 6 - yy, 2, 7); } g.globalAlpha = 1; }
+  }
+  // 聊天對話框：講話的人頭上冒出來，3.5 秒後消失
+  say(id, text) { (this.bubbles || (this.bubbles = new Map())).set(id, { s: text.length > 18 ? text.slice(0, 17) + '…' : text, t0: performance.now() }); }
+  bubble(g, p) {
+    const b = this.bubbles && this.bubbles.get(p.id);
+    if (!b) return;
+    const age = (performance.now() - b.t0) / 1000;
+    if (age > 3.5) { this.bubbles.delete(p.id); return; }
+    const a = Math.min(1, age * 8, (3.5 - age) * 3), pop = Math.min(1, age * 7);
+    g.save(); g.font = `700 13px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const w = Math.max(34, g.measureText(b.s).width + 18), h = 24, x = p.x, y = p.y - (p.jz || 0) - 108;
+    g.globalAlpha = a; g.translate(x, y); g.scale(0.7 + 0.3 * pop, 0.7 + 0.3 * pop);
+    g.fillStyle = 'rgba(248,244,232,.96)'; g.strokeStyle = 'rgba(8,10,16,.9)'; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, 9); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(-6, h / 2 - 1); g.lineTo(0, h / 2 + 8); g.lineTo(6, h / 2 - 1); g.closePath(); g.fill(); g.beginPath(); g.moveTo(-6, h / 2); g.lineTo(0, h / 2 + 8); g.lineTo(6, h / 2); g.stroke();
+    g.fillStyle = '#12151c'; g.fillText(b.s, 0, 1);
+    g.restore();
   }
   playerLabel(g, p, t) {
     const info = this.roster.get(p.id) || { name: '?', slot: 0 }, col = SLOT_COLORS[info.slot % 4], down = p.fl & 1;

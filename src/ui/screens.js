@@ -168,7 +168,7 @@ export class Screens {
         <div class="st" style="color:${p.away ? '#ff9a5a' : p.host ? 'var(--gold2)' : p.ready ? 'var(--green)' : 'var(--dim)'}">${p.away ? '暫離中' : p.host ? '房主' : p.ready ? '已準備' : '未準備'}</div></div>`;
     }).join('');
     const serId = ch.series || 1;
-    const sers = SERIES.map((sr) => { const c0 = CHAPTERS.find((c) => (c.series || 1) === sr.id); return `<button class="sertab ${sr.id === serId ? 'on' : ''}" data-a="series" data-v="${sr.id}" ${c0 && nodeUnlocked(c0.nodes[0].id, cleared) ? '' : 'disabled'}><b>系列 ${'一二三四五六'[sr.id - 1]}</b>　${sr.name}<i>${sr.sub}</i></button>`; }).join('');
+    const sers = SERIES.map((sr) => { const c0 = CHAPTERS.find((c) => (c.series || 1) === sr.id); return `<button class="sertab ${sr.id === serId ? 'on' : ''}" data-a="series" data-v="${sr.id}" ${c0 && nodeUnlocked(c0.nodes[0].id, cleared) ? '' : 'disabled'}><b>系列 ${'一二三四五六七八九'[sr.id - 1]}</b>　${sr.name}<i>${sr.sub}</i></button>`; }).join('');
     const tabs = CHAPTERS.filter((c) => (c.series || 1) === serId).map((c) => `<button class="chtab ${c.id === this.tab ? 'on' : ''}" data-a="tab" data-v="${c.id}" ${nodeUnlocked(c.nodes[0].id, cleared) ? '' : 'disabled'}>第 ${c.id} 章　${c.name}</button>`).join('');
     const px = (n) => 9 + n.pos[0] * 20.5, py = (n) => 15 + n.pos[1] * 28;
     let lines = '';

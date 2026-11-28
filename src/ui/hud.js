@@ -23,6 +23,7 @@ export class Hud {
     this.modal.addEventListener('click', (e) => { const t = e.target.closest('[data-a]'); if (t && !t.disabled) { sfx('click'); this.act(t.dataset.a, t.dataset.v); } });
     addEventListener('keydown', (e) => {
       if (!this.choices || this.choices.done) return;
+      if (e.target && e.target.tagName === 'INPUT') return;      // 正在打聊天訊息
       const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code);
       if (i >= 0 && i < this.choices.opts.length) this.act('opt', i); else if (e.code === 'KeyR') this.act('reroll');
     });

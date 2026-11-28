@@ -9,6 +9,7 @@ import { loadMapTextures, mapReady, MapRenderer } from './render/map.js';
 import { loadFxSprites } from './render/fxsprites.js';
 import { Screens } from './ui/screens.js';
 import { Hud } from './ui/hud.js';
+import { Chat } from './ui/chat.js';
 import { Input } from './ui/input.js';
 import { CHARS } from './data/characters.js';
 import { STAGES } from './data/chapters.js';
@@ -52,11 +53,13 @@ const app = {
 };
 app.screens = new Screens(app);
 app.hud = new Hud(app);
+app.chat = new Chat(app);
 window.__app = app;                       // 方便除錯 / 自動化測試
 
 app.session.on('lobby', () => { if (app.rt && app.session.rt) return; if (app.rt) app.stopGame(); if (app.screens.cur === 'lobby' || !app.screens.cur) { app.screens.tabFromSel(); app.screens.show('lobby'); } });
 app.session.on('start', (rt, msg) => app.startGame(rt, msg));
-app.session.on('note', (s) => app.toast(s));
+app.session.on('note', (s) => { app.toast(s); if (app.chat.where) app.chat.system(s); });
+app.session.on('chat', (id, s) => app.chat.onMsg(id, s));
 app.session.on('dropped', (why) => { app.stopGame(); app.session.lobby.players = []; app.screens.show('home'); app.toast(why); });
 
 addEventListener('resize', () => { if (app.renderer) app.renderer.resize(); });

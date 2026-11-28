@@ -26,6 +26,8 @@ function makeTicker(fn, hz = 60) {
   } catch (e) { const id = setInterval(fn, 1000 / hz); return { stop() { clearInterval(id); } }; }
 }
 
+// 聊天訊息清理：去掉控制字元與換行、壓縮空白、最長 60 字
+function cleanChat(s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); }
 export class Session {
   constructor() {
     this.mode = 'solo'; this.myId = 0; this.code = null; this.host = null; this.conn = null;
@@ -34,6 +36,7 @@ export class Session {
     this.rt = null; this.handlers = {};
     this.toks = new Map(); this.awayT = new Map();      // 房主端：重連憑證、暫離計時
     this.tok = null; this.reconnecting = false;         // 客戶端
+    this.chatT = new Map();                             // 房主端：每個人上次發言時間（防洗頻）
     // 分頁切到背景（手機切 App）：先告訴對方「我暫離」，回來時再確認連線還活著
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => {
       const hid = document.hidden;
@@ -157,6 +160,7 @@ export class Session {
       }
       if (pid < 0 || this.conns.get(pid) !== conn) return;
       const lp = this.lobby.players.find((p) => p.id === pid);
+      if (m.t === 'chat') { this.relayChat(pid, m.s); return; }
       if (m.t === 'away') { conn.grace(AWAY_MS); this.setAway(pid, true); }
       else if (m.t === 'fg') { conn.grace(0); this.setAway(pid, false); if (this.rt) this.rt.resync(pid); }
       else if (m.t === 'me' && lp && !this.rt) { lp.charId = m.charId; lp.bonus = m.bonus; lp.rank = m.rank | 0; lp.ready = !!m.ready; lp.name = String(m.name || lp.name).slice(0, 12); this.syncLobby(); }
@@ -192,6 +196,20 @@ export class Session {
   }
   isAway(pid) { const lp = this.lobby.players.find((p) => p.id === pid); return !!(lp && lp.away); }
   note(s) { this.broadcast(JSON.stringify({ t: 'note', s })); this.fire('note', s); }
+  // 聊天：客戶端送給房主，房主檢查後轉發給所有人（含自己）。每人 0.7 秒最多一則、最長 60 字
+  sendChat(s) {
+    s = cleanChat(s);
+    if (!s || this.mode === 'solo') return;
+    if (this.mode === 'client') { if (this.conn && this.conn.open) this.conn.send(JSON.stringify({ t: 'chat', s })); }
+    else this.relayChat(this.myId, s);
+  }
+  relayChat(pid, s) {
+    s = cleanChat(s);
+    const t = Date.now(), last = this.chatT.get(pid) || 0;
+    if (!s || t - last < 700) return;
+    this.chatT.set(pid, t);
+    this.broadcast(JSON.stringify({ t: 'chat', id: pid, s })); this.fire('chat', pid, s);
+  }
   syncLobby() { this.broadcast(JSON.stringify({ t: 'lobby', lobby: this.lobby })); this.fire('lobby'); }
   // 快照（二進位）不送給暫離中的玩家：凍結的頁面收不了，積太多會把連線塞爆
   broadcast(d) { const bin = typeof d !== 'string'; for (const [pid, c] of this.conns) if (!bin || !this.isAway(pid)) c.send(d); }
@@ -227,6 +245,7 @@ export class Session {
   clientMsg(m) {
     if (m.t === 'lobby') { this.lobby = m.lobby; if (!this.rt) this.fire('lobby'); }
     else if (m.t === 'note') this.fire('note', m.s);
+    else if (m.t === 'chat') this.fire('chat', m.id | 0, cleanChat(m.s));
     else if (m.t === 'hostaway') { if (this.conn) this.conn.grace(AWAY_MS); this.fire('note', '房主切到背景了，畫面若停住請稍候…'); }
     else if (m.t === 'hostfg') { if (this.conn) { this.conn.grace(0); this.conn.probe(); } this.fire('note', '房主回來了'); }
     else if (m.t === 'resume') {                 // 重連後：對局還在進行，補上這段時間錯過的狀態
