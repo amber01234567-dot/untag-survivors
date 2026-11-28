@@ -591,3 +591,24 @@ body.touch #chat .cbtn span { display: none; }
   .whint { font-size: 15px; left: 16px; top: 14px; } .whint i { display: none; }
   .wmark .lab { padding: 1px 6px 2px; } .wmark .lab i { font-size: 9px; }
 }
+
+/* ── 關卡節點：樣式一 圖示徽章 / 樣式二 路牌卡片 ── */
+.rnode.nmed .badge { width: 62px; height: 62px; background: radial-gradient(circle at 35% 30%, #2a3246, #0a0d14 78%); border: 3px solid color-mix(in srgb, var(--c) 70%, #fff 0%); box-shadow: 0 0 0 3px rgba(6, 8, 13, .9), 0 0 0 4px color-mix(in srgb, var(--c) 45%, transparent), 0 5px 12px rgba(0, 0, 0, .65); }
+.rnode.nmed .badge img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .7)); }
+.rnode.nmed.k-boss .badge { width: 84px; height: 84px; } .rnode.nmed.k-boss .badge img { width: 64px; height: 64px; }
+.rnode.nmed.cleared .badge { border-color: var(--gold2); box-shadow: 0 0 0 3px rgba(6, 8, 13, .9), 0 0 0 4px rgba(255, 215, 107, .5), 0 5px 12px rgba(0, 0, 0, .65); }
+.rnode.nmed.sel .badge { box-shadow: 0 0 0 3px #fff, 0 0 26px var(--c); }
+.rnode.ncard { flex-direction: row; gap: 8px; padding: 5px 12px 5px 5px; background: linear-gradient(180deg, rgba(20, 25, 36, .96), rgba(8, 10, 16, .96)); border: 1px solid color-mix(in srgb, var(--c) 65%, transparent); border-left: 4px solid var(--c); box-shadow: 0 5px 12px rgba(0, 0, 0, .6); transition: .15s; }
+.rnode.ncard .ci { width: 40px; height: 40px; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--c) 28%, transparent), transparent 72%); }
+.rnode.ncard .ci img { width: 38px; height: 38px; object-fit: contain; }
+.rnode.ncard .ct { text-align: left; }
+.rnode.ncard .nm { background: none; padding: 0; font-family: var(--serif); font-size: 13px; } .rnode.ncard .nm b { display: block; font-family: var(--sans); font-size: 10px; letter-spacing: .12em; }
+.rnode.ncard.k-boss { padding: 8px 16px 8px 8px; border-width: 2px; border-left-width: 5px; } .rnode.ncard.k-boss .ci, .rnode.ncard.k-boss .ci img { width: 54px; height: 54px; } .rnode.ncard.k-boss .nm { font-size: 15px; }
+.rnode.ncard.cleared { border-color: rgba(255, 215, 107, .7); border-left-color: var(--gold2); }
+.rnode.ncard.sel { box-shadow: 0 0 0 2px #fff, 0 0 22px var(--c); transform: translate(-50%, -50%) scale(1.06); }
+.rnode.ncard:hover { transform: translate(-50%, -50%) scale(1.04); }
+.rnode.ncard.open { animation: pulse 1.6s infinite; }
+@media (max-width: 900px) { .rnode.nmed .badge { width: 46px; height: 46px; } .rnode.nmed .badge img { width: 34px; height: 34px; } .rnode.ncard .ci, .rnode.ncard .ci img { width: 28px; height: 28px; } .rnode.ncard .nm { font-size: 11px; } }
+
+.zhead h2, .zhead .btn, .zhead .tag, .zhead .dim, .zhead .mapsw button { white-space: nowrap; }
+.zhead .sp { flex: 1; }
