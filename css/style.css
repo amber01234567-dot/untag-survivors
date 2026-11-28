@@ -520,3 +520,61 @@ body.touch #chat .cbtn span { display: none; }
 .shopc .pic.big canvas { width: 150px !important; height: 150px !important; }
 .skinchars { flex-wrap: nowrap; overflow-x: auto; max-height: 44px; flex: 0 0 auto; }
 .skinchars .chtab { flex: 0 0 auto; padding: 6px 12px; font-size: 12px; }
+
+/* ───── 選關畫面重做：A 世界地圖 / B 系列橫幅（共用關卡路線 .route）───── */
+.mapwrap.mapa, .mapwrap.mapb { position: relative; display: flex; flex-direction: column; padding: 10px; gap: 8px; overflow: hidden; }
+.mapsw { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; gap: 4px; }
+.mapsw button { font: inherit; font-size: 11px; padding: 3px 8px; color: #8f9ab2; background: rgba(6, 8, 13, .85); border: 1px solid var(--line); cursor: pointer; }
+.mapsw button.on { color: #12151c; background: var(--gold2); border-color: var(--gold2); font-weight: 700; }
+/* 關卡路線 */
+.route { position: relative; flex: 1; min-height: 250px; border: 1px solid rgba(201, 164, 90, .45); background-size: cover; background-position: center; overflow: hidden; }
+.route svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.route svg line { stroke: rgba(180, 190, 210, .35); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 2 12; }
+.route svg line.on { stroke: var(--gold2); stroke-dasharray: none; stroke-width: 3; filter: drop-shadow(0 0 4px rgba(255, 215, 107, .7)); }
+.route .intro { position: absolute; left: 14px; right: 14px; bottom: 8px; font-size: 12px; color: #c9d1e2; text-align: center; text-shadow: 0 1px 4px #000; }
+.rtabs { position: absolute; left: 10px; top: 10px; z-index: 3; display: flex; gap: 6px; }
+.rtab { font-family: var(--serif); font-weight: 900; font-size: 14px; color: #aab3c6; padding: 5px 14px 6px; background: rgba(6, 8, 13, .82); border: 1px solid var(--line); cursor: pointer; text-align: left; }
+.rtab i { display: block; font-style: normal; font-family: var(--sans); font-size: 10px; letter-spacing: .15em; color: #7c8699; font-weight: 400; }
+.rtab.on { color: #f1e7cf; border-color: var(--gold2); background: rgba(226, 181, 62, .16); box-shadow: 0 0 12px rgba(226, 181, 62, .25); }
+.rtab:disabled { opacity: .35; cursor: default; }
+.rnode { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--text); }
+.rnode .badge { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #10141d), #0a0d14 75%); border: 3px solid var(--c); box-shadow: 0 0 0 3px rgba(6, 8, 13, .85), 0 4px 10px rgba(0, 0, 0, .6); transition: .15s; }
+.rnode .badge span { font-family: var(--serif); font-weight: 900; font-size: 22px; color: #fff; text-shadow: 0 1px 3px #000; }
+.rnode.k-boss .badge { width: 70px; height: 70px; border-width: 4px; } .rnode.k-boss .badge span { font-size: 28px; }
+.rnode .nm { font-size: 12px; font-weight: 700; white-space: nowrap; padding: 2px 8px; background: rgba(6, 8, 13, .82); border-radius: 10px; }
+.rnode .nm b { color: var(--c); margin-right: 3px; }
+.rnode .stars { font-size: 10px; color: var(--gold2); letter-spacing: 1px; height: 11px; text-shadow: 0 1px 2px #000; }
+.rnode.locked { opacity: .45; pointer-events: none; filter: grayscale(1); }
+.rnode.open .badge { animation: pulse 1.6s infinite; }
+.rnode.cleared .badge { border-color: var(--gold2); }
+.rnode.sel .badge { transform: scale(1.14); box-shadow: 0 0 0 3px #fff, 0 0 24px var(--c); }
+.rnode:hover .badge { transform: scale(1.08); }
+/* A：世界地圖 */
+.wworld { position: relative; flex: 1; min-height: 300px; background-size: 100% 100%; background-position: center; border: 1px solid rgba(201, 164, 90, .45); }
+.wworld::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(4, 5, 9, .6)); pointer-events: none; }
+.whint { position: absolute; left: 12px; top: 10px; font-family: var(--serif); font-weight: 900; font-size: 15px; letter-spacing: .12em; color: #f1e7cf; text-shadow: 0 2px 6px #000; z-index: 2; }
+.wmark { position: absolute; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--text); }
+.wmark .pin { width: 46px; height: 46px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: grid; place-items: center; background: var(--c); border: 3px solid #fff; box-shadow: 0 5px 12px rgba(0, 0, 0, .7); transition: .15s; }
+.wmark .pin span { transform: rotate(45deg); font-family: var(--serif); font-weight: 900; font-size: 19px; color: #10141d; }
+.wmark .lab { margin-top: 6px; padding: 3px 10px 4px; background: rgba(6, 8, 13, .88); border: 1px solid color-mix(in srgb, var(--c) 60%, transparent); text-align: center; line-height: 1.25; }
+.wmark .lab b { display: block; font-family: var(--serif); font-size: 14px; font-weight: 900; letter-spacing: .08em; }
+.wmark .lab i { font-style: normal; font-size: 10.5px; color: #aab3c6; }
+.wmark:hover .pin, .wmark.cur .pin { transform: rotate(-45deg) scale(1.18); box-shadow: 0 0 20px var(--c), 0 5px 12px rgba(0, 0, 0, .7); }
+.wmark.cur .pin { animation: pulse 1.6s infinite; }
+.wmark.locked { cursor: default; } .wmark.locked .pin { background: #4a5266; border-color: #8f9ab2; } .wmark.locked .lab { opacity: .7; }
+.zhead { display: flex; align-items: center; gap: 14px; padding-right: 230px; }
+.zhead h2, .banner h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: 22px; letter-spacing: .08em; color: #f1e7cf; }
+.zhead .sub, .banner .sub { font-size: 10px; letter-spacing: .3em; color: var(--c); }
+/* B：系列橫幅 */
+.banner { position: relative; flex: 0 0 132px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background-size: cover; background-position: center 35%; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.banner .arr { flex: 0 0 38px; height: 64px; font-size: 30px; line-height: 1; color: #f1e7cf; background: rgba(6, 8, 13, .7); border: 1px solid var(--line); cursor: pointer; }
+.banner .arr:disabled { opacity: .25; cursor: default; }
+.banner .btxt { flex: 1; text-shadow: 0 2px 6px #000; }
+.banner .btxt h2 { font-size: 28px; }
+.banner .meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; color: #c9d1e2; }
+.banner .bar { width: 160px; height: 6px; background: rgba(0, 0, 0, .6); border: 1px solid var(--line); } .banner .bar i { display: block; height: 100%; background: var(--gold2); }
+.banner .dots { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); display: flex; gap: 7px; }
+.banner .dots button { width: 11px; height: 11px; border-radius: 50%; border: 1px solid #fff; background: color-mix(in srgb, var(--c) 45%, #0a0d14); padding: 0; cursor: pointer; }
+.banner .dots button.on { background: var(--c); transform: scale(1.35); box-shadow: 0 0 8px var(--c); }
+.banner .dots button:disabled { opacity: .3; cursor: default; }
+@media (max-width: 900px) { .rnode .badge { width: 40px; height: 40px; } .rnode .badge span { font-size: 16px; } .rnode .nm { font-size: 10.5px; } .zhead { padding-right: 0; flex-wrap: wrap; } .banner { flex-basis: 104px; } .banner .btxt h2 { font-size: 20px; } .wmark .pin { width: 34px; height: 34px; } .wmark .lab b { font-size: 12px; } }

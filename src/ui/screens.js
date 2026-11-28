@@ -45,6 +45,9 @@ const P = (id, size) => `<i data-p="${id}" data-s="${size}"></i>`;
 function mount(root) { root.querySelectorAll('i[data-p]').forEach((el) => el.replaceWith(portrait(el.dataset.p, +el.dataset.s, el.dataset.set || ''))); }
 const objLine = (o) => (o.t === 'kill' ? `殲滅 ${Math.round(o.n * 1.8)} 名敵人` : o.t === 'survive' ? `撐過 ${o.s} 秒` : o.t === 'nests' ? `摧毀 ${o.n} 個巢穴` : o.t === 'elite' ? `擊敗菁英「${ENEMIES[o.who].name}」` : o.t === 'boss' ? `擊敗首領「${ENEMIES[o.who].name}」` : o.t === 'goblins' ? `${o.s} 秒內盡量攔截運鈔鼠` : '寶藏');
 
+// 選關畫面：世界地圖上九個系列的位置（百分比）；SER_ART = 已經有主視覺圖的系列
+const SER_POS = { 1: [14, 70], 2: [49, 72], 3: [85, 68], 4: [83, 40], 5: [53, 42], 6: [16, 40], 7: [21, 13], 8: [50, 15], 9: [85, 13] };
+const SER_ART = { 1: 1 };
 export class Screens {
   constructor(app) {
     this.app = app; this.el = document.getElementById('screen'); this.cur = null; this.tab = 1; this.sel = save.data.char; this.back = 'home';
@@ -87,7 +90,7 @@ export class Screens {
         case 'back': this.show(this.back === 'lobby' && ses.lobby.players.length ? 'lobby' : 'home'); break;
         case 'leave': ses.leave(); ses.lobby.players = []; this.show('home'); break;
         case 'tab': this.tab = +v; this.show('lobby'); break;
-        case 'series': this.tab = CHAPTERS.find((c) => (c.series || 1) === +v).id; this.show('lobby'); break;
+        case 'series': { const c0 = CHAPTERS.find((c) => (c.series || 1) === +v); if (c0) { this.tab = c0.id; this.show('lobby'); } break; }
         case 'vol': { const s = save.data.settings, cyc = [0, 0.2, 0.45, 0.8], i = cyc.findIndex((x) => x >= s[v] - 0.01); s[v] = cyc[(i + 1) % 4]; if (v === 'sfx') setVolume(s.sfx); else setMusicVolume(s.music); save.write(); this.refresh(); break; }
         case 'tpage': this.tpage = +v; this.refresh(); break;
         case 'node': if (ses.isHost()) { const cl = ses.lobby.cleared[v] || 0; ses.select(v, Math.min(ses.lobby.sel.diff, cl)); } break;
@@ -108,6 +111,9 @@ export class Screens {
         case 'skinchar': this.sel = v; this.show('shop'); this.loadSkinPics(); break;
         case 'skinbuy': if (save.buySkin(v)) { sfx('chest'); app.toast('取得造型：' + SKIN[v].name); } else app.toast('金幣不足'); this.refresh(); break;
         case 'skinset': { const c = CHARS[this.sel] ? this.sel : save.data.char; save.setSkin(c, save.skinFor(c) === v ? '' : v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
+        case 'mapui': this.mapUi = v; this.show('lobby'); break;
+        case 'wzoom': this.mapZoom = true; this.tab = (CHAPTERS.filter((c) => (c.series || 1) === +v).filter((c) => nodeUnlocked(c.nodes[0].id, ses.lobby.cleared || {})).pop() || CHAPTERS.find((c) => (c.series || 1) === +v)).id; this.show('lobby'); break;
+        case 'wback': this.mapZoom = false; this.show('lobby'); break;
         case 'backup': this.back = 'home'; this.bkMsg = ''; this.show('backup'); break;
         case 'bkcopy': {
           const code = save.exportCode(), ta = this.el.querySelector('#bkout');
@@ -138,6 +144,47 @@ export class Screens {
     const st = save.data.settings; setVolume(st.sfx); setMusicVolume(st.music);
     this.sel = save.data.char; this.bkIn = ''; this.bkMsg = '✓ 匯入完成' + (DEV ? '（測試模式不會寫入瀏覽器，重新整理後會還原）' : '');
     this.app.toast('存檔已匯入'); this.show('backup');
+  }
+  // ───────── 選關畫面（重做中）：A = 世界地圖、B = 系列橫幅。兩版共用下方的關卡路線 ─────────
+  mapPanel(ui, ch, serId, cleared, lb) {
+    const NUM = '一二三四五六七八九', sr = SERIES.find((x) => x.id === serId), col = (x) => (x.el && EL[x.el] ? EL[x.el].color : x.id === 2 ? '#e0a45a' : '#ff5ab0');
+    const chOf = (id) => CHAPTERS.filter((c) => (c.series || 1) === id), open = (id) => { const c0 = chOf(id)[0]; return !!c0 && nodeUnlocked(c0.nodes[0].id, cleared); };
+    const prog = (id) => { let n = 0, t = 0; for (const c of chOf(id)) for (const nd of c.nodes) { t++; if (cleared[nd.id]) n++; } return [n, t]; };
+    const art = (id) => (SER_ART[id] ? `background-image:linear-gradient(180deg,rgba(6,8,13,.25),rgba(6,8,13,.78)),url(assets/ui/series/s${id}.jpg)` : `background-image:linear-gradient(135deg,color-mix(in srgb,${col(SERIES.find((x) => x.id === id))} 28%,#0a0d14),#06080d 70%)`);
+    const sw = `<div class="mapsw">${[['a', 'A 世界地圖'], ['b', 'B 系列橫幅'], ['old', '舊版']].map(([v, n]) => `<button class="${ui === v ? 'on' : ''}" data-a="mapui" data-v="${v}">${n}</button>`).join('')}</div>`;
+    // 關卡路線
+    const px = (n) => 9 + n.pos[0] * 20.5, py = (n) => 20 + n.pos[1] * 26;
+    let roads = '';
+    for (const n of ch.nodes) for (const id of n.next) { const m = STAGES[id], on = cleared[n.id]; roads += `<line x1="${px(n)}%" y1="${py(n)}%" x2="${px(m)}%" y2="${py(m)}%" class="${on ? 'on' : ''}"/>`; }
+    const nodes = ch.nodes.map((n) => {
+      const cl = cleared[n.id] || 0, un = nodeUnlocked(n.id, cleared);
+      return `<button class="rnode ${un ? (cl ? 'cleared' : 'open') : 'locked'} ${n.id === lb.sel.stage ? 'sel' : ''} k-${n.kind}" style="left:${px(n)}%;top:${py(n)}%;--c:${KIND_COL[n.kind]}" data-a="node" data-v="${n.id}">
+        <div class="badge"><span>${un ? NODE_KINDS[n.kind].glyph : '🔒'}</span></div><div class="nm"><b>${n.id}</b> ${n.name}</div><div class="stars">${'★'.repeat(cl)}${'☆'.repeat(3 - cl)}</div></button>`;
+    }).join('');
+    const tabs = chOf(serId).map((c) => `<button class="rtab ${c.id === this.tab ? 'on' : ''}" data-a="tab" data-v="${c.id}" ${nodeUnlocked(c.nodes[0].id, cleared) ? '' : 'disabled'}><i>第 ${c.id} 章</i>${c.name}</button>`).join('');
+    const route = `<div class="route" style="${art(serId)}"><div class="rtabs">${tabs}</div><svg>${roads}</svg>${nodes}<div class="intro">${ch.intro}</div></div>`;
+    if (ui === 'b') {
+      const [n, t] = prog(serId), prev = SERIES.find((x) => x.id === serId - 1), next = SERIES.find((x) => x.id === serId + 1);
+      const dots = SERIES.map((x) => `<button class="${x.id === serId ? 'on' : ''}" data-a="series" data-v="${x.id}" ${open(x.id) ? '' : 'disabled'} style="--c:${col(x)}" title="${x.name}"></button>`).join('');
+      return `<div class="panel mapwrap mapb">${sw}
+        <div class="banner" style="${art(serId)};--c:${col(sr)}">
+          <button class="arr" data-a="series" data-v="${serId - 1}" ${prev && open(prev.id) ? '' : 'disabled'}>‹</button>
+          <div class="btxt"><div class="sub">SERIES ${serId}・${sr.sub}</div><h2>系列${NUM[serId - 1]}　${sr.name}</h2>
+            <div class="meta">${sr.el ? `<span class="tag" style="--c:${col(sr)}">${EL[sr.el].name}屬性</span>` : ''}<span>通關 ${n} / ${t}</span><div class="bar"><i style="width:${Math.round(n / t * 100)}%"></i></div></div></div>
+          <button class="arr" data-a="series" data-v="${serId + 1}" ${next && open(next.id) ? '' : 'disabled'}>›</button>
+          <div class="dots">${dots}</div>
+        </div>${route}</div>`;
+    }
+    if (!this.mapZoom) {
+      const marks = SERIES.map((x) => { const [n, t] = prog(x.id), un = open(x.id), [mx, my] = SER_POS[x.id] || [50, 50];
+        return `<button class="wmark ${un ? '' : 'locked'} ${x.id === serId ? 'cur' : ''}" style="left:${mx}%;top:${my}%;--c:${col(x)}" data-a="wzoom" data-v="${x.id}" ${un ? '' : 'disabled'}>
+          <div class="pin"><span>${un ? NUM[x.id - 1] : '🔒'}</span></div><div class="lab"><b>${x.name}</b><i>${un ? `${n} / ${t}${n === t ? ' ✓' : ''}` : '尚未開放'}</i></div></button>`; }).join('');
+      return `<div class="panel mapwrap mapa">${sw}<div class="wworld" style="background-image:url(assets/ui/world.jpg)">${marks}<div class="whint">選擇要前往的區域</div></div></div>`;
+    }
+    const [n, t] = prog(serId);
+    return `<div class="panel mapwrap mapa">${sw}
+      <div class="zhead" style="--c:${col(sr)}"><button class="btn small ghost" data-a="wback">← 世界地圖</button><div><div class="sub">SERIES ${serId}・${sr.sub}</div><h2>系列${NUM[serId - 1]}　${sr.name}</h2></div>
+        ${sr.el ? `<span class="tag" style="--c:${col(sr)}">${EL[sr.el].name}屬性</span>` : ''}<span class="dim" style="font-size:12px">通關 ${n} / ${t}</span></div>${route}</div>`;
   }
   // 造型預覽圖用到才載入：載好後重畫一次
   loadSkinPics() {
@@ -206,8 +253,8 @@ export class Screens {
       <div class="lobby-grid">
         <div class="panel party">${ses.mode !== 'solo' ? `<div class="roomcode"><div class="sub">ROOM CODE</div><b>${ses.code}</b><div><button class="btn small ghost" data-a="copy" style="margin-top:6px">複製邀請連結</button></div></div>` : ''}${slots}
           ${ses.mode !== 'solo' ? '<div class="dim" style="font-size:11px;line-height:1.6">把房號或邀請連結傳給朋友即可加入。房主的瀏覽器就是主機，請保持分頁開啟。</div>' : ''}</div>
-        <div class="panel mapwrap"><div class="sertabs">${sers}</div><div class="chtabs">${tabs}</div>
-          <div class="wmap"><svg>${lines}</svg>${nodes}<div class="intro">${ch.intro}</div></div></div>
+        ${(this.mapUi || 'a') === 'old' ? `<div class="panel mapwrap"><div class="sertabs">${sers}</div><div class="chtabs">${tabs}</div>
+          <div class="wmap"><svg>${lines}</svg>${nodes}<div class="intro">${ch.intro}</div></div></div>` : this.mapPanel(this.mapUi || 'a', ch, serId, cleared, lb)}
         <div class="panel info scroll">
           <div><span class="tag" style="--c:${KIND_COL[st.kind]}">${NODE_KINDS[st.kind].name}</span> <span class="sub">${st.id}</span></div>
           <h3>${st.name}</h3>
