@@ -67,7 +67,7 @@ export const save = {
   data: fresh(),
   load() {
     try { const raw = localStorage.getItem(KEY); if (raw) this.data = migrate(JSON.parse(raw)); } catch (e) { this.data = fresh(); }
-    if (DEV) { this.data.coins = Math.max(this.data.coins, 99999); }
+    if (DEV) { this.data.coins = Math.max(this.data.coins, 9999999); }      // 測試模式：金幣給足，商城的東西都買得起
     if (!this.data.name) this.data.name = '玩家' + Math.floor(100 + Math.random() * 900);
     if (!this.isUnlocked(this.data.char)) this.data.char = 'tingge';
     return this.data;

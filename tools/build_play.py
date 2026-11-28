@@ -4,7 +4,7 @@ import re, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 html = open(os.path.join(ROOT, 'index.html')).read(); css = open(os.path.join(ROOT, 'css/style.css')).read().replace('url(../assets/', 'url(assets/')
 body = re.search(r'<body>(.*)</body>', html, re.S).group(1)
-body = re.sub(r'<script src="vendor/peerjs[^"]*"></script>\n?', '', body).replace('<script type="module" src="src/main.js"></script>', '<script>window.__TEST = true; window.__MAPPACK = true;</script>\n<script src="ui-inline.js"></script>\n<script type="module" src="src/main.js"></script>')
+body = re.sub(r'<script src="vendor/peerjs[^"]*"></script>\n?', '', body).replace('<script type="module" src="src/main.js"></script>', '<script>window.__TEST = true; window.__MAPPACK = true;</script>\n<script src="ui-inline.js"></script>\n<script src="fx-inline.js"></script>\n<script type="module" src="src/main.js"></script>')
 os.makedirs(os.path.join(ROOT, 'dist'), exist_ok=True)
 open(os.path.join(ROOT, 'dist/play.html'), 'w').write('<title>LUHAI 測試版</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap">\n<style>\n' + css + '\n</style>' + body)
 
