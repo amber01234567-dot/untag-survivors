@@ -22,7 +22,7 @@ const PSPR = {
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
-const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）" };
+const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）" };
 
 export class Renderer {
   constructor(canvas, L, myId, roster) {
@@ -488,6 +488,22 @@ export class Renderer {
         g.strokeStyle = col; g.lineWidth = 2; g.globalAlpha = 0.75; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke();
         g.fillStyle = col; g.globalAlpha = 0.12 + 0.18 * pu; g.beginPath(); g.ellipse(x, y, r * pu, r * pu * 0.86, 0, 0, TAU); g.fill();
         g.globalAlpha = 0.8; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x - r * 0.7, y); g.moveTo(x + r, y); g.lineTo(x + r * 0.7, y); g.moveTo(x, y - r * 0.86); g.lineTo(x, y - r * 0.6); g.moveTo(x, y + r * 0.86); g.lineTo(x, y + r * 0.6); g.stroke(); g.globalAlpha = 1;
+        break;
+      }
+      case 'e_fog': {                              // 毒霧：預警時是虛線圈，成形後是一團翻滾的綠霧
+        if (!z.on) {
+          g.strokeStyle = 'rgba(150,230,80,.85)'; g.lineWidth = 2.5; g.setLineDash([12, 8]); g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+          g.fillStyle = 'rgba(120,210,60,.16)'; g.beginPath(); g.ellipse(x, y, r * z.dp, r * z.dp * 0.86, 0, 0, TAU); g.fill();
+        } else {
+          const tt = t, fade = Math.min(1, (1 - z.p) * 6);
+          g.fillStyle = `rgba(60,110,30,${0.28 * fade})`; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.fill();
+          for (let i = 0; i < 9; i++) {
+            const a = i * 0.7 + tt * (0.25 + (i % 3) * 0.1), d = r * (0.25 + 0.45 * ((i * 37 % 10) / 10)), bx = x + Math.cos(a) * d, by = y + Math.sin(a) * d * 0.86, br = r * (0.42 + 0.12 * Math.sin(tt * 1.3 + i));
+            const gr = g.createRadialGradient(bx, by, 0, bx, by, br); gr.addColorStop(0, `rgba(150,235,70,${0.5 * fade})`); gr.addColorStop(0.6, `rgba(130,70,190,${0.3 * fade})`); gr.addColorStop(1, 'rgba(90,160,50,0)');
+            g.fillStyle = gr; g.beginPath(); g.arc(bx, by, br, 0, TAU); g.fill();
+          }
+          g.strokeStyle = `rgba(170,245,90,${0.9 * fade})`; g.lineWidth = 3; g.beginPath(); g.ellipse(x, y, r, r * 0.86, 0, 0, TAU); g.stroke();
+        }
         break;
       }
       case 'e_warn': case 'e_slam': {

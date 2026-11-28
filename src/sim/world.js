@@ -93,6 +93,18 @@ export class World {
         if (ph >= VENT_PERIOD - VENT_WARN && prev < VENT_PERIOD - VENT_WARN) warn(this, v.x, v.y, VENT_R, VENT_WARN, 15 * this.dmgMul);
       }
     }
+    if (this.stage.hazard === 'fog') {                           // 場地危險：毒霧。先出現預警圈，成形後停留幾秒，站在裡面持續受傷並中毒
+      this.hazT = (this.hazT === undefined ? 7 : this.hazT) - dt;
+      if (this.hazT <= 0) {
+        this.hazT = this.rng.range(9, 12);
+        const z = this.L.zones.find((q) => q.state === 'active');
+        if (z) {
+          const pts = this.alive().filter((p) => this.L.zoneOf[Math.floor(p.y / TILE) * this.L.W + Math.floor(p.x / TILE)] === z.idx).map((p) => [p.x + this.rng.range(-90, 90), p.y + this.rng.range(-90, 90)]);
+          while (pts.length < 3) { const i = z.floor[this.rng.int(0, z.floor.length - 1)]; pts.push([(i % this.L.W + 0.5) * TILE, (Math.floor(i / this.L.W) + 0.5) * TILE]); }
+          for (const [x, y] of pts.slice(0, 3)) this.addFog(x, y, 150, 1.8, 5.5, 5 * this.dmgMul);
+        }
+      }
+    }
     if (this.stage.hazard === 'icicle') {                       // 場地危險：冰柱不定時砸向玩家附近（有預警圈）
       this.hazT = (this.hazT === undefined ? 8 : this.hazT) - dt;
       if (this.hazT <= 0) {
@@ -398,6 +410,8 @@ export class World {
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 
+  // 毒霧：delay 秒的預警後成形，停留 dur 秒，每 0.6 秒傷害一次範圍內的玩家
+  addFog(x, y, r, delay, dur, dmg) { return this.addZone({ kind: 'e_fog', team: 1, x, y, r, delay, dur: delay + dur, tick: 0.6, dmg }); }
   // ───────── 區域效果 ─────────
   updateZones(dt) {
     for (const z of this.zones) {
@@ -450,7 +464,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -459,7 +473,7 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
@@ -472,6 +486,11 @@ export class World {
         d.tk = 0.7;
         this.playersIn(d.x, d.y, 300, (q) => addBuff(q, 'pylon', { t: 1.2, dmg: 0.3, haste: 0.2 }));
         for (const e of this.randomEnemies(d.x, d.y, 420, 5)) { this.emit('l', d.x | 0, (d.y - 60) | 0, e.x | 0, e.y | 0, 0); this.damageEnemy(e, e.def.boss ? 60 * pow : 45 * pow, null, false, { stun: 0.4 }); }
+        this.emit('r', d.x | 0, d.y | 0, 300, 1);
+      } else if (d.kind === 'totem' && d.tk <= 0) {            // 淨化圖騰：解毒、持續回血，並驅散附近的毒霧
+        d.tk = 0.5;
+        this.playersIn(d.x, d.y, 300, (q) => { q.burnT = 0; addBuff(q, 'totem', { t: 1.0, regen: q.st.maxHp * 0.035 }); });
+        for (const z of this.zones) if (!z.dead && z.kind === 'e_fog' && dist2(z.x, z.y, d.x, d.y) < 360 * 360) z.dead = true;
         this.emit('r', d.x | 0, d.y | 0, 300, 1);
       } else if (d.kind === 'brazier' && d.tk <= 0) {          // 火盆：取暖（解除緩速、回血、增傷），並灼燒靠近的敵人
         d.tk = 0.5;
@@ -489,7 +508,7 @@ export class World {
           this.hash.query(d.x, d.y, 270, (e) => this.damageEnemy(e, e.def.boss ? 700 * pow : 100 * pow, null, false, { stun: 3, slow: 0.5, slowDur: 6 }));
           this.emit('b', d.x | 0, d.y | 0, 270, 1); this.emit('sh', 9);
         }
-        if (d.kind === 'barrel') {
+        if (d.kind === 'barrel' || d.kind === 'gas') {
           this.hash.query(d.x, d.y, 240, (e) => this.damageEnemy(e, e.def.boss ? 900 * pow : 130 * pow, null, false, { kb: 420, sx: d.x, sy: d.y, stun: 0.8, dot: 14 * pow, dotDur: 4 }));
           this.emit('b', d.x | 0, d.y | 0, 240, 1); this.emit('sh', 10);
           this.addZone({ kind: 'fire', x: d.x, y: d.y, r: 150, dur: 5, tick: 0.5, dmg: 14 * pow, owner: null });

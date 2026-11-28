@@ -55,6 +55,7 @@ export const SERIES = [
   { id: 2, name: '廢土荒野', sub: 'WASTELAND' },
   { id: 3, name: '永凍冰原', sub: 'FROZEN TUNDRA', el: 'ice' },      // 系列三起：一個系列一種屬性，掉該屬性的套裝
   { id: 4, name: '熔岩火山', sub: 'MAGMA VOLCANO', el: 'fire' },
+  { id: 5, name: '瘴氣毒沼', sub: 'MIASMA MIRE', el: 'poison' },
 ];
 
 export const DIFFS = [
@@ -326,6 +327,29 @@ export const CHAPTERS = [
         pool: [['lavalizard', 4], ['firebat', 4], ['firepriest', 3], ['whelp', 2], ['obgolem', 2]], objs: [nests(3), elite('whelp'), survive(60), kill(130)] },
       { id: '12-B', name: '炎龍之座', kind: 'boss', layout: 'gauntlet', diff: 5.5, pos: [4, 1], next: [], coins: 3500,
         pool: [['ember', 5], ['firebat', 4], ['firepriest', 2], ['whelp', 1]], objs: [kill(130), boss('firedragon')] },
+    ],
+  },
+  // ───── 第五系列：瘴氣毒沼（毒屬性：怪物打到會中毒；掉落瘴氣死神）─────
+  {
+    id: 13, series: 5, name: '腐爛濕地', sub: 'ROTTING WETLAND', theme: 'swamp', outdoor: true, hazard: 'fog',
+    shapes: { combat: [['bog', 4], ['cave', 2]], final: 'round' },      // 空間架構：木棧道串起的沼澤群島、不規則空地；首領在圓形泥潭
+    intro: '火山的灰落到山腳下，把一整片林子泡爛了。水是綠的，霧是紫的，踩下去的每一步都有東西在看。',
+    devices: [['totem', 4], ['gas', 3]],
+    nodes: [
+      { id: '13-1', name: '爛木棧道', kind: 'normal', layout: 'snake', diff: 5.05, pos: [0, 1], next: ['13-2', '13-3'], coins: 2050,
+        pool: [['mudling', 6], ['mosquito', 4], ['toad', 1]], objs: [kill(85), survive(55), kill(125)] },
+      { id: '13-2', name: '枯樹沼', kind: 'normal', layout: 'ring', diff: 5.12, pos: [1, 0.3], next: ['13-4'], coins: 2120,
+        pool: [['mudling', 5], ['mosquito', 4], ['rotter', 2], ['toad', 1]], objs: [kill(75), nests(3), survive(55), elite('rotter')] },
+      { id: '13-3', name: '毒蟾窪地', kind: 'normal', layout: 'hub', diff: 5.16, pos: [1, 1.7], next: ['13-4', '13-5'], coins: 2150,
+        pool: [['mudling', 5], ['mosquito', 4], ['toad', 3], ['rotter', 1]], objs: [kill(75), survive(55), nests(3), kill(125)] },
+      { id: '13-4', name: '沉船墳場', kind: 'normal', layout: 'trident', diff: 5.25, pos: [2, 0.7], next: ['13-6'], coins: 2250,
+        pool: [['mudling', 4], ['mosquito', 4], ['rotter', 3], ['toad', 2]], objs: [kill(75), nests(3), survive(55), elite('toad'), kill(130)] },
+      { id: '13-5', name: '採藥人小屋', kind: 'bonus', layout: 'arena', diff: 5.2, pos: [2, 2], next: ['13-6'], coins: 1450,
+        pool: [['mudling', 6], ['mosquito', 3], ['rotter', 1]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '13-6', name: '瘴氣源頭', kind: 'elite', layout: 'cross', diff: 5.35, pos: [3, 1.2], next: ['13-B'], coins: 2500,
+        pool: [['mudling', 4], ['mosquito', 4], ['rotter', 3], ['toad', 3]], objs: [nests(3), elite('rotter'), survive(60), kill(130)] },
+      { id: '13-B', name: '巨蛙的泥潭', kind: 'boss', layout: 'gauntlet', diff: 5.5, pos: [4, 1], next: [], coins: 3900,
+        pool: [['mudling', 5], ['mosquito', 4], ['rotter', 2], ['toad', 1]], objs: [kill(130), boss('bogfrog')] },
     ],
   },
 ];

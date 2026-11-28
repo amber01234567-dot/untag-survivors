@@ -482,6 +482,35 @@ const AI = {
       for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.38 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 100, 0.95, e.dmg * 1.2); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-230, 230), q.y + W.rng.range(-230, 230), 100, 1.15, e.dmg * 1.2); } W.emit('sh', 3); } });
     } else for (let i = 0; i < (p2 ? 6 : 4); i++) summon(W, e, i % 2 ? 'whelp' : 'firebat', i * 1.5, 120);
   },
+  // 沼澤巨蛙：長舌直線突刺、高高跳起砸下、吐出會留在地上的毒泡（小毒霧）、召喚毒泥怪
+  boss_bogfrog(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    const jump = () => { const tp = W.nearestPlayer(e.x, e.y, true) || p; ai.tx = tp.x; ai.ty = tp.y; if (solidAt(W.L, ai.tx, ai.ty)) { ai.tx = e.x; ai.ty = e.y; } W.emit('r', e.x | 0, e.y | 0, 110, 6); e.st = 3; ai.w = 1.1; e.x = -9999; e.y = -9999; warn(W, ai.tx, ai.ty, 185, 1.1, e.dmg * 1.5); };
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 3) {                            // 跳在空中：打不到，時間到砸在預警圈上
+      ai.w -= dt;
+      if (ai.w <= 0) {
+        e.x = ai.tx; e.y = ai.ty; e.st = 0; e.spawnT = 0.3; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); W.emit('sh', 10);
+        for (let i = 0; i < 12; i++) shootAt(W, e, 'e_spore', i * TAU / 12, 200, e.dmg * 0.5, { r: 10 });
+        if (ai.hops > 0) { ai.hops--; ai.q.push({ t: 0.6, fn: () => jump() }); }
+      }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.9 : 3.9; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 長舌突刺：朝每個玩家一條細長直線，半血後連刺兩次
+      const tongue = () => { for (const q of W.alive()) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: Math.atan2(q.y - e.y, q.x - e.x), len: 680, w: 46, delay: 0.8, dur: 1.05, tick: 9, dmg: e.dmg * 1.4 }); W.emit('sh', 3); };
+      tongue(); if (p2) ai.q.push({ t: 1.15, fn: tongue });
+    } else if (m === 2) { ai.hops = p2 ? 2 : 1; jump(); }
+    else if (m === 3) {                          // 毒泡：落在玩家附近，留下小片毒霧
+      for (const q of W.alive()) for (let i = 0; i < (p2 ? 4 : 3); i++) W.addFog(q.x + W.rng.range(-170, 170), q.y + W.rng.range(-170, 170), 95, 1.1, 5, e.dmg * 0.22);
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'mosquito' : 'mudling', i * 1.05, 100);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

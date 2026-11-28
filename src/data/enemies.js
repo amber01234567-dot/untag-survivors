@@ -93,3 +93,9 @@ E('firepriest', { name: '火焰祭司', hp: 96, speed: 86, dmg: 17, r: 14, xp: 6
 E('whelp', { name: '幼龍', hp: 430, speed: 62, dmg: 27, r: 21, xp: 13, ai: 'charger', kbRes: 0.85 });
 E('obscorp', { name: '黑曜石巨蠍', hp: 70000, speed: 60, dmg: 30, r: 50, xp: 1100, ai: 'boss_obscorp', kbRes: 1, boss: true });
 E('firedragon', { name: '炎龍', hp: 76000, speed: 58, dmg: 31, r: 56, xp: 1300, ai: 'boss_firedragon', kbRes: 1, boss: true });
+// ───── 第五系列：瘴氣毒沼（毒屬性）─────
+E('mudling', { name: '毒泥怪', hp: 22, speed: 144, dmg: 9, r: 10, xp: 2, ai: 'swarm' });
+E('mosquito', { name: '沼澤蚊', hp: 50, speed: 122, dmg: 13, r: 12, xp: 3, ai: 'chase', fly: true });
+E('toad', { name: '毒蟾蜍', hp: 175, speed: 40, dmg: 21, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 460 });
+E('rotter', { name: '腐屍', hp: 300, speed: 50, dmg: 22, r: 18, xp: 9, ai: 'chase', kbRes: 0.7 });
+E('bogfrog', { name: '沼澤巨蛙', hp: 68000, speed: 54, dmg: 31, r: 52, xp: 1250, ai: 'boss_bogfrog', kbRes: 1, boss: true });

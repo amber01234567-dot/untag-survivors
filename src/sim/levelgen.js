@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -25,6 +25,13 @@ function carveShape(z, side, rng, COR, set, unset) {
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
   let pool = null;
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'bog') {                         // 沼澤群島：中央一塊陸地，周圍一圈小島，用木棧道（6 格寬）串成網，中間是毒水
+    const isl = [[cx, cy, 7, 6]], n = 6, a0 = rng.range(0, 6.28);
+    for (let i = 0; i < n; i++) { const a = a0 + i * 6.283 / n + rng.range(-0.18, 0.18); isl.push([cx + Math.cos(a) * w * 0.38, cy + Math.sin(a) * h * 0.37, rng.range(5.5, 7), rng.range(4.5, 5.5)]); }
+    for (const [ex, ey, rx, ry] of isl) ell(ex, ey, rx, ry);
+    const bridge = (p, q) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); for (let t = 0; t <= 1; t += 0.5 / d) ell(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, 3.1, 3.1); };
+    for (let i = 1; i <= n; i++) { bridge(isl[i], isl[i % n + 1]); if (i % 2) bridge(isl[0], isl[i]); }      // 外圈相連 + 每隔一座連回中央
+  }
   else if (z.shape === 'wind') {                        // 蜿蜒坑道：一條寬的 S 形通道，兩個彎處各有一個較大的空間
     const A = h / 2 - 9;
     for (let t = 0; t <= 1; t += 0.004) ell(X + t * w, cy + A * Math.sin(t * Math.PI * 2), 6.2, 6.2);
@@ -72,8 +79,8 @@ function carveShape(z, side, rng, COR, set, unset) {
     rect(X, Y, X + w, Y + h);
   }
   // 中心與通道口一定相通
-  rect(cx - 5, cy - 5, cx + 5, cy + 5);
-  const b = COR / 2 + 1;
+  if (z.shape !== 'bog') rect(cx - 5, cy - 5, cx + 5, cy + 5);
+  const b = z.shape === 'bog' ? 3.2 : COR / 2 + 1;      // 沼澤：通道口到中央也是一條棧道，不是大通道
   if (side.U) rect(cx - b, Y, cx + b, cy); if (side.D) rect(cx - b, cy, cx + b, Y + h);
   if (side.L) rect(X, cy - b, cx, cy + b); if (side.R) rect(cx, cy - b, X + w, cy + b);
   if (pool) {                                           // 池子最後挖：通道口到環上是通的，中心不可走
