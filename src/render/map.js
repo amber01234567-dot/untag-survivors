@@ -178,9 +178,16 @@ function mirrored(im, mx, my) {
   for (let j = 0; j < (my ? 2 : 1); j++) for (let i = 0; i < (mx ? 2 : 1); i++) { g.save(); g.translate(i ? im.width * 2 : 0, j ? im.height * 2 : 0); g.scale(i ? -1 : 1, j ? -1 : 1); g.drawImage(im, 0, 0); g.restore(); }
   return c;
 }
-export async function loadMapTextures() {
-  await Promise.all(MAP_THEMES.map(async (theme) => {
-    const url = (n) => new URL(`../../assets/map/${theme}/${n}.png`, import.meta.url).href, T = { props: {}, decals: [], signs: [] };
+// 場景貼圖：進關卡時才載入該主題（主題很多，開遊戲時一次載完會很慢）。測試頁把每個主題打包成一個 JSON（map/<主題>.json）。
+const LOADING = {};
+export function loadMapTextures(theme) {
+  if (!theme || !MAP_THEMES.includes(theme)) return Promise.resolve();
+  if (!LOADING[theme]) LOADING[theme] = (async () => {
+    let pack = null;
+    if (typeof window !== 'undefined' && window.__MAPPACK) { try { pack = await (await fetch(`map/${theme}.json`)).json(); } catch (e) { pack = null; } }
+    const base = (n) => new URL(`../../assets/map/${theme}/${n}.png`, import.meta.url).href;
+    const T = { props: {}, decals: [], signs: [] };
+    const url = (n) => (pack ? pack[n] || 'data:,' : base(n));
     const jobs = [
       loadImage(url('floor')).then((im) => { if (im) T.floor = mirrored(im, true, true); }),
       loadImage(url('roof')).then((im) => { if (im) T.roof = mirrored(im, true, true); }),
@@ -194,8 +201,10 @@ export async function loadMapTextures() {
     for (const k in T.props) T.props[k] = T.props[k].filter(Boolean);
     T.decals = T.decals.filter(Boolean); T.signs = T.signs.filter(Boolean);
     TEX[theme] = T;
-  }));
+  })();
+  return LOADING[theme];
 }
+export const mapReady = (theme) => !!TEX[theme] || !MAP_THEMES.includes(theme);
 const WALL_W = 384;      // 牆面貼圖（鏡射後）對應的世界寬度；牆面高 2 格
 function pattern(g, canvas, worldW) { const p = g.createPattern(canvas, 'repeat'); const k = worldW / canvas.width; p.setTransform(new DOMMatrix().scale(k, k)); return p; }
 

@@ -5,7 +5,7 @@ import { Session } from './net/session.js';
 import { Renderer } from './render/renderer.js';
 import { loadSprites } from './render/chibi.js';
 import { loadEnemySprites } from './render/enemySprites.js';
-import { loadMapTextures } from './render/map.js';
+import { loadMapTextures, mapReady, MapRenderer } from './render/map.js';
 import { loadFxSprites } from './render/fxsprites.js';
 import { Screens } from './ui/screens.js';
 import { Hud } from './ui/hud.js';
@@ -31,6 +31,7 @@ const app = {
     this.rt = rt; this.frame = null;
     this.screens.hide();
     this.renderer = new Renderer(this.canvas, rt.view.L, rt.myId, msg.players);
+    { const th = rt.view.L.theme, r = this.renderer; if (!mapReady(th)) loadMapTextures(th).then(() => { if (this.renderer === r) r.map = new MapRenderer(rt.view.L); }); }      // 場景貼圖還沒載好：先用程式繪製，載好後換上
     this.renderer.fx.onSfx = (n) => { if (n === 'boss') music('boss'); sfx(n); };
     music('s' + (STAGES[msg.stage] ? STAGES[msg.stage].series : 1));
     this.renderer.fx.opts.shake = save.data.settings.shake; this.renderer.fx.opts.dmgNum = save.data.settings.dmgNum;
@@ -97,7 +98,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
-await Promise.all([loadSprites(), loadEnemySprites(), loadMapTextures(), loadFxSprites()]);                      // 圖片立繪要先載好，選單上的頭像才畫得出來
+await Promise.all([loadSprites(), loadEnemySprites(), loadFxSprites()]);                      // 圖片立繪要先載好，選單上的頭像才畫得出來
 // 啟動畫面。?quick=1-1,tingge 直接開一場單人（開發用）
 if (qs.get('set')) window.__SET = qs.get('set');
 if (qs.get('quick')) {
