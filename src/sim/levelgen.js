@@ -316,6 +316,18 @@ export function buildLevel(stage, seed) {
       for (let cy2 = 0; cy2 < 2; cy2++) for (let cx2 = 0; cx2 < 3; cx2++) spikes.push({ x: (x + cx2 * 2 + 1) * TILE, y: (y + cy2 * 2 + 1) * TILE, zone: z.idx, ph: (cx2 + cy2) % 2 ? 2.5 : 0, gx: px, gy: py });
       i++;
     }
+    // 窄道放不下大片的：補幾片 2 塊一組的小地刺（4x2 格，直的或橫的），讓每個戰鬥區至少有 4 處
+    let have = new Set(spikes.filter((q) => q.zone === z.idx).map((q) => q.gx + ',' + q.gy)).size;
+    for (let tries = 0; have < 4 && tries < 240; tries++) {
+      const vert = rng.next() < 0.5, w2 = vert ? 2 : 4, h2 = vert ? 4 : 2;
+      const x = rng.int(z.x + 2, z.x + z.w - 3 - w2), y = rng.int(z.y + 2, z.y + z.h - 3 - h2);
+      if (Math.abs(x + w2 / 2 - z.cx / TILE) < 4 && Math.abs(y + h2 / 2 - z.cy / TILE) < 4) continue;
+      if (!clearAround(x, y, w2, h2, 1)) continue;
+      const px = (x + w2 / 2) * TILE, py = (y + h2 / 2) * TILE;
+      if (spikes.some((q) => Math.abs(q.gx - px) < 230 && Math.abs(q.gy - py) < 200)) continue;
+      for (let k = 0; k < 2; k++) spikes.push({ x: (x + (vert ? 1 : k * 2 + 1)) * TILE, y: (y + (vert ? k * 2 + 1 : 1)) * TILE, zone: z.idx, ph: k ? 2.5 : 0, gx: px, gy: py });
+      have++;
+    }
   }
   const devices = [];
   if (stage.devices) for (const z of zones) {
