@@ -2881,5 +2881,533 @@ export const SPRITE_SHEETS = {
    254
   ],
   "one": 1
+ },
+ "allen_untaga": {
+  "px": 250,
+  "walk": [
+   168,
+   254
+  ],
+  "attack": [
+   191,
+   254
+  ],
+  "one": 1
+ },
+ "enjidou_untaga": {
+  "px": 250,
+  "walk": [
+   222,
+   255
+  ],
+  "attack": [
+   257,
+   254
+  ],
+  "one": 1
+ },
+ "feijie_untaga": {
+  "px": 250,
+  "walk": [
+   162,
+   255
+  ],
+  "attack": [
+   211,
+   256
+  ],
+  "one": 1
+ },
+ "gouqi_untaga": {
+  "px": 250,
+  "walk": [
+   205,
+   255
+  ],
+  "attack": [
+   242,
+   268
+  ],
+  "one": 1
+ },
+ "hajimi_untaga": {
+  "px": 250,
+  "walk": [
+   155,
+   254
+  ],
+  "attack": [
+   213,
+   257
+  ],
+  "one": 1
+ },
+ "laijie_untaga": {
+  "px": 250,
+  "walk": [
+   267,
+   254
+  ],
+  "attack": [
+   383,
+   254
+  ],
+  "one": 1
+ },
+ "laojin_untaga": {
+  "px": 250,
+  "walk": [
+   190,
+   255
+  ],
+  "attack": [
+   284,
+   255
+  ],
+  "one": 1
+ },
+ "laoliu_untaga": {
+  "px": 250,
+  "walk": [
+   294,
+   254
+  ],
+  "attack": [
+   358,
+   290
+  ],
+  "one": 1
+ },
+ "maomaochong_untaga": {
+  "px": 250,
+  "walk": [
+   211,
+   254
+  ],
+  "attack": [
+   212,
+   254
+  ],
+  "one": 1
+ },
+ "moumou_untaga": {
+  "px": 250,
+  "walk": [
+   232,
+   254
+  ],
+  "attack": [
+   231,
+   256
+  ],
+  "one": 1
+ },
+ "nongfu_untaga": {
+  "px": 250,
+  "walk": [
+   199,
+   254
+  ],
+  "attack": [
+   247,
+   254
+  ],
+  "one": 1
+ },
+ "qiqiu_untaga": {
+  "px": 250,
+  "walk": [
+   142,
+   254
+  ],
+  "attack": [
+   113,
+   254
+  ],
+  "one": 1
+ },
+ "shaonian_untaga": {
+  "px": 250,
+  "walk": [
+   194,
+   254
+  ],
+  "attack": [
+   247,
+   254
+  ],
+  "one": 1
+ },
+ "shenshen_untaga": {
+  "px": 250,
+  "walk": [
+   171,
+   254
+  ],
+  "attack": [
+   213,
+   258
+  ],
+  "one": 1
+ },
+ "tiaotiao_untaga": {
+  "px": 250,
+  "walk": [
+   176,
+   255
+  ],
+  "attack": [
+   209,
+   254
+  ],
+  "one": 1
+ },
+ "tingge_untaga": {
+  "px": 250,
+  "walk": [
+   144,
+   255
+  ],
+  "attack": [
+   207,
+   254
+  ],
+  "one": 1
+ },
+ "tk_untaga": {
+  "px": 250,
+  "walk": [
+   190,
+   254
+  ],
+  "attack": [
+   262,
+   264
+  ],
+  "one": 1
+ },
+ "wangchuan_untaga": {
+  "px": 250,
+  "walk": [
+   209,
+   254
+  ],
+  "attack": [
+   229,
+   254
+  ],
+  "one": 1
+ },
+ "xia_untaga": {
+  "px": 250,
+  "walk": [
+   236,
+   254
+  ],
+  "attack": [
+   308,
+   308
+  ],
+  "one": 1
+ },
+ "xiaoshunzi_untaga": {
+  "px": 250,
+  "walk": [
+   129,
+   255
+  ],
+  "attack": [
+   160,
+   254
+  ],
+  "one": 1
+ },
+ "yangdidi_untaga": {
+  "px": 250,
+  "walk": [
+   175,
+   254
+  ],
+  "attack": [
+   348,
+   254
+  ],
+  "one": 1
+ },
+ "yingzhang_untaga": {
+  "px": 250,
+  "walk": [
+   211,
+   255
+  ],
+  "attack": [
+   247,
+   254
+  ],
+  "one": 1
+ },
+ "allen_untagb": {
+  "px": 250,
+  "walk": [
+   175,
+   254
+  ],
+  "attack": [
+   241,
+   254
+  ],
+  "one": 1
+ },
+ "enjidou_untagb": {
+  "px": 250,
+  "walk": [
+   231,
+   255
+  ],
+  "attack": [
+   266,
+   254
+  ],
+  "one": 1
+ },
+ "feijie_untagb": {
+  "px": 250,
+  "walk": [
+   153,
+   254
+  ],
+  "attack": [
+   205,
+   254
+  ],
+  "one": 1
+ },
+ "gouqi_untagb": {
+  "px": 250,
+  "walk": [
+   208,
+   254
+  ],
+  "attack": [
+   251,
+   266
+  ],
+  "one": 1
+ },
+ "hajimi_untagb": {
+  "px": 250,
+  "walk": [
+   171,
+   255
+  ],
+  "attack": [
+   219,
+   255
+  ],
+  "one": 1
+ },
+ "laijie_untagb": {
+  "px": 250,
+  "walk": [
+   260,
+   255
+  ],
+  "attack": [
+   312,
+   254
+  ],
+  "one": 1
+ },
+ "laojin_untagb": {
+  "px": 250,
+  "walk": [
+   195,
+   256
+  ],
+  "attack": [
+   290,
+   255
+  ],
+  "one": 1
+ },
+ "laoliu_untagb": {
+  "px": 250,
+  "walk": [
+   211,
+   254
+  ],
+  "attack": [
+   294,
+   261
+  ],
+  "one": 1
+ },
+ "maomaochong_untagb": {
+  "px": 250,
+  "walk": [
+   206,
+   254
+  ],
+  "attack": [
+   229,
+   257
+  ],
+  "one": 1
+ },
+ "moumou_untagb": {
+  "px": 250,
+  "walk": [
+   224,
+   255
+  ],
+  "attack": [
+   210,
+   254
+  ],
+  "one": 1
+ },
+ "nongfu_untagb": {
+  "px": 250,
+  "walk": [
+   218,
+   255
+  ],
+  "attack": [
+   278,
+   254
+  ],
+  "one": 1
+ },
+ "qiqiu_untagb": {
+  "px": 250,
+  "walk": [
+   156,
+   254
+  ],
+  "attack": [
+   130,
+   254
+  ],
+  "one": 1
+ },
+ "shaonian_untagb": {
+  "px": 250,
+  "walk": [
+   175,
+   254
+  ],
+  "attack": [
+   251,
+   254
+  ],
+  "one": 1
+ },
+ "shenshen_untagb": {
+  "px": 250,
+  "walk": [
+   175,
+   254
+  ],
+  "attack": [
+   209,
+   255
+  ],
+  "one": 1
+ },
+ "tiaotiao_untagb": {
+  "px": 250,
+  "walk": [
+   185,
+   255
+  ],
+  "attack": [
+   229,
+   254
+  ],
+  "one": 1
+ },
+ "tingge_untagb": {
+  "px": 250,
+  "walk": [
+   142,
+   255
+  ],
+  "attack": [
+   225,
+   254
+  ],
+  "one": 1
+ },
+ "tk_untagb": {
+  "px": 250,
+  "walk": [
+   197,
+   254
+  ],
+  "attack": [
+   255,
+   255
+  ],
+  "one": 1
+ },
+ "wangchuan_untagb": {
+  "px": 250,
+  "walk": [
+   210,
+   254
+  ],
+  "attack": [
+   229,
+   254
+  ],
+  "one": 1
+ },
+ "xia_untagb": {
+  "px": 250,
+  "walk": [
+   219,
+   254
+  ],
+  "attack": [
+   262,
+   282
+  ],
+  "one": 1
+ },
+ "xiaoshunzi_untagb": {
+  "px": 250,
+  "walk": [
+   130,
+   254
+  ],
+  "attack": [
+   170,
+   254
+  ],
+  "one": 1
+ },
+ "yangdidi_untagb": {
+  "px": 250,
+  "walk": [
+   195,
+   255
+  ],
+  "attack": [
+   286,
+   255
+  ],
+  "one": 1
+ },
+ "yingzhang_untagb": {
+  "px": 250,
+  "walk": [
+   206,
+   255
+  ],
+  "attack": [
+   249,
+   254
+  ],
+  "one": 1
  }
 };
