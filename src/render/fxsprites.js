@@ -2,7 +2,7 @@
 export const FXS = {};
 const NAMES = ['pk_g1', 'pk_g2', 'pk_g3', 'pk_c', 'pk_h', 'pk_k', 'pk_m', 'pk_x', 'boom', 'slash', 'hit', 'circle', 'gate',
   'bullet', 'knife', 'cleaver', 'blade', 'rune', 'syringe', 'skewer', 'bead', 'ball', 'missile', 'molotov', 'grenade', 'orb', 'mine', 'drone', 'cat', 'lion', 'rat', 'tank', 'decoy',
-  'flame', 'fireground', 'coalground', 'dragonring', 'swordqi', 'whirl', 'crack', 'garbageground', 'blackhole', 'zerogrid', 'mandala', 'palm', 'kart', 'dev_barrel', 'dev_turret', 'dev_pylon', 'dev_icebomb', 'dev_brazier', 'dev_water', 'dev_totem', 'dev_gas', 'dev_drum', 'dev_ballista', 'dev_chime', 'dev_boulder',
+  'flame', 'fireground', 'coalground', 'dragonring', 'swordqi', 'whirl', 'crack', 'garbageground', 'blackhole', 'zerogrid', 'mandala', 'palm', 'kart', 'dev_barrel', 'dev_turret', 'dev_pylon', 'dev_icebomb', 'dev_brazier', 'dev_water', 'dev_totem', 'dev_gas', 'dev_drum', 'dev_ballista', 'dev_chime', 'dev_boulder', 'dev_smoke',
   'evo_starslash', 'evo_starwave', 'evo_wheel', 'evo_skyblade', 'evo_reticle',
   'evo_rockspike', 'evo_chop', 'evo_bigcleaver', 'evo_fist', 'evo_thunderball',
   'evo_tracer', 'evo_lance', 'evo_glaive', 'evo_nuke', 'evo_mushroom', 'skull', 'bit',

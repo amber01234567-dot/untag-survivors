@@ -11,7 +11,7 @@ export const PROJ_KINDS = [
   'wave', 'cleaver', 'baseball', 'laserbolt', 'missile', 'molotov', 'blade', 'dronebolt',
   'e_can', 'e_spore', 'e_orb', 'e_laser', 'e_trash', 'e_chain', 'grenade', 'note', 'fireball', 'kart',
   'starwave', 'wheel', 'fist', 'thunderball', 'tracer', 'lance', 'glaive', 'nuke', 'meatslice', 'moneybag', 'kamikaze',
-  'e_ice', 'e_fire', 'e_gold', 'e_wind',
+  'e_ice', 'e_fire', 'e_gold', 'e_wind', 'e_rock',
 ];
 export const ZONE_KINDS = [
   'mine', 'rune', 'runebig', 'blackhole', 'fire', 'frost', 'beam', 'pulse', 'heal', 'grill',
@@ -30,3 +30,6 @@ export const VENT_PERIOD = 9, VENT_WARN = 1.4, VENT_R = 76;
 
 // 陣風：推動玩家的速度（像素 / 秒）
 export const GUST_SPEED = 95;
+
+// 地刺：每 SPIKE_PERIOD 秒一輪，最後 SPIKE_WARN+SPIKE_UP 秒是「亮起預警 → 刺出」；相鄰的地磚錯開半輪
+export const SPIKE_PERIOD = 5, SPIKE_WARN = 0.9, SPIKE_UP = 0.7, SPIKE_SIZE = 64;

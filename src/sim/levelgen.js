@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -53,6 +53,12 @@ function carveShape(z, side, rng, COR, set, unset) {
     for (const [ex, ey, rx, ry] of isl) ell(ex, ey, rx, ry);
     const bridge = (p, q) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); for (let t = 0; t <= 1; t += 0.5 / d) ell(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, 3.1, 3.1); };
     for (let i = 1; i <= n; i++) { bridge(isl[i], isl[i % n + 1]); if (i % 2) bridge(isl[0], isl[i]); }      // 外圈相連 + 每隔一座連回中央
+  }
+  else if (z.shape === 'slot') {                        // 一線天：又長又窄的峽谷主道，中途有三處向兩側鼓出的寬敞岩窟
+    const p1 = rng.range(0, 6.28);
+    for (let x = X; x < X + w; x++) { const o = Math.sin((x - X) * 0.16 + p1) * 2.2; rect(x, cy - 3.5 + o, x + 1, cy + 3.5 + o); }
+    const up = rng.next() < 0.5 ? 1 : -1;
+    ell(X + w * 0.19, cy + up * 6, 8, rng.range(8, 10)); ell(cx, cy - up * 5, 9.5, rng.range(9, 11)); ell(X + w * 0.81, cy + up * 6, 8, rng.range(8, 10));
   }
   else if (z.shape === 'pinwheel') {                    // 風車台：中央一座圓台，向外伸出四片錯開的扇葉平台，末端各有一塊小圓台
     ell(cx, cy, 9, 8);
@@ -297,6 +303,20 @@ export function buildLevel(stage, seed) {
       vents.push({ x: px, y: py, zone: z.idx, ph: rng.range(0, 9) }); i++;
     }
   }
+  // ── 地刺（土系列的場地危險）：每個戰鬥區幾片 3x2 格的機關地磚，棋盤式交錯啟動 ──
+  const spikes = [];
+  if (stage.hazard === 'spikes') for (const z of zones) {
+    if (z.kind !== 'combat' && z.kind !== 'final') continue;
+    for (let i = 0, tries = 0; i < (z.kind === 'final' ? 5 : 4) && tries < 160; tries++) {
+      const x = rng.int(z.x + 3, z.x + z.w - 9), y = rng.int(z.y + 3, z.y + z.h - 7);          // 一片 = 6x4 格（每塊地磚 2x2 格）
+      if (Math.abs(x + 3 - z.cx / TILE) < 5 && Math.abs(y + 2 - z.cy / TILE) < 4) continue;
+      if (!clearAround(x, y, 6, 4, 1)) continue;
+      const px = (x + 3) * TILE, py = (y + 2) * TILE;
+      if (spikes.some((s) => Math.abs(s.gx - px) < 330 && Math.abs(s.gy - py) < 260)) continue;
+      for (let cy2 = 0; cy2 < 2; cy2++) for (let cx2 = 0; cx2 < 3; cx2++) spikes.push({ x: (x + cx2 * 2 + 1) * TILE, y: (y + cy2 * 2 + 1) * TILE, zone: z.idx, ph: (cx2 + cy2) % 2 ? 2.5 : 0, gx: px, gy: py });
+      i++;
+    }
+  }
   const devices = [];
   if (stage.devices) for (const z of zones) {
     if (z.kind !== 'combat' && z.kind !== 'final') continue;
@@ -355,7 +375,7 @@ export function buildLevel(stage, seed) {
   }
 
   const start = zones.find((z) => z.kind === 'start');
-  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, vents, outdoor: out, theme: stage.theme, seed,
+  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, vents, spikes, outdoor: out, theme: stage.theme, seed,
     spawn: { x: start.cx, y: start.cy } };
 }
 

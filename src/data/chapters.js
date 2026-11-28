@@ -58,6 +58,7 @@ export const SERIES = [
   { id: 5, name: '瘴氣毒沼', sub: 'MIASMA MIRE', el: 'poison' },
   { id: 6, name: '黃金神殿', sub: 'GOLDEN TEMPLE', el: 'gold' },
   { id: 7, name: '浮空風島', sub: 'SKY ISLES', el: 'wind' },
+  { id: 8, name: '巨岩峽谷', sub: 'STONE GORGE', el: 'earth' },
 ];
 
 export const DIFFS = [
@@ -530,6 +531,29 @@ export const CHAPTERS = [
         pool: [['crowtengu', 5], ['yamabushi', 3], ['millsoldier', 2], ['kitemon', 3]], objs: [nests(3), elite('yamabushi'), survive(60), kill(135)] },
       { id: '21-B', name: '本殿前庭', kind: 'boss', layout: 'gauntlet', diff: 6.95, pos: [4, 1], next: [], coins: 11210,
         pool: [['windling', 5], ['crowtengu', 3], ['sparrow', 3]], objs: [kill(135), boss('tengu')] },
+    ],
+  },
+  // ───── 第八系列：巨岩峽谷（土屬性：怪物較耐打，擊殺目標數下修一成；掉落大地忍者）─────
+  {
+    id: 22, series: 8, name: '落石峽谷', sub: 'ROCKFALL GORGE', theme: 'gorge', outdoor: true, hazard: 'spikes',
+    shapes: { combat: [['slot', 4], ['cave', 2]], final: 'round' },      // 空間架構：又長又窄的一線天（中途有岩窟）、不規則空地；首領在圓形窪地
+    intro: '從雲上摔下來的地方是一條裂縫。兩邊的岩壁高得看不到天，地上的石板踩下去會咬人。',
+    devices: [['smoke', 4], ['boulder', 3]],
+    nodes: [
+      { id: '22-1', name: '裂谷入口', kind: 'normal', layout: 'snake', diff: 6.55, pos: [0, 1], next: ['22-2', '22-3'], coins: 6600,
+        pool: [['pebble', 6], ['rocklizard', 4], ['monkey', 1]], objs: [kill(77), survive(55), kill(117)] },
+      { id: '22-2', name: '斷橋', kind: 'normal', layout: 'ring', diff: 6.62, pos: [1, 0.3], next: ['22-4'], coins: 6800,
+        pool: [['pebble', 5], ['rocklizard', 4], ['pangolin', 2], ['monkey', 1]], objs: [kill(68), nests(3), survive(55), elite('pangolin')] },
+      { id: '22-3', name: '猴群岩棚', kind: 'normal', layout: 'hub', diff: 6.66, pos: [1, 1.7], next: ['22-4', '22-5'], coins: 6900,
+        pool: [['pebble', 5], ['rocklizard', 4], ['monkey', 3], ['pangolin', 1]], objs: [kill(68), survive(55), nests(3), kill(120)] },
+      { id: '22-4', name: '一線天', kind: 'normal', layout: 'trident', diff: 6.75, pos: [2, 0.7], next: ['22-6'], coins: 7250,
+        pool: [['pebble', 4], ['rocklizard', 4], ['pangolin', 3], ['monkey', 2]], objs: [kill(68), nests(3), survive(55), elite('monkey'), kill(120)] },
+      { id: '22-5', name: '採晶人營地', kind: 'bonus', layout: 'arena', diff: 6.7, pos: [2, 2], next: ['22-6'], coins: 4600,
+        pool: [['pebble', 7], ['rocklizard', 3], ['pangolin', 1]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '22-6', name: '機關石道', kind: 'elite', layout: 'cross', diff: 6.85, pos: [3, 1.2], next: ['22-B'], coins: 8050,
+        pool: [['pebble', 4], ['rocklizard', 4], ['pangolin', 3], ['monkey', 3]], objs: [nests(3), elite('pangolin'), survive(60), kill(120)] },
+      { id: '22-B', name: '巨龜窪地', kind: 'boss', layout: 'gauntlet', diff: 7.0, pos: [4, 1], next: [], coins: 12500,
+        pool: [['pebble', 5], ['rocklizard', 4], ['pangolin', 2], ['monkey', 1]], objs: [kill(120), boss('rockturtle')] },
     ],
   },
 ];

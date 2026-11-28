@@ -714,6 +714,36 @@ const AI = {
       for (let i = 0; i < (p2 ? 3 : 2); i++) { const a = W.rng.range(0, TAU); W.addTornado(p.x + Math.cos(a) * 240, p.y + Math.sin(a) * 240, a + Math.PI, 120, 6, e.dmg * 0.4); }
     } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'yamabushi' : 'crowtengu', i * 1.25, 130);
   },
+  // 岩甲巨龜：縮殼旋轉衝撞（撞牆反彈）、震落巨石、背上岩刺放射、召喚
+  boss_rockturtle(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; if (ai.w <= 0) { e.st = 2; ai.w = p2 ? 4.2 : 3.2; ai.trail = 0; } return; }
+    if (e.st === 2) {                            // 旋轉滑行：撞到牆就反彈，沿路留下衝擊圈
+      const vx = Math.cos(ai.a) * 620 * dt, vy = Math.sin(ai.a) * 620 * dt, bx = e.x, by = e.y;
+      moveBody(W.L, e, vx, 0, e.r * 0.6); if (Math.abs(e.x - bx) < Math.abs(vx) * 0.5) { ai.a = Math.PI - ai.a; W.emit('sh', 5); }
+      moveBody(W.L, e, 0, vy, e.r * 0.6); if (Math.abs(e.y - by) < Math.abs(vy) * 0.5) { ai.a = -ai.a; W.emit('sh', 5); }
+      ai.w -= dt; ai.trail -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1;
+      if (ai.trail <= 0) { ai.trail = 0.16; warn(W, e.x + Math.cos(ai.a) * 110, e.y + Math.sin(ai.a) * 110, 86, 0.35, e.dmg * 1.1); }
+      if (ai.w <= 0) { e.st = 0; warn(W, e.x, e.y, 170, 0.5, e.dmg * 1.2); }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 3.0 : 4.0; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) { e.st = 1; ai.w = 0.9; ai.a = Math.atan2(p.y - e.y, p.x - e.x) + 0.5; warn(W, e.x, e.y, 150, 0.9, e.dmg * 1.2); }
+    else if (m === 2) {                          // 震落巨石
+      W.emit('sh', 8);
+      for (let k = 0; k < (p2 ? 6 : 4); k++) ai.q.push({ t: k ? 0.4 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 104, 1.0, e.dmg * 1.3); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-230, 230), q.y + W.rng.range(-230, 230), 104, 1.2, e.dmg * 1.3); } } });
+    } else if (m === 3) {                        // 岩刺放射：三波，每波角度錯開
+      const volley = (off, sp2) => { for (let i = 0; i < 16; i++) shootAt(W, e, 'e_rock', off + i * TAU / 16, sp2, e.dmg * 0.55, { r: 11 }); };
+      volley(0, 190); ai.q.push({ t: 0.5, fn: () => volley(0.2, 215) }); ai.q.push({ t: 0.5, fn: () => volley(0.4, 190) }); if (p2) ai.q.push({ t: 0.5, fn: () => volley(0.1, 240) });
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'pangolin' : i % 3 === 1 ? 'rocklizard' : 'pebble', i * 1.05, 120);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

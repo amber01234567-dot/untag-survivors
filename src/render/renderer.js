@@ -1,5 +1,5 @@
 // 主繪製：鏡頭 → 地面層 → 地面效果 → 依 Y 排序的角色與敵人 → 子彈 / 特效 → 遮蔽層 → 光照 → 文字。
-import { VENT_PERIOD, VENT_WARN } from '../sim/const.js';
+import { VENT_PERIOD, VENT_WARN, SPIKE_PERIOD, SPIKE_WARN, SPIKE_UP, SPIKE_SIZE } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
 import { PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, BUFF_BITS, VIEW_H } from '../sim/const.js';
 import { ENEMY_LIST } from '../data/enemies.js';
@@ -18,11 +18,11 @@ const PSPR = {
   starwave: ['evo_starwave', 150, 'aim'], kamikaze: ['drone', 26, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
-  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], e_wind: ['orb', 16, '', '#8ff0d8'],
+  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], e_wind: ['orb', 16, '', '#8ff0d8'], e_rock: ['orb', 17, '', '#c79a5a'],
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
-const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a", drum: "#ff6a4a", ballista: "#ffd24d", chime: "#8ff0d8", boulder: "#c9b08a" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）", drum: "戰鼓（靠近敲響）", ballista: "弩砲（靠近啟動）", chime: "風鈴塔（靠近啟動）", boulder: "落石機關（靠近啟動）" };
+const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a", drum: "#ff6a4a", ballista: "#ffd24d", chime: "#8ff0d8", boulder: "#c9b08a", smoke: "#b8b8c8" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）", drum: "戰鼓（靠近敲響）", ballista: "弩砲（靠近啟動）", chime: "風鈴塔（靠近啟動）", boulder: "落石機關（靠近啟動）", smoke: "煙幕彈（靠近引爆）" };
 
 export class Renderer {
   constructor(canvas, L, myId, roster) {
@@ -73,6 +73,7 @@ export class Renderer {
     for (const e of f.enemies) if (vis(e.x, e.y, 120)) list.push(e);
     for (const p of f.players) if (!(p.fl & 32)) { p._p = 1; list.push(p); }
     for (const s of f.summons) { const k = SUMMON_KINDS[s.k]; if (k !== 'wisp' && k !== 'drone') { s._s = 1; list.push(s); } }
+    if (L.spikes && L.spikes.length) for (const s of L.spikes) if (vis(s.x, s.y, 80)) this.spike(g, s, f.time, L.zones[s.zone].state === 'active');
     if (L.vents && L.vents.length) for (const v of L.vents) if (vis(v.x, v.y, 120)) this.vent(g, v, f.time, L.zones[v.zone].state === 'active');
     if (f.devs) for (const d of L.devices) if (vis(d.x, d.y, 160)) { this.deviceGround(g, d, f.devs[d.idx] || [0, 0], t); list.push({ _d: d, y: d.y + 10 }); }
     list.sort((a, b) => a.y - b.y);
@@ -650,6 +651,19 @@ export class Renderer {
     g.translate(cx, cy); g.rotate(a); g.globalAlpha = k;
     g.fillStyle = blowing ? '#8ff0d8' : '#ffe27a'; g.strokeStyle = 'rgba(5,6,10,.8)'; g.lineWidth = 3;
     g.beginPath(); g.moveTo(-44, -11); g.lineTo(10, -11); g.lineTo(10, -26); g.lineTo(46, 0); g.lineTo(10, 26); g.lineTo(10, 11); g.lineTo(-44, 11); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+  // 地刺地磚：平時是有孔的石板，快刺出時發亮，刺出時畫出一排尖刺
+  spike(g, s, time, active) {
+    const ph = (time + s.ph) % SPIKE_PERIOD, h = SPIKE_SIZE / 2 - 2, up = active && ph >= SPIKE_PERIOD - SPIKE_UP, warn = active && !up && ph >= SPIKE_PERIOD - SPIKE_UP - SPIKE_WARN;
+    g.save(); g.translate(s.x, s.y);
+    g.fillStyle = '#4a3a2c'; g.strokeStyle = '#2a2018'; g.lineWidth = 2; g.beginPath(); g.roundRect(-h, -h, h * 2, h * 2, 5); g.fill(); g.stroke();
+    if (warn) { const k = (ph - (SPIKE_PERIOD - SPIKE_UP - SPIKE_WARN)) / SPIKE_WARN; g.fillStyle = `rgba(255,${190 - k * 90 | 0},60,${0.25 + k * 0.45})`; g.fillRect(-h + 2, -h + 2, h * 2 - 4, h * 2 - 4); }
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) {
+      const x = (i - 1) * 18, y = (j - 1) * 18 + 4;
+      if (up) { g.fillStyle = '#d8d0c0'; g.strokeStyle = '#3a3028'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 6, y); g.lineTo(x, y - 24); g.lineTo(x + 6, y); g.closePath(); g.fill(); g.stroke(); }
+      else { g.fillStyle = '#1c140e'; g.beginPath(); g.ellipse(x, y - 2, 4.5, 3, 0, 0, Math.PI * 2); g.fill(); }
+    }
     g.restore();
   }
   // 噴發口：地上的裂口，快噴發時發亮

@@ -1,5 +1,5 @@
 // 權威模擬世界（只在房主 / 單人端執行）。客戶端只收快照，不跑這個檔案。
-import { TILE, PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, VENT_PERIOD, VENT_WARN, VENT_R, GUST_SPEED } from './const.js';
+import { TILE, PROJ_KINDS, ZONE_KINDS, SUMMON_KINDS, VENT_PERIOD, VENT_WARN, VENT_R, GUST_SPEED, SPIKE_PERIOD, SPIKE_UP, SPIKE_SIZE } from './const.js';
 import { RNG, TAU, clamp, dist2, angDiff, lerpAngle } from '../core/util.js';
 import { buildLevel, moveBody, blocksShot, solidAt, FlowField } from './levelgen.js';
 import { DIFFS } from '../data/chapters.js';
@@ -91,6 +91,14 @@ export class World {
         if (this.L.zones[v.zone].state !== 'active') continue;
         const ph = (this.time + v.ph) % VENT_PERIOD, prev = (this.time - dt + v.ph) % VENT_PERIOD;
         if (ph >= VENT_PERIOD - VENT_WARN && prev < VENT_PERIOD - VENT_WARN) warn(this, v.x, v.y, VENT_R, VENT_WARN, 15 * this.dmgMul);
+      }
+    }
+    if (this.L.spikes.length) {                                   // 場地危險：地刺。刺出的那段時間站在地磚上就會受傷（每人 0.6 秒最多一次）
+      for (const p of this.players) { if (p.spikeCd > 0) p.spikeCd -= dt; }
+      for (const s of this.L.spikes) {
+        if (this.L.zones[s.zone].state !== 'active') continue;
+        if ((this.time + s.ph) % SPIKE_PERIOD < SPIKE_PERIOD - SPIKE_UP) continue;
+        for (const p of this.players) if (!p.down && !p.gone && !(p.spikeCd > 0) && Math.abs(p.x - s.x) < SPIKE_SIZE / 2 && Math.abs(p.y - s.y) < SPIKE_SIZE / 2) { p.spikeCd = 0.6; this.damagePlayer(p, 17 * this.dmgMul); }
       }
     }
     if (this.wind) {                                              // 陣風：st 1 = 預警（箭頭），st 2 = 吹（推動玩家，見 updatePlayer）
@@ -498,7 +506,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 }, chime: { arm: 0.7, run: 10, cd: 30 }, boulder: { arm: 0.7, run: 0.6, cd: 24 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 }, chime: { arm: 0.7, run: 10, cd: 30 }, boulder: { arm: 0.7, run: 0.6, cd: 24 }, smoke: { arm: 0.7, run: 0.8, cd: 26 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -507,7 +515,7 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！', chime: '風鈴響起！', boulder: '落石滾下！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！', chime: '風鈴響起！', boulder: '落石滾下！', smoke: '煙幕彈！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
@@ -550,6 +558,10 @@ export class World {
         this.emit('r', d.x | 0, d.y | 0, 280, 1);
       }
       if (d.t <= 0) {
+        if (d.kind === 'smoke') {                               // 煙幕彈：大範圍的敵人失去目標、原地發愣幾秒，並承受更多傷害
+          this.hash.query(d.x, d.y, 300, (e) => this.damageEnemy(e, e.def.boss ? 200 * pow : 30 * pow, null, false, { stun: 3.5, mark: 4, quiet: true }));
+          this.emit('b', d.x | 0, d.y | 0, 300, 1); this.emit('r', d.x | 0, d.y | 0, 300, 6);
+        }
         if (d.kind === 'water') {                               // 水塔：大水沖擊並緩速敵人，澆熄隊友身上的火並回血
           this.hash.query(d.x, d.y, 280, (e) => this.damageEnemy(e, e.def.boss ? 650 * pow : 95 * pow, null, false, { kb: 380, sx: d.x, sy: d.y, stun: 1.2, slow: 0.5, slowDur: 7 }));
           this.playersIn(d.x, d.y, 300, (q) => { q.burnT = 0; this.heal(q, q.st.maxHp * 0.15, null); });

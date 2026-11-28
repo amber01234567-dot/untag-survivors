@@ -130,3 +130,9 @@ E('yamabushi', { name: '山伏僧', hp: 350, speed: 52, dmg: 23, r: 18, xp: 10, 
 E('millgolem', { name: '風車巨怪', hp: 64000, speed: 54, dmg: 36, r: 56, xp: 1900, ai: 'boss_millgolem', kbRes: 1, boss: true });
 E('tengu', { name: '大天狗', hp: 70000, speed: 74, dmg: 37, r: 46, xp: 2100, ai: 'boss_tengu', kbRes: 1, boss: true, fly: true });
 E('tenguclone', { name: '天狗分身', hp: 1, speed: 0, dmg: 20, r: 40, xp: 0, ai: 'clone', kbRes: 1, fly: true });
+// ───── 第八系列：巨岩峽谷（土屬性：較耐打）─────
+E('pebble', { name: '碎石怪', hp: 24, speed: 144, dmg: 10, r: 10, xp: 2, ai: 'swarm' });
+E('rocklizard', { name: '岩蜥', hp: 80, speed: 98, dmg: 15, r: 13, xp: 3, ai: 'chase' });
+E('monkey', { name: '投石猴', hp: 150, speed: 60, dmg: 22, r: 15, xp: 6, ai: 'lobber', kbRes: 0.4, shotCd: 3.2, shotRange: 460 });
+E('pangolin', { name: '穿山甲', hp: 150, speed: 80, dmg: 21, r: 15, xp: 6, ai: 'charger', kbRes: 0.6 });
+E('rockturtle', { name: '岩甲巨龜', hp: 56000, speed: 50, dmg: 38, r: 58, xp: 2100, ai: 'boss_rockturtle', kbRes: 1, boss: true });
