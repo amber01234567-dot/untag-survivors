@@ -111,3 +111,9 @@ E('swordsman', { name: '持刀兵俑', hp: 72, speed: 98, dmg: 14, r: 13, xp: 3,
 E('crossbow', { name: '弓弩兵俑', hp: 76, speed: 56, dmg: 14, r: 14, xp: 4, ai: 'shooter', proj: 'e_gold', shotCd: 2.5, shotRange: 400, shotSpeed: 270 });
 E('lionling', { name: '小石獅', hp: 110, speed: 78, dmg: 19, r: 14, xp: 5, ai: 'charger', kbRes: 0.4 });
 E('stonelion', { name: '鎮殿石獅', hp: 64000, speed: 62, dmg: 33, r: 50, xp: 1500, ai: 'boss_stonelion', kbRes: 1, boss: true });
+E('shieldman', { name: '持盾兵俑', hp: 330, speed: 50, dmg: 22, r: 18, xp: 9, ai: 'chase', kbRes: 0.8 });
+E('dingmon', { name: '青銅鼎怪', hp: 185, speed: 40, dmg: 22, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 460 });
+E('goldguard', { name: '金甲親衛', hp: 360, speed: 48, dmg: 24, r: 19, xp: 12, ai: 'burst', kbRes: 0.85, proj: 'e_gold', shotCd: 4.0, shotSpeed: 185, shotCount: 8 });
+E('mimic', { name: '寶箱怪', hp: 60, speed: 112, dmg: 25, r: 14, xp: 4, ai: 'exploder', boomR: 96, coins: 2 });
+E('general', { name: '兵俑將軍', hp: 68000, speed: 60, dmg: 34, r: 50, xp: 1600, ai: 'boss_general', kbRes: 1, boss: true });
+E('emperor', { name: '黃金帝王', hp: 68000, speed: 70, dmg: 35, r: 56, xp: 1800, ai: 'boss_emperor', kbRes: 1, boss: true });

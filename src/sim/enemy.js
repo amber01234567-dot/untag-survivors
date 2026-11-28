@@ -581,6 +581,56 @@ const AI = {
       ai.q.push({ t: 0.8, fn: () => { for (let i = 0; i < n + 1; i++) shootAt(W, e, 'e_gold', a + (i - n / 2) * 0.34, 150, e.dmg * 0.9, { r: 24 }); } });
     } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 2 ? 'lionling' : 'coinling', i * 1.2, 100);
   },
+  // 兵俑將軍：長戟直線突刺、大橫掃、號令兵陣（一整排一整排的長條依序掃過場地）、召喚兵俑
+  boss_general(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.8; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 長戟突刺：朝每個玩家一條，半血後左右各多一條
+      const thrust = () => { for (const q of W.alive()) { const a = Math.atan2(q.y - e.y, q.x - e.x); for (const off of p2 ? [-0.3, 0, 0.3] : [0]) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: a + off, len: 640, w: 58, delay: 0.85, dur: 1.1, tick: 9, dmg: e.dmg * 1.4 }); } W.emit('sh', 4); };
+      thrust(); ai.q.push({ t: 1.3, fn: thrust });
+    } else if (m === 2) {                        // 大橫掃：身邊一整圈，接著外圈
+      warn(W, e.x, e.y, 200, 0.8, e.dmg * 1.4); W.emit('sh', 6);
+      ai.q.push({ t: 0.9, fn: () => { for (let i = 0; i < 12; i++) warn(W, e.x + Math.cos(i * TAU / 12) * 300, e.y + Math.sin(i * TAU / 12) * 300, 96, 0.7, e.dmg * 1.2); } });
+    } else if (m === 3) {                        // 號令兵陣：橫向的長條一排一排由上往下（或由下往上）推進，要從空檔穿過去
+      const z = W.L.zones[e.zone] || W.L.zones.find((q) => q.kind === 'final'), rows = p2 ? 6 : 5, top = z.y * 32, hh = z.h * 32, dir = ai.n % 8 < 4 ? 1 : -1;
+      for (let k = 0; k < rows; k++) { const r = dir > 0 ? k : rows - 1 - k; ai.q.push({ t: k ? 0.55 : 0, fn: () => { W.addZone({ kind: 'e_beam', team: 1, x: z.x * 32, y: top + (r + 0.5) * hh / rows, a: 0, len: z.w * 32, w: hh / rows * 0.62, delay: 1.0, dur: 1.25, tick: 9, dmg: e.dmg * 1.3 }); W.emit('sh', 3); } }); }
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 0 ? 'shieldman' : i % 3 === 1 ? 'crossbow' : 'swordsman', i * 1.05, 110);
+  },
+  // 黃金帝王：前半場坐在龍椅上不動（金幣雨、十字金光、召喚親衛）；半血後站起來持劍追擊（劍氣橫掃、衝刺）
+  boss_emperor(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (p2 && !ai.up) { ai.up = true; ai.cd = 1.6; W.emit('sh', 12); W.emit('t', e.x | 0, (e.y - e.r - 30) | 0, '帝王起身！', 3); warn(W, e.x, e.y, 260, 1.2, e.dmg * 1.5); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.5; } return; }
+    if (e.st === 2) { const hit = moveBody(W.L, e, Math.cos(ai.a) * 1150 * dt, Math.sin(ai.a) * 1150 * dt, e.r * 0.6); ai.w -= dt; if (ai.w <= 0 || hit) { e.st = 0; W.emit('sh', 9); warn(W, e.x, e.y, 170, 0.4, e.dmg * 1.2); } return; }
+    if (ai.up) seek(W, e, dt, sp, p.x, p.y); else e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = ai.up ? 2.6 : 3.3; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    const coinRain = (waves) => { for (let k = 0; k < waves; k++) ai.q.push({ t: k ? 0.4 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-40, 40), q.y + W.rng.range(-40, 40), 96, 0.95, e.dmg * 1.2); for (let i = 0; i < 2; i++) warn(W, q.x + W.rng.range(-220, 220), q.y + W.rng.range(-220, 220), 96, 1.15, e.dmg * 1.2); } } }); };
+    const rays = (off, n) => { for (let i = 0; i < n; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: off + i * TAU / n, len: 760, w: 54, delay: 1.0, dur: 1.25, tick: 9, dmg: e.dmg * 1.3 }); W.emit('sh', 4); };
+    if (!ai.up) {
+      if (m === 1) coinRain(5);
+      else if (m === 2) { const o = W.rng.range(0, TAU); rays(o, 4); ai.q.push({ t: 1.2, fn: () => rays(o + TAU / 8, 4) }); }
+      else if (m === 3) { for (let i = 0; i < 18; i++) shootAt(W, e, 'e_gold', i * TAU / 18, 190, e.dmg * 0.55, { r: 11 }); ai.q.push({ t: 0.6, fn: () => { for (let i = 0; i < 18; i++) shootAt(W, e, 'e_gold', (i + 0.5) * TAU / 18, 220, e.dmg * 0.55, { r: 11 }); } }); }
+      else for (let i = 0; i < 6; i++) summon(W, e, i % 3 === 0 ? 'goldguard' : i % 3 === 1 ? 'mimic' : 'coinling', i * 1.05, 150);
+    } else {
+      if (m === 1) { const a = Math.atan2(p.y - e.y, p.x - e.x); for (let i = -3; i <= 3; i++) for (const dd of [150, 290]) warn(W, e.x + Math.cos(a + i * 0.36) * dd, e.y + Math.sin(a + i * 0.36) * dd, dd > 200 ? 100 : 84, 0.5 + (i + 3) * 0.08, e.dmg * 1.3); rays(a, 1); }
+      else if (m === 2) startDash(W, e, 0.7);
+      else if (m === 3) { coinRain(4); rays(W.rng.range(0, TAU), 6); }
+      else { for (let i = 0; i < 6; i++) summon(W, e, i % 2 ? 'goldguard' : 'mimic', i * 1.05, 130); for (let i = 0; i < 16; i++) shootAt(W, e, 'e_gold', i * TAU / 16, 210, e.dmg * 0.55, { r: 11 }); }
+    }
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

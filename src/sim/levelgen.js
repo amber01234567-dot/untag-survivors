@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -25,6 +25,12 @@ function carveShape(z, side, rng, COR, set, unset) {
   const rect = (x0, y0, x1, y1) => { for (let y = Math.floor(y0); y < y1; y++) for (let x = Math.floor(x0); x < x1; x++) set(x, y); };
   let pool = null;
   if (z.shape === 'round') ell(cx, cy, w / 2, h / 2);
+  else if (z.shape === 'courtyard') {                   // 回字殿：外圈迴廊包著中央正殿，中間一圈牆，四面各開一扇門
+    rect(X, Y, X + w, Y + h);
+    const ix0 = X + 10, ix1 = X + w - 10, iy0 = Y + 9, iy1 = Y + h - 9;
+    for (let x = ix0; x < ix1; x++) { if (Math.abs(x + 0.5 - cx) < 3.5) continue; unset(x, iy0); unset(x, iy0 + 1); unset(x, iy1 - 1); unset(x, iy1 - 2); }
+    for (let y = iy0; y < iy1; y++) { if (Math.abs(y + 0.5 - cy) < 3.5) continue; unset(ix0, y); unset(ix0 + 1, y); unset(ix1 - 1, y); unset(ix1 - 2, y); }
+  }
   else if (z.shape === 'avenue') {                      // 參道：一條寬的橫向大道，兩側是一格一格的小廣場，各用一段短頸連到大道
     const ah = 10, pw = 7, step = 9, nk = 3, pd = Math.floor(h / 2 - ah / 2 - nk - 1);
     rect(X, cy - ah / 2, X + w, cy + ah / 2);
@@ -210,6 +216,18 @@ export function buildLevel(stage, seed) {
         if (!clearAround(px, py, 2, 2, 1)) continue;
         for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
         props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
+      }
+    } else if (z.shape === 'ranks') {                  // 兵陣方格：一排排陶俑隊列把大空間切成平行走道，每排留幾個缺口
+      n = Math.floor(n * 0.3);
+      for (let py = z.y + 5, row = 0; py < z.y + z.h - 6; py += 6, row++) {
+        if (Math.abs(py + 1 - midY) < 4) continue;                      // 中央那一條留空（左右通道）
+        const g1 = z.x + 6 + ((row * 7) % 9), g2 = z.x + z.w - 10 - ((row * 5) % 9);
+        for (let px = z.x + 3; px < z.x + z.w - 3; px++) {
+          if (Math.abs(px + 0.5 - midX) < 4 || (px >= g1 && px < g1 + 4) || (px >= g2 && px < g2 + 4)) continue;
+          if (!clearAround(px, py, 1, 2, 0)) continue;
+          tiles[idx(px, py)] = T_OBST; tiles[idx(px, py + 1)] = T_OBST;
+          props.push({ x: px, y: py, w: 1, h: 2, v: 500 });
+        }
       }
     } else if (z.shape === 'grove') {                  // 蘑菇迷林：一圈圈巨菇圍成天然的隔間，每圈留幾個缺口
       n = Math.floor(n * 0.4);
