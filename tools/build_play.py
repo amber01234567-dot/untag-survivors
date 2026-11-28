@@ -17,4 +17,7 @@ for d in ('icons', 'skills'):
 en = {os.path.basename(f)[:-4]: 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode() for f in sorted(glob.glob(os.path.join(ROOT, 'assets/enemies/*.png')))}
 open(os.path.join(ROOT, 'dist/ui-inline.js'), 'w').write('window.__UI = ' + json.dumps(ui) + ';\nwindow.__EN = ' + json.dumps(en) + ';')
 print('內嵌怪物圖', len(en))
+fx = {os.path.basename(f)[:-4]: 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode() for f in sorted(glob.glob(os.path.join(ROOT, 'assets/fx/*.png')))}
+open(os.path.join(ROOT, 'dist/fx-inline.js'), 'w').write('window.__FX = ' + json.dumps(fx) + ';')
+print('內嵌特效圖', len(fx))
 print('內嵌圖示', len(ui))

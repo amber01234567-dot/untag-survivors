@@ -10,7 +10,7 @@ const NAMES = ['pk_g1', 'pk_g2', 'pk_g3', 'pk_c', 'pk_h', 'pk_k', 'pk_m', 'pk_x'
 export function loadFxSprites() {
   return Promise.all(NAMES.map((n) => new Promise((res) => {
     const im = new Image(); im.onload = () => { FXS[n] = im; res(); }; im.onerror = () => res();
-    im.src = new URL(`../../assets/fx/${n}.png`, import.meta.url).href;
+    im.src = (typeof window !== 'undefined' && window.__FX && window.__FX[n]) || new URL(`../../assets/fx/${n}.png`, import.meta.url).href;      // 測試頁把特效圖內嵌成一個檔
   })));
 }
 // 把白色素材染成指定顏色（結果會快取）
