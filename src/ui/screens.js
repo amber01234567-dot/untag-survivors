@@ -113,7 +113,6 @@ export class Screens {
         case 'skinbuy': if (save.buySkin(v)) { sfx('chest'); app.toast('取得造型：' + SKIN[v].name); } else app.toast('金幣不足'); this.refresh(); break;
         case 'skinset': { const c = CHARS[this.sel] ? this.sel : save.data.char; save.setSkin(c, save.skinFor(c) === v ? '' : v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'wzoom': this.mapZoom = true; this.tab = (CHAPTERS.filter((c) => (c.series || 1) === +v).filter((c) => nodeOpen(c.nodes[0].id, ses.lobby.cleared || {})).pop() || CHAPTERS.find((c) => (c.series || 1) === +v)).id; this.show('lobby'); break;
-        case 'nodeui': this.nodeUi = v; this.show('lobby'); break;
         case 'wback': this.mapZoom = false; this.show('lobby'); break;
         case 'backup': this.back = 'home'; this.bkMsg = ''; this.show('backup'); break;
         case 'bkcopy': {
@@ -154,14 +153,13 @@ export class Screens {
     const art = (id) => (SER_ART[id] ? `background-image:linear-gradient(180deg,rgba(6,8,13,.25),rgba(6,8,13,.78)),url(assets/ui/series/s${id}.jpg)` : `background-image:linear-gradient(135deg,color-mix(in srgb,${col(SERIES.find((x) => x.id === id))} 28%,#0a0d14),#06080d 70%)`);
     const sw = '';
     // 關卡路線
-    const card = this.nodeUi === 'c', px = (n) => (card ? 13 + n.pos[0] * 18.5 : 9 + n.pos[0] * 20.5), py = (n) => 20 + n.pos[1] * 26;
+    const px = (n) => 9 + n.pos[0] * 20.5, py = (n) => 20 + n.pos[1] * 26;
     let roads = '';
     for (const n of ch.nodes) for (const id of n.next) { const m = STAGES[id], on = cleared[n.id]; roads += `<line x1="${px(n)}%" y1="${py(n)}%" x2="${px(m)}%" y2="${py(m)}%" class="${on ? 'on' : ''}"/>`; }
     const nodes = ch.nodes.map((n) => {
       const cl = cleared[n.id] || 0, un = nodeOpen(n.id, cleared);
-      const nu = this.nodeUi || 'm', ic = `<img src="assets/ui/nodes/n_${un ? n.kind : 'lock'}.png" alt="">`, stars = '★'.repeat(cl) + '☆'.repeat(3 - cl);
+      const ic = `<img src="assets/ui/nodes/n_${un ? n.kind : 'lock'}.png" alt="">`, stars = '★'.repeat(cl) + '☆'.repeat(3 - cl);
       const cls = `${un ? (cl ? 'cleared' : 'open') : 'locked'} ${n.id === lb.sel.stage ? 'sel' : ''} k-${n.kind}`, pos = `left:${px(n)}%;top:${py(n)}%;--c:${KIND_COL[n.kind]}`;
-      if (nu === 'c') return `<button class="rnode ncard ${cls}" style="${pos}" data-a="node" data-v="${n.id}"><div class="ci">${ic}</div><div class="ct"><div class="nm"><b>${n.id}</b>${n.name}</div><div class="stars">${stars}</div></div></button>`;
       return `<button class="rnode nmed ${cls}" style="${pos}" data-a="node" data-v="${n.id}"><div class="badge">${ic}</div><div class="nm"><b>${n.id}</b> ${n.name}</div><div class="stars">${stars}</div></button>`;
     }).join('');
     const tabs = chOf(serId).map((c) => `<button class="rtab ${c.id === this.tab ? 'on' : ''}" data-a="tab" data-v="${c.id}" ${nodeOpen(c.nodes[0].id, cleared) ? '' : 'disabled'}><i>第 ${c.id} 章</i>${c.name}</button>`).join('');
@@ -177,8 +175,7 @@ export class Screens {
     const [n, t] = prog(serId);
     return `<div class="panel mapwrap mapa">${sw}
       <div class="zhead" style="--c:${col(sr)}"><button class="btn small ghost" data-a="wback">← 世界地圖</button><div><div class="sub">SERIES ${serId}・${sr.sub}</div><h2>系列${NUM[serId - 1]}　${sr.name}</h2></div>
-        ${sr.el ? `<span class="tag" style="--c:${col(sr)}">${EL[sr.el].name}屬性</span>` : ''}<span class="dim" style="font-size:12px">通關 ${n} / ${t}</span><div class="sp"></div>
-        <div class="mapsw" style="position:static">${[['m', '徽章'], ['c', '卡片']].map(([v, nm]) => `<button class="${(this.nodeUi || 'm') === v ? 'on' : ''}" data-a="nodeui" data-v="${v}">${nm}</button>`).join('')}</div></div>${route}</div>`;
+        ${sr.el ? `<span class="tag" style="--c:${col(sr)}">${EL[sr.el].name}屬性</span>` : ''}<span class="dim" style="font-size:12px">通關 ${n} / ${t}</span></div>${route}</div>`;
   }
   // 造型預覽圖用到才載入：載好後重畫一次
   loadSkinPics() {
