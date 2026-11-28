@@ -96,6 +96,8 @@ export function updatePlayer(W, p, dt) {
     if (p.reviveP >= 1) { W.revive(p, 0.4); W.emit('t', p.x | 0, (p.y - 60) | 0, '復活！', 2); W.emit('a', 'revive'); }
     return;
   }
+  if (p.rootT > 0) p.rootT -= dt;
+  if (p.rootCd > 0) p.rootCd -= dt;
   if (p.shockCd > 0) p.shockCd -= dt;
   if (p.burnT > 0) { p.burnT -= dt; if (p.hp > 1) { p.hp = Math.max(1, p.hp - p.burn * dt); p.hurt = Math.max(p.hurt, 0.05); } }      // 燃燒 / 中毒：不會直接致死
   p.invuln -= dt; p.hurt -= dt; if (p.stealth > 0) p.stealth -= dt;
@@ -119,7 +121,7 @@ export function updatePlayer(W, p, dt) {
     if (d.dmg) W.hash.query(p.x, p.y, d.hitR || 40, (e) => { if (d.hit.has(e.id)) return; d.hit.add(e.id); W.strike(p, e, d.dmg, d.hitOpt); });
     d.t -= dt;
     if (d.t <= 0) { p.dash = null; d.onEnd && d.onEnd(W, p); }
-  } else if (p.moving && !p.rooted) {
+  } else if (p.moving && !p.rooted && !(p.rootT > 0)) {
     const sp = p.st.speed * bSpeed(p);
     moveBody(L, p, mx * sp * dt, my * sp * dt, 11);
   }

@@ -73,6 +73,7 @@ export class Renderer {
     for (const e of f.enemies) if (vis(e.x, e.y, 120)) list.push(e);
     for (const p of f.players) if (!(p.fl & 32)) { p._p = 1; list.push(p); }
     for (const s of f.summons) { const k = SUMMON_KINDS[s.k]; if (k !== 'wisp' && k !== 'drone') { s._s = 1; list.push(s); } }
+    if (f.hud && f.hud.L && f.hud.L.tw) for (const i of f.hud.L.tw) this.rockWall(g, (i % L.W) * 32, Math.floor(i / L.W) * 32);
     if (L.spikes && L.spikes.length) for (const s of L.spikes) if (vis(s.x, s.y, 80)) this.spike(g, s, f.time, L.zones[s.zone].state === 'active');
     if (L.vents && L.vents.length) for (const v of L.vents) if (vis(v.x, v.y, 120)) this.vent(g, v, f.time, L.zones[v.zone].state === 'active');
     if (f.devs) for (const d of L.devices) if (vis(d.x, d.y, 160)) { this.deviceGround(g, d, f.devs[d.idx] || [0, 0], t); list.push({ _d: d, y: d.y + 10 }); }
@@ -492,6 +493,24 @@ export class Renderer {
         g.globalAlpha = 0.8; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x - r * 0.7, y); g.moveTo(x + r, y); g.lineTo(x + r * 0.7, y); g.moveTo(x, y - r * 0.86); g.lineTo(x, y - r * 0.6); g.moveTo(x, y + r * 0.86); g.lineTo(x, y + r * 0.6); g.stroke(); g.globalAlpha = 1;
         break;
       }
+      case 'e_web': {                              // 蜘蛛網：預警圈裡畫出放射狀的網
+        g.save(); g.translate(x, y); g.scale(1, 0.86);
+        g.fillStyle = 'rgba(235,235,225,.12)'; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();
+        g.strokeStyle = `rgba(245,245,235,${0.35 + 0.5 * z.dp})`; g.lineWidth = 1.6;
+        for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(i * TAU / 8) * r, Math.sin(i * TAU / 8) * r); g.stroke(); }
+        for (let k = 1; k <= 3; k++) { g.beginPath(); for (let i = 0; i <= 8; i++) { const rr = r * k / 3 * (i % 2 ? 0.92 : 1), px = Math.cos(i * TAU / 8) * rr, py = Math.sin(i * TAU / 8) * rr; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); }
+        g.restore();
+        break;
+      }
+      case 'e_caltrop': {                          // 撒菱：一片小小的鐵蒺藜
+        g.save(); g.translate(x, y);
+        g.fillStyle = 'rgba(60,40,20,.18)'; g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.fill();
+        g.strokeStyle = 'rgba(200,150,90,.7)'; g.lineWidth = 1.5; g.setLineDash([5, 6]); g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+        const fade = z.on ? Math.min(1, (1 - z.p) * 8) : z.dp;
+        for (let i = 0; i < 16; i++) { const a = i * 2.4, d = r * (0.2 + 0.7 * ((i * 53 % 17) / 17)), px = Math.cos(a) * d, py = Math.sin(a) * d * 0.86; g.fillStyle = `rgba(70,74,84,${fade})`; g.beginPath(); g.moveTo(px, py - 7); g.lineTo(px + 6, py + 4); g.lineTo(px - 6, py + 4); g.closePath(); g.fill(); g.fillStyle = `rgba(210,215,225,${fade})`; g.fillRect(px - 1, py - 6, 2, 5); }
+        g.restore();
+        break;
+      }
       case 'e_tornado': {                          // 龍捲風：一圈圈旋轉的弧線，往上變寬
         g.save(); g.translate(x, y);
         if (!z.on) { g.strokeStyle = 'rgba(200,255,240,.8)'; g.lineWidth = 2.5; g.setLineDash([10, 8]); g.beginPath(); g.ellipse(0, 0, r, r * 0.86, 0, 0, TAU); g.stroke(); g.setLineDash([]); }
@@ -651,6 +670,15 @@ export class Renderer {
     g.translate(cx, cy); g.rotate(a); g.globalAlpha = k;
     g.fillStyle = blowing ? '#8ff0d8' : '#ffe27a'; g.strokeStyle = 'rgba(5,6,10,.8)'; g.lineWidth = 3;
     g.beginPath(); g.moveTo(-44, -11); g.lineTo(10, -11); g.lineTo(10, -26); g.lineTo(46, 0); g.lineTo(10, 26); g.lineTo(10, 11); g.lineTo(-44, 11); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+  // 土牆術升起的岩牆（一格）
+  rockWall(g, x, y) {
+    g.save(); g.translate(x, y);
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(-2, 26, 36, 10);
+    g.fillStyle = '#6a4c30'; g.strokeStyle = '#2a1c10'; g.lineWidth = 2; g.beginPath(); g.roundRect(0, -22, 32, 54, 4); g.fill(); g.stroke();
+    g.fillStyle = '#a07a4c'; g.beginPath(); g.roundRect(1, -22, 30, 22, 4); g.fill();
+    g.strokeStyle = 'rgba(40,26,14,.55)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(8, 2); g.lineTo(13, 16); g.lineTo(9, 30); g.moveTo(22, 0); g.lineTo(19, 12); g.lineTo(25, 24); g.stroke();
     g.restore();
   }
   // 地刺地磚：平時是有孔的石板，快刺出時發亮，刺出時畫出一排尖刺

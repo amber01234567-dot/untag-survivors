@@ -4,14 +4,14 @@ import { buffBits, bHaste } from '../sim/player.js';
 import { SKINS } from '../sim/const.js';
 import { EL_IDS } from '../data/gear.js';
 
-export const PROTO = 11;
+export const PROTO = 12;
 const STATES = ['play', 'levelup', 'won', 'lost'];
 const PF = ['id', 'x', 'y', 'face', 'aim', 'hp', 'maxHp', 'shield', 'fl', 'rev', 'atkN', 'atkA', 'cdP', 'ult', 'buffs', 'jz', 'ack', 'castN', 'spd', 'skin', 'set'];
 
 export function snapOf(W) {
   const s = {
     t: W.time, st: STATES.indexOf(W.state), lv: W.level, xp: Math.floor(W.xp), xn: W.xpNeed, co: Math.floor(W.coins), ki: W.kills, pt: Math.ceil(W.pickT),
-    p: [], en: [], pr: [], z: [], s: [], L: Object.assign(W.ctl.state(), { w: W.wind ? [Math.round(W.wind.vx), Math.round(W.wind.vy), W.wind.st] : 0 }), e: W.ev,
+    p: [], en: [], pr: [], z: [], s: [], L: Object.assign(W.ctl.state(), { w: W.wind ? [Math.round(W.wind.vx), Math.round(W.wind.vy), W.wind.st] : 0, tw: W.tempTiles() }), e: W.ev,
   };
   W.ev = [];
   for (const p of W.players) {
@@ -20,7 +20,7 @@ export function snapOf(W) {
     s.p.push({
       id: p.id, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, face: p.face, aim: Math.round(p.aim * 100) / 100,
       hp: Math.ceil(p.hp), maxHp: p.st.maxHp, shield: Math.ceil(p.shield),
-      fl: (p.down ? 1 : 0) | (p.moving ? 2 : 0) | (p.hurt > 0 ? 4 : 0) | (p.jump ? 8 : 0) | (p.dash ? 16 : 0) | (p.gone ? 32 : 0) | (p.buffs.chime ? 64 : 0),
+      fl: (p.down ? 1 : 0) | (p.moving ? 2 : 0) | (p.hurt > 0 ? 4 : 0) | (p.jump ? 8 : 0) | (p.dash ? 16 : 0) | (p.gone ? 32 : 0) | (p.buffs.chime ? 64 : 0) | (p.rootT > 0 ? 128 : 0),
       rev: Math.round(p.reviveP * 100), atkN: p.atkN & 1023, atkA: Math.round(p.atkA * 100) / 100,
       cdP: Math.max(0, Math.round(p.skillCd / (p.def.skill.cd * p.st.cd) * 100)), ult: Math.floor(p.ult / p.ultMax * 100),
       buffs: buffBits(p), jz: Math.round(p.jumpZ), ack: p.ack, castN: p.castN & 255, spd: Math.round(spd), skin: Math.max(0, SKINS.indexOf((p.weapons[0] && p.weapons[0].def.skin) || '')),

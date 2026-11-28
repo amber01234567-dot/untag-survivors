@@ -48,7 +48,7 @@ export class World {
     this.time = 0; this.tickN = 0;
     this.players = []; this.enemies = []; this.projs = []; this.zones = []; this.summons = [];
     this.pickups = new Map();
-    this.decoys = [];
+    this.decoys = []; this.walls = [];
     this.ev = []; this._dmgEv = 0;
     this.eid = 0; this.prid = 0; this.zid = 0; this.gid = 0; this.sid = 0;
     this.n = players.length;
@@ -93,6 +93,7 @@ export class World {
         if (ph >= VENT_PERIOD - VENT_WARN && prev < VENT_PERIOD - VENT_WARN) warn(this, v.x, v.y, VENT_R, VENT_WARN, 15 * this.dmgMul);
       }
     }
+    if (this.walls.length) { for (const w of this.walls) { w.t -= dt; if (w.t <= 0) for (const i of w.tiles) if (this.L.tiles[i] === 2) this.L.tiles[i] = 1; } this.walls = this.walls.filter((w) => w.t > 0); }
     if (this.L.spikes.length) {                                   // 場地危險：地刺。刺出的那段時間站在地磚上就會受傷（每人 0.6 秒最多一次）
       for (const p of this.players) { if (p.spikeCd > 0) p.spikeCd -= dt; }
       for (const s of this.L.spikes) {
@@ -439,6 +440,26 @@ export class World {
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 
+  // 土牆術：從 (x, y) 沿角度 a 的垂直方向升起一排岩牆（n 格），dur 秒後消失。牆會擋住玩家、敵人和子彈；不會蓋在玩家身上
+  addWall(x, y, a, n, dur) {
+    const L = this.L, tiles = [], px = -Math.sin(a), py = Math.cos(a);
+    for (let k = -(n >> 1); k <= (n >> 1); k++) for (const t2 of [0, 1]) {
+      const wx = x + px * k * TILE + Math.cos(a) * t2 * TILE * 0.6, wy = y + py * k * TILE + Math.sin(a) * t2 * TILE * 0.6;
+      const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE), i = ty * L.W + tx;
+      if (tx < 1 || ty < 1 || tx >= L.W - 1 || ty >= L.H - 1 || L.tiles[i] !== 1 || tiles.includes(i)) continue;
+      const cx = (tx + 0.5) * TILE, cy = (ty + 0.5) * TILE;
+      if (this.players.some((p) => !p.gone && Math.abs(p.x - cx) < 34 && Math.abs(p.y - cy) < 34)) continue;
+      tiles.push(i);
+    }
+    if (!tiles.length) return;
+    for (const i of tiles) { L.tiles[i] = 2; this.emit('r', ((i % L.W) + 0.5) * TILE | 0, (Math.floor(i / L.W) + 0.5) * TILE | 0, 26, 6); }
+    this.walls.push({ tiles, t: dur }); this.emit('sh', 5);
+  }
+  tempTiles() { const o = []; for (const w of this.walls) for (const i of w.tiles) o.push(i); return o; }
+  // 撒菱：地上留一片鐵蒺藜，踩到會受傷並緩速
+  addCaltrops(x, y, r, dur, dmg) { return this.addZone({ kind: 'e_caltrop', team: 1, x, y, r, delay: 0.5, dur: dur + 0.5, tick: 0.5, dmg, slowP: 0.3 }); }
+  // 蜘蛛網：預警後落下，範圍內的玩家被定住 root 秒（可以攻擊，不能移動）
+  addWeb(x, y, r, delay, root, dmg) { return this.addZone({ kind: 'e_web', team: 1, x, y, r, delay, dur: delay + 0.25, tick: 9, dmg, once: true, root }); }
   // 龍捲風：會在場上慢慢移動、撞牆反彈的危險區，碰到的玩家持續受傷
   addTornado(x, y, a, speed, dur, dmg) {
     return this.addZone({ kind: 'e_tornado', team: 1, x, y, r: 70, delay: 0.9, dur: dur + 0.9, tick: 9, dmg, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, hitT: 0,
@@ -474,7 +495,7 @@ export class World {
       if (z.once && z.fired) return;
       z.fired = true;
       if (z.len) { const ca = Math.cos(z.a), sa = Math.sin(z.a); for (const p of this.players) { const dx = p.x - z.x, dy = p.y - z.y, t = dx * ca + dy * sa; if (t >= 0 && t <= z.len && Math.abs(-dx * sa + dy * ca) <= z.w / 2 + 10) this.damagePlayer(p, z.dmg); } }
-      else { this.playersIn(z.x, z.y, z.r, (p) => this.damagePlayer(p, z.dmg)); if (z.once) this.emit('b', z.x | 0, z.y | 0, z.r | 0, 3); }
+      else { this.playersIn(z.x, z.y, z.r, (p) => { this.damagePlayer(p, z.dmg); if (z.root && !(p.rootCd > 0) && !p.down) { p.rootT = z.root; p.rootCd = z.root + 2.5; this.emit('t', p.x | 0, (p.y - 60) | 0, '被黏住！', 3); } if (z.slowP) addBuff(p, 'caltrop', { t: 0.8, speed: -z.slowP }); }); if (z.once) this.emit('b', z.x | 0, z.y | 0, z.r | 0, 3); }
       return;
     }
     const p = z.owner;

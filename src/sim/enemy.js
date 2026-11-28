@@ -744,6 +744,65 @@ const AI = {
       volley(0, 190); ai.q.push({ t: 0.5, fn: () => volley(0.2, 215) }); ai.q.push({ t: 0.5, fn: () => volley(0.4, 190) }); if (p2) ai.q.push({ t: 0.5, fn: () => volley(0.1, 240) });
     } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'pangolin' : i % 3 === 1 ? 'rocklizard' : 'pebble', i * 1.05, 120);
   },
+  // 土蜘蛛：吐網（定身）、八足連刺（繞一圈依序刺下）、鑽地突襲、產卵（小蜘蛛）
+  boss_tsuchigumo(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 3) { ai.w -= dt; if (ai.w <= 0) { e.x = ai.tx; e.y = ai.ty; e.st = 0; e.spawnT = 0.35; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); W.emit('sh', 9); for (let i = 0; i < 8; i++) warn(W, e.x + Math.cos(i * TAU / 8) * 210, e.y + Math.sin(i * TAU / 8) * 210, 84, 0.6, e.dmg * 1.1); } return; }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.8 : 3.7; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 5;
+    if (m === 1 || m === 4) {                    // 吐網：落在每個玩家附近，被罩住會定身；接著朝被黏住的人放一排岩刺
+      for (const q of W.alive()) { W.addWeb(q.x + W.rng.range(-50, 50), q.y + W.rng.range(-50, 50), 100, 1.0, p2 ? 1.3 : 1.0, e.dmg * 0.4); if (p2) W.addWeb(q.x + W.rng.range(-220, 220), q.y + W.rng.range(-220, 220), 100, 1.25, 1.3, e.dmg * 0.4); }
+      ai.q.push({ t: 1.5, fn: () => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = -2; i <= 2; i++) shootAt(W, e, 'e_rock', a + i * 0.16, 250, e.dmg * 0.55, { r: 10 }); } });
+    } else if (m === 2) {                        // 八足連刺：身邊一圈依序刺下，半血後再反方向一圈
+      const ring = (dir, off) => { for (let i = 0; i < 8; i++) warn(W, e.x + Math.cos(dir * i * TAU / 8 + off) * 175, e.y + Math.sin(dir * i * TAU / 8 + off) * 175, 92, 0.5 + i * 0.13, e.dmg * 1.3); };
+      ring(1, 0); W.emit('sh', 5); if (p2) ai.q.push({ t: 1.6, fn: () => ring(-1, 0.39) });
+    } else if (m === 3) {                        // 鑽地突襲
+      const tp = W.nearestPlayer(e.x, e.y, true) || p; ai.tx = tp.x; ai.ty = tp.y; if (solidAt(W.L, ai.tx, ai.ty)) { ai.tx = e.x; ai.ty = e.y; }
+      W.emit('r', e.x | 0, e.y | 0, 120, 6); e.st = 3; ai.w = 1.2; e.x = -9999; e.y = -9999; warn(W, ai.tx, ai.ty, 180, 1.2, e.dmg * 1.5);
+    } else for (let i = 0; i < (p2 ? 12 : 9); i++) summon(W, e, i % 4 === 3 ? 'genin' : 'spiderling', i * 0.75, 110);
+  },
+  // 忍軍頭領：替身術（短時間內被打掉一定血量 → 留下煙霧瞬移並反擊）、撒菱、土牆術（升起會擋路的岩牆）、手裏劍亂舞
+  boss_ninjamaster(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    // 替身術：每累積掉 6% 血（且冷卻好了）就發動一次
+    if (ai.subHp === undefined) ai.subHp = e.hp;
+    ai.subCd = (ai.subCd || 0) - dt;
+    if (ai.subHp - e.hp > e.maxHp * 0.06 && ai.subCd <= 0) {
+      ai.subHp = e.hp; ai.subCd = p2 ? 5 : 7;
+      const ox = e.x, oy = e.y;
+      for (let k = 0; k < 8; k++) { const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 230, ty = p.y + Math.sin(a) * 230; if (!solidAt(W.L, tx, ty)) { e.x = tx; e.y = ty; break; } }
+      W.emit('r', ox | 0, oy | 0, 110, 6); W.emit('t', ox | 0, (oy - 50) | 0, '替身術！', 3); e.spawnT = 0.35; W.emit('sp', e.x | 0, e.y | 0, e.r | 0);
+      warn(W, ox, oy, 150, 0.7, e.dmg * 1.3);                                    // 原地留下的替身木樁爆開
+      ai.q = ai.q || []; ai.q.push({ t: 0.45, fn: () => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = -3; i <= 3; i++) shootAt(W, e, 'e_rock', a + i * 0.13, 290, e.dmg * 0.55, { r: 10 }); } });
+    } else if (ai.subHp - e.hp > e.maxHp * 0.06) ai.subHp = e.hp + e.maxHp * 0.06;
+    if (d > 330) seek(W, e, dt, sp * (p2 ? 1.2 : 1), p.x, p.y); else if (d < 190) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.7 * dt, (e.y - p.y) / d * sp * 0.7 * dt, e.r * 0.5);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.5 : 3.3; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 手裏劍亂舞：瞄準的扇形三連發，半血後再加一圈
+      const fan = (n, spread, sp2) => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = 0; i < n; i++) shootAt(W, e, 'e_rock', a + (i - (n - 1) / 2) * spread, sp2, e.dmg * 0.55, { r: 10 }); };
+      fan(7, 0.14, 280); ai.q.push({ t: 0.35, fn: () => fan(8, 0.14, 300) }); ai.q.push({ t: 0.35, fn: () => fan(9, 0.13, 280) });
+      if (p2) ai.q.push({ t: 0.5, fn: () => { for (let i = 0; i < 20; i++) shootAt(W, e, 'e_rock', i * TAU / 20, 230, e.dmg * 0.55, { r: 10 }); } });
+    } else if (m === 2) {                        // 撒菱：玩家四周和退路上
+      for (const q of W.alive()) for (let i = 0; i < (p2 ? 5 : 4); i++) { const a = i * TAU / (p2 ? 5 : 4) + W.rng.range(-0.4, 0.4); W.addCaltrops(q.x + Math.cos(a) * 150, q.y + Math.sin(a) * 150, 62, 8, e.dmg * 0.3); }
+    } else if (m === 3) {                        // 土牆術：在玩家身後（遠離頭領的那一側）升起岩牆截斷退路，半血後左右再各一道
+      const a = Math.atan2(p.y - e.y, p.x - e.x);
+      W.addWall(p.x + Math.cos(a) * 110, p.y + Math.sin(a) * 110, a, 9, 5);
+      if (p2) { W.addWall(p.x + Math.cos(a + 1.57) * 150, p.y + Math.sin(a + 1.57) * 150, a + 1.57, 7, 5); W.addWall(p.x + Math.cos(a - 1.57) * 150, p.y + Math.sin(a - 1.57) * 150, a - 1.57, 7, 5); }
+      ai.q.push({ t: 0.7, fn: () => { for (const q of W.alive()) warn(W, q.x, q.y, 110, 0.9, e.dmg * 1.3); } });
+    } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'stonegolem' : i % 3 === 1 ? 'shurinin' : 'genin', i * 1.25, 130);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

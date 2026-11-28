@@ -136,3 +136,10 @@ E('rocklizard', { name: '岩蜥', hp: 80, speed: 98, dmg: 15, r: 13, xp: 3, ai: 
 E('monkey', { name: '投石猴', hp: 150, speed: 60, dmg: 22, r: 15, xp: 6, ai: 'lobber', kbRes: 0.4, shotCd: 3.2, shotRange: 460 });
 E('pangolin', { name: '穿山甲', hp: 150, speed: 80, dmg: 21, r: 15, xp: 6, ai: 'charger', kbRes: 0.6 });
 E('rockturtle', { name: '岩甲巨龜', hp: 56000, speed: 50, dmg: 38, r: 58, xp: 2100, ai: 'boss_rockturtle', kbRes: 1, boss: true });
+E('genin', { name: '下忍', hp: 110, speed: 94, dmg: 20, r: 13, xp: 6, ai: 'blink' });
+E('shurinin', { name: '手裏劍忍者', hp: 90, speed: 62, dmg: 15, r: 13, xp: 5, ai: 'shooter', proj: 'e_rock', shotCd: 2.3, shotRange: 410, shotSpeed: 280 });
+E('stonegolem', { name: '岩石魔像', hp: 460, speed: 44, dmg: 25, r: 20, xp: 13, ai: 'burst', kbRes: 0.9, proj: 'e_rock', shotCd: 4.0, shotSpeed: 185, shotCount: 8 });
+E('haniwa', { name: '土偶', hp: 56, speed: 108, dmg: 26, r: 13, xp: 3, ai: 'exploder', boomR: 96 });
+E('spiderling', { name: '小蜘蛛', hp: 26, speed: 150, dmg: 10, r: 10, xp: 2, ai: 'swarm' });
+E('tsuchigumo', { name: '土蜘蛛', hp: 54000, speed: 64, dmg: 39, r: 56, xp: 2300, ai: 'boss_tsuchigumo', kbRes: 1, boss: true });
+E('ninjamaster', { name: '忍軍頭領', hp: 56000, speed: 78, dmg: 40, r: 44, xp: 2500, ai: 'boss_ninjamaster', kbRes: 1, boss: true });

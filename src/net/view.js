@@ -28,6 +28,8 @@ export class View {
     // 閘門狀態（影響碰撞與畫面）
     const L = this.L;
     s.L.g.forEach((g, i) => { if (g && !L.links[i].open) openLink(L, L.links[i]); });
+    { const tw = s.L.tw || [], key = tw.join();          // 土牆術：暫時性的岩牆（會擋路），跟著快照同步到碰撞層
+      if (key !== (this.twKey || '')) { for (const i of this.tw || []) if (!tw.includes(i) && L.tiles[i] === 2) L.tiles[i] = 1; for (const i of tw) L.tiles[i] = 2; this.tw = tw; this.twKey = key; } }
     s.L.z.forEach((c, i) => { L.zones[i].state = ['locked', 'open', 'active', 'cleared'][c]; });
     for (const ev of s.e) {
       const k = ev[0];

@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { bamboo: [[50, 38], [52, 40]], grid: [[52, 38], [52, 40]], slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -110,7 +110,11 @@ function carveShape(z, side, rng, COR, set, unset) {
       const my = (y0 + y1) / 2, mx = (x0 + x1) / 2;
       rect(sx < 0 ? x1 : cx + 5, my - 2, sx < 0 ? cx - 5 : x0, my + 2); rect(mx - 2, sy < 0 ? y1 : cy + 5, mx + 2, sy < 0 ? cy - 5 : y0);
     }
-  } else if (z.shape === 'cave' || z.shape === 'grove') {                      // 洞窟：不規則的圓
+  } else if (z.shape === 'grid') {                      // 機關迴廊：棋盤一樣的井字走道，中間是實心岩柱（橫 4 根、直 2 根）
+    rect(X, Y, X + w, Y + h);
+    const cw = 5, ch = 6, pw = (w - cw * 5) / 4, ph = (h - ch * 3) / 2;
+    for (let j = 0; j < 2; j++) for (let i = 0; i < 4; i++) { const x0 = Math.round(X + cw + i * (pw + cw)), y0 = Math.round(Y + ch + j * (ph + ch)); for (let yy = y0; yy < y0 + Math.floor(ph); yy++) for (let xx = x0; xx < x0 + Math.floor(pw); xx++) unset(xx, yy); }
+  } else if (z.shape === 'cave' || z.shape === 'grove' || z.shape === 'bamboo') {                      // 洞窟：不規則的圓
     const p1 = rng.range(0, 6.28), p2 = rng.range(0, 6.28), p3 = rng.range(0, 6.28);
     for (let y = Y; y < Y + h; y++) for (let x = X; x < X + w; x++) {
       const dx = (x + 0.5 - cx) / (w / 2), dy = (y + 0.5 - cy) / (h / 2), a = Math.atan2(dy, dx);
@@ -238,6 +242,18 @@ export function buildLevel(stage, seed) {
         if (!clearAround(px, py, 2, 2, 1)) continue;
         for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
         props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
+      }
+    } else if (z.shape === 'bamboo') {                 // 竹林迷陣：一排排彎曲的竹叢把空地切成蜿蜒的小路，每排留幾個缺口
+      n = Math.floor(n * 0.3);
+      for (let base = z.y + 5, row = 0; base < z.y + z.h - 6; base += 6, row++) {
+        const ph = rng.range(0, 6.28), g1 = z.x + 5 + rng.int(0, 10), g2 = z.x + z.w - 9 - rng.int(0, 10), g3 = Math.round(midX) - 2 + (row % 2 ? 9 : -9);
+        for (let px = z.x + 2; px < z.x + z.w - 2; px++) {
+          if ((px >= g1 && px < g1 + 4) || (px >= g2 && px < g2 + 4) || (px >= g3 && px < g3 + 4) || Math.abs(px + 0.5 - midX) < 3.5) continue;
+          const py = base + Math.round(Math.sin(px * 0.33 + ph) * 2);
+          if (Math.abs(py + 1 - midY) < 4) continue;
+          if (!clearAround(px, py, 1, 2, 0)) continue;
+          tiles[idx(px, py)] = T_OBST; tiles[idx(px, py + 1)] = T_OBST; props.push({ x: px, y: py, w: 1, h: 2, v: 500 });
+        }
       }
     } else if (z.shape === 'torii') {                  // 千本鳥居：沿著參道每隔一段立一對鳥居柱，把長路隔成一段一段（中間留通道）
       n = Math.floor(n * 0.4);
