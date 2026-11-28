@@ -62,7 +62,7 @@ export class World {
     this.flow = new FlowField(this.L);
     const nMul = 1 + 0.65 * (this.n - 1);
     this.hpMul = stage.diff * this.diff.hp * nMul;
-    this.dmgMul = Math.sqrt(stage.diff) * this.diff.dmg;
+    this.dmgMul = Math.sqrt(stage.diff) * this.diff.dmg * (1 + 0.05 * (this.n - 1));      // 組隊：怪的攻擊小幅提高（4 人 +15%），仍然比單人輕鬆，只是不會太無聊
     this.rateMul = this.diff.rate * (1 + 0.5 * (this.n - 1));
     players.forEach((p, i) => this.players.push(makePlayer(this, p, i)));
     for (const p of this.players) this.lvQueue = Math.max(this.lvQueue, supply + (p.bonus.startLv | 0));

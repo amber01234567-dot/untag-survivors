@@ -51,6 +51,7 @@ export class Screens {
       sfx('click');
       this.act(t.dataset.a, t.dataset.v, t);
     });
+    this.el.addEventListener('change', (e) => { if (e.target.id === 'bkfile' && e.target.files[0]) { const fr = new FileReader(); fr.onload = () => this.importSave(String(fr.result)); fr.onerror = () => this.app.toast('檔案讀不出來'); fr.readAsText(e.target.files[0]); } });
     this.el.addEventListener('change', (e) => { if (e.target.id === 'name') { save.data.name = e.target.value.trim().slice(0, 12) || save.data.name; save.write(); } });
   }
   hide() { this.el.classList.remove('on'); this.el.innerHTML = ''; this.cur = null; }
@@ -96,9 +97,37 @@ export class Screens {
         case 'buy': if (save.unlock(v)) { app.toast('已解鎖 ' + CHARS[v].name); sfx('chest'); } else app.toast('金幣不足'); this.show('roster'); break;
         case 'talent': if (save.buyTalent(v)) { sfx('levelup'); if (ses.lobby.players.length) ses.updateMe(); } else app.toast('金幣不足'); this.refresh(); break;
         case 'sheet': { const lb = document.createElement('div'); lb.className = 'lightbox'; lb.innerHTML = `<img src="assets/sheets/${v}.jpg" alt="">`; lb.onclick = () => lb.remove(); document.body.appendChild(lb); break; }
-        case 'reset': if (confirm('確定要清除所有存檔進度嗎？')) { save.reset(); this.show('home'); } break;
+        case 'reset': if (confirm('確定要清除所有存檔進度嗎？\n（建議先到「存檔備份」匯出一份）')) { save.reset(); this.show('home'); } break;
+        case 'backup': this.back = 'home'; this.bkMsg = ''; this.show('backup'); break;
+        case 'bkcopy': {
+          const code = save.exportCode(), ta = this.el.querySelector('#bkout');
+          let ok = false;
+          try { await navigator.clipboard.writeText(code); ok = true; } catch (e) { if (ta) { ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { /* noop */ } } }
+          app.toast(ok ? '存檔碼已複製' : '無法自動複製，請手動全選上面的存檔碼再複製'); break;
+        }
+        case 'bkdl': {
+          const d = new Date(), z = (n) => String(n).padStart(2, '0'), a2 = document.createElement('a');
+          a2.href = URL.createObjectURL(new Blob([save.exportCode()], { type: 'text/plain' }));
+          a2.download = `luhai-save-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
+          document.body.appendChild(a2); a2.click(); a2.remove(); setTimeout(() => URL.revokeObjectURL(a2.href), 2000);
+          app.toast('已下載存檔檔案'); break;
+        }
+        case 'bkfile': this.el.querySelector('#bkfile').click(); break;
+        case 'bkimport': this.importSave(this.el.querySelector('#bkin').value); break;
       }
     } catch (err) { app.toast(err.message || String(err)); }
+  }
+  // 匯入存檔：先解析給玩家看內容，確認後才覆蓋
+  importSave(text) {
+    const r = save.parseCode(text);
+    if (!r.ok) { this.bkMsg = '✕ ' + r.err; this.bkIn = text; return this.show('backup'); }
+    const i = r.info, cur = save.summary();
+    const line = (x) => `${x.name || '（未命名）'}｜金幣 ${x.coins}｜最遠第 ${x.chapter || 1} 章（通關 ${x.cleared} 關）｜裝備 ${x.gear} 件｜進化武器 ${x.evos} 把`;
+    if (!confirm(`要用這份存檔覆蓋目前的進度嗎？\n\n匯入的存檔：\n${line(i)}\n\n目前的進度（會被取代）：\n${line(cur)}`)) return;
+    save.importCode(text);
+    const st = save.data.settings; setVolume(st.sfx); setMusicVolume(st.music);
+    this.sel = save.data.char; this.bkIn = ''; this.bkMsg = '✓ 匯入完成' + (DEV ? '（測試模式不會寫入瀏覽器，重新整理後會還原）' : '');
+    this.app.toast('存檔已匯入'); this.show('backup');
   }
   tabFromSel() { this.tab = STAGES[this.app.session.lobby.sel.stage].chapter; }
 
@@ -123,7 +152,7 @@ export class Screens {
         <button class="btn ghost" data-a="gear">裝備</button>
       </div>
       <div class="sound"><button class="btn small ghost" data-a="vol" data-v="music">♪ 音樂：${lv(st.music)}</button><button class="btn small ghost" data-a="vol" data-v="sfx">🔊 音效：${lv(st.sfx)}</button></div>
-      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 LUHAI 倖存戰線・版權所有</div>
+      <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="backup" style="cursor:pointer;text-decoration:underline">存檔備份</a>　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 LUHAI 倖存戰線・版權所有</div>
     </div>`;
   }
 
@@ -268,6 +297,28 @@ export class Screens {
   }
 
   // ───────── 天賦 ─────────
+  // ───────── 存檔備份（匯出 / 匯入）─────────
+  backup() {
+    const i = save.summary(), code = save.exportCode();
+    return `<div class="page">
+      <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">存檔備份</div><div class="dim" style="font-size:12px">換瀏覽器、換裝置或清除瀏覽資料前，先匯出一份</div></div>
+      <div class="bkgrid scroll">
+        <div class="panel bkbox">
+          <h3>匯出目前的進度</h3>
+          <div class="bkinfo">${esc(i.name)}　<span class="coin gold">${i.coins}</span>　最遠第 ${i.chapter || 1} 章・通關 ${i.cleared} 關　天賦 ${i.talents} 級　熟練度合計 ${i.ranks}　裝備 ${i.gear} 件　進化武器 ${i.evos} 把</div>
+          <textarea id="bkout" class="bkta" readonly spellcheck="false" onclick="this.select()">${code}</textarea>
+          <div class="bkrow"><button class="btn primary" data-a="bkcopy">複製存檔碼</button><button class="btn" data-a="bkdl">下載成檔案</button></div>
+          <div class="dim bknote">存檔碼就是你的全部進度：貼到記事本、傳給自己，或下載成檔案保存都可以。</div>
+        </div>
+        <div class="panel bkbox">
+          <h3>匯入存檔</h3>
+          <textarea id="bkin" class="bkta" spellcheck="false" placeholder="把存檔碼貼在這裡（LUHAI1. 開頭的一長串）">${esc(this.bkIn || '')}</textarea>
+          <div class="bkrow"><button class="btn primary" data-a="bkimport">匯入</button><button class="btn" data-a="bkfile">選擇存檔檔案…</button><input type="file" id="bkfile" accept=".txt,text/plain" style="display:none"></div>
+          ${this.bkMsg ? `<div class="bkmsg ${this.bkMsg[0] === '✓' ? 'ok' : 'bad'}">${esc(this.bkMsg)}</div>` : ''}
+          <div class="dim bknote">匯入會<b>覆蓋</b>這個瀏覽器目前的進度，覆蓋前會先讓你確認兩邊的內容。</div>
+        </div>
+      </div></div>`;
+  }
   talents() {
     const cleared = save.data.cleared || {}, open = (pg) => DEV || !pg.req || !!cleared[pg.req];
     let page = TALENT_PAGES.find((x) => x.id === (this.tpage || 1)) || TALENT_PAGES[0];

@@ -26,6 +26,38 @@ function migrate(s) {
   return s;
 }
 
+const CODE_PREFIX = 'LUHAI1.';
+function b64enc(str) { const u = new TextEncoder().encode(str); let b = ''; for (let i = 0; i < u.length; i++) b += String.fromCharCode(u[i]); return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function b64dec(str) { const b = atob(str.replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new TextDecoder().decode(u); }
+function checksum(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+// 匯入的資料不可信：型別不對的欄位換回預設值，數字夾在合理範圍內，不認得的角色 / 天賦 / 關卡丟掉
+function sanitize(s) {
+  const f = fresh(), obj = (v) => v && typeof v === 'object' && !Array.isArray(v), int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(+v) || 0));
+  for (const k of ['talents', 'chars', 'gear', 'equip', 'evos', 'evoSel', 'cleared', 'settings', 'stats']) if (!obj(s[k])) s[k] = f[k];
+  for (const k of ['subSel', 'unlocked']) if (!Array.isArray(s[k])) s[k] = [];
+  s.coins = int(s.coins, 0, 99999999); s.name = String(s.name || '').slice(0, 12);
+  if (!CHARS[s.char]) s.char = 'tingge';
+  const tl = {}; for (const t of TALENTS) if (s.talents[t.id]) tl[t.id] = int(s.talents[t.id], 0, t.max); s.talents = tl;
+  const ch = {}; for (const id in s.chars) if (CHARS[id] && obj(s.chars[id])) ch[id] = { xp: int(s.chars[id].xp, 0, 1e7), rank: int(s.chars[id].rank, 0, MASTERY.maxRank) }; s.chars = ch;
+  const cl = {}; for (const id in s.cleared) if (STAGES[id]) cl[id] = int(s.cleared[id], 0, DIFFS.length); s.cleared = cl;
+  const gr = {}; for (const c in s.gear) if (CHARS[c] && obj(s.gear[c])) { gr[c] = {}; for (const g in s.gear[c]) { const [el, slot] = g.split('_'); if (EL[el] && SLOTS.some((x) => x.id === slot)) gr[c][g] = int(s.gear[c][g], 1, MAX_STAR); } } s.gear = gr;
+  const eq = {}; for (const c in s.equip) if (CHARS[c] && obj(s.equip[c])) { eq[c] = {}; for (const slot in s.equip[c]) { const el = s.equip[c][slot]; if (SLOTS.some((x) => x.id === slot) && EL[el] && gr[c] && gr[c][gearId(el, slot)]) eq[c][slot] = el; } } s.equip = eq;
+  const ev = {}; for (const c in s.evos) if (CHARS[c] && Array.isArray(s.evos[c])) ev[c] = s.evos[c].filter((w) => WEAPONS[w] && WEAPONS[w].evoOf); s.evos = ev;
+  const es = {}; for (const c in s.evoSel) if (ev[c] && ev[c].includes(s.evoSel[c])) es[c] = s.evoSel[c]; s.evoSel = es;
+  s.subSel = s.subSel.filter((id) => SUB_WEAPONS.includes(id)).slice(0, 4);
+  s.unlocked = s.unlocked.filter((id) => CHARS[id]);
+  for (const k of ['sfx', 'music']) s.settings[k] = Math.max(0, Math.min(1, +s.settings[k] || 0));
+  for (const k of ['shake', 'dmgNum']) s.settings[k] = !!s.settings[k];
+  for (const k of ['runs', 'wins', 'kills']) s.stats[k] = int(s.stats[k], 0, 1e9);
+  return s;
+}
+function summary(d) {
+  const cleared = Object.keys(d.cleared || {}), far = cleared.map((id) => STAGES[id]).filter(Boolean).reduce((m, st) => Math.max(m, st.chapter), 0);
+  let gear = 0; for (const c in d.gear) gear += Object.keys(d.gear[c]).length;
+  let evos = 0; for (const c in d.evos) evos += d.evos[c].length;
+  return { name: d.name, coins: d.coins, cleared: cleared.length, chapter: far, talents: Object.values(d.talents || {}).reduce((a, b) => a + b, 0), ranks: Object.values(d.chars || {}).reduce((a, c) => a + (c.rank || 0), 0), gear, evos, runs: (d.stats && d.stats.runs) || 0 };
+}
+
 export const save = {
   data: fresh(),
   load() {
@@ -36,6 +68,38 @@ export const save = {
     return this.data;
   },
   write() { if (DEV) return; try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch (e) { /* 無痕模式等情況：忽略 */ } },
+  // ── 存檔匯出 / 匯入 ──
+  // 存檔碼 = "LUHAI1." + base64(JSON) + "." + 檢查碼。換瀏覽器、換裝置、清快取前先匯出，之後貼回來就能接續。
+  exportCode() {
+    const d = Object.assign({}, this.data, { exportedAt: Date.now() });
+    const body = b64enc(JSON.stringify(d));
+    return CODE_PREFIX + body + '.' + checksum(body);
+  },
+  // 只解析、不寫入：回傳 { ok, data, info } 或 { ok: false, err }。info 給畫面顯示「這份存檔裡有什麼」
+  parseCode(str) {
+    const t = String(str || '').replace(/\s+/g, '');
+    if (!t) return { ok: false, err: '請先貼上存檔碼' };
+    if (!t.startsWith(CODE_PREFIX)) return { ok: false, err: '這不是 LUHAI 的存檔碼' };
+    const i = t.lastIndexOf('.'), body = t.slice(CODE_PREFIX.length, i), sum = t.slice(i + 1);
+    if (i <= CODE_PREFIX.length || checksum(body) !== sum) return { ok: false, err: '存檔碼不完整或被改過（請確認整段都有複製到）' };
+    let d;
+    try { d = JSON.parse(b64dec(body)); } catch (e) { return { ok: false, err: '存檔碼內容讀不出來' }; }
+    if (!d || typeof d !== 'object' || Array.isArray(d) || typeof d.coins !== 'number') return { ok: false, err: '存檔碼內容不正確' };
+    if ((d.v || 1) > SAVE_VERSION) return { ok: false, err: '這份存檔來自比較新的遊戲版本，請先重新整理頁面更新遊戲' };
+    delete d.exportedAt;
+    d = sanitize(migrate(d));
+    return { ok: true, data: d, info: summary(d) };
+  },
+  importCode(str) {
+    const r = this.parseCode(str);
+    if (!r.ok) return r;
+    this.data = r.data;
+    if (!this.data.name) this.data.name = '玩家' + Math.floor(100 + Math.random() * 900);
+    if (!this.isUnlocked(this.data.char)) this.data.char = 'tingge';
+    this.write();
+    return r;
+  },
+  summary() { return summary(this.data); },
   reset() { this.data = fresh(); this.data.name = '玩家' + Math.floor(100 + Math.random() * 900); this.write(); },
 
   isUnlocked(id) { const c = CHARS[id]; return !!c && (DEV || !c.unlock || this.data.unlocked.includes(id)); },
