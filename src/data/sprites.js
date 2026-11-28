@@ -5785,5 +5785,269 @@ export const SPRITE_SHEETS = {
    254
   ],
   "one": 1
+ },
+ "allen_xmas": {
+  "px": 250,
+  "walk": [
+   180,
+   255
+  ],
+  "attack": [
+   252,
+   254
+  ],
+  "one": 1
+ },
+ "enjidou_xmas": {
+  "px": 250,
+  "walk": [
+   264,
+   256
+  ],
+  "attack": [
+   331,
+   254
+  ],
+  "one": 1
+ },
+ "feijie_xmas": {
+  "px": 250,
+  "walk": [
+   200,
+   254
+  ],
+  "attack": [
+   229,
+   254
+  ],
+  "one": 1
+ },
+ "gouqi_xmas": {
+  "px": 250,
+  "walk": [
+   206,
+   254
+  ],
+  "attack": [
+   225,
+   254
+  ],
+  "one": 1
+ },
+ "hajimi_xmas": {
+  "px": 250,
+  "walk": [
+   179,
+   256
+  ],
+  "attack": [
+   218,
+   254
+  ],
+  "one": 1
+ },
+ "laijie_xmas": {
+  "px": 250,
+  "walk": [
+   289,
+   254
+  ],
+  "attack": [
+   361,
+   255
+  ],
+  "one": 1
+ },
+ "laojin_xmas": {
+  "px": 250,
+  "walk": [
+   200,
+   254
+  ],
+  "attack": [
+   205,
+   254
+  ],
+  "one": 1
+ },
+ "laoliu_xmas": {
+  "px": 250,
+  "walk": [
+   229,
+   254
+  ],
+  "attack": [
+   346,
+   257
+  ],
+  "one": 1
+ },
+ "maomaochong_xmas": {
+  "px": 250,
+  "walk": [
+   254,
+   254
+  ],
+  "attack": [
+   244,
+   254
+  ],
+  "one": 1
+ },
+ "moumou_xmas": {
+  "px": 250,
+  "walk": [
+   238,
+   256
+  ],
+  "attack": [
+   243,
+   254
+  ],
+  "one": 1
+ },
+ "nongfu_xmas": {
+  "px": 250,
+  "walk": [
+   225,
+   257
+  ],
+  "attack": [
+   316,
+   254
+  ],
+  "one": 1
+ },
+ "qiqiu_xmas": {
+  "px": 250,
+  "walk": [
+   172,
+   254
+  ],
+  "attack": [
+   169,
+   255
+  ],
+  "one": 1
+ },
+ "shaonian_xmas": {
+  "px": 250,
+  "walk": [
+   183,
+   254
+  ],
+  "attack": [
+   262,
+   254
+  ],
+  "one": 1
+ },
+ "shenshen_xmas": {
+  "px": 250,
+  "walk": [
+   191,
+   254
+  ],
+  "attack": [
+   234,
+   254
+  ],
+  "one": 1
+ },
+ "tiaotiao_xmas": {
+  "px": 250,
+  "walk": [
+   208,
+   254
+  ],
+  "attack": [
+   229,
+   254
+  ],
+  "one": 1
+ },
+ "tingge_xmas": {
+  "px": 250,
+  "walk": [
+   196,
+   256
+  ],
+  "attack": [
+   213,
+   254
+  ],
+  "one": 1
+ },
+ "tk_xmas": {
+  "px": 250,
+  "walk": [
+   204,
+   254
+  ],
+  "attack": [
+   222,
+   254
+  ],
+  "one": 1
+ },
+ "wangchuan_xmas": {
+  "px": 250,
+  "walk": [
+   231,
+   254
+  ],
+  "attack": [
+   342,
+   254
+  ],
+  "one": 1
+ },
+ "xia_xmas": {
+  "px": 250,
+  "walk": [
+   242,
+   254
+  ],
+  "attack": [
+   265,
+   304
+  ],
+  "one": 1
+ },
+ "xiaoshunzi_xmas": {
+  "px": 250,
+  "walk": [
+   162,
+   255
+  ],
+  "attack": [
+   184,
+   254
+  ],
+  "one": 1
+ },
+ "yangdidi_xmas": {
+  "px": 250,
+  "walk": [
+   204,
+   255
+  ],
+  "attack": [
+   345,
+   255
+  ],
+  "one": 1
+ },
+ "yingzhang_xmas": {
+  "px": 250,
+  "walk": [
+   213,
+   256
+  ],
+  "attack": [
+   275,
+   254
+  ],
+  "one": 1
  }
 };
