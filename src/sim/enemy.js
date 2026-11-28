@@ -511,6 +511,49 @@ const AI = {
       for (const q of W.alive()) for (let i = 0; i < (p2 ? 4 : 3); i++) W.addFog(q.x + W.rng.range(-170, 170), q.y + W.rng.range(-170, 170), 95, 1.1, 5, e.dmg * 0.22);
     } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'mosquito' : 'mudling', i * 1.05, 100);
   },
+  // 孢子母菇：不會移動。旋轉的孢子彈幕（有缺口可鑽）、向外擴散的毒霧環、不斷長出小菇；半血後彈幕加密、霧環多一圈
+  boss_sporemother(W, e, dt) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.tgt) e.face = e.tgt.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.6 : 3.4; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1 || m === 3) {                    // 旋轉彈幕：每波留一個缺口，缺口位置逐波轉動
+      const n = p2 ? 22 : 18, waves = p2 ? 6 : 4, g0 = W.rng.range(0, TAU), dir = m === 1 ? 1 : -1;
+      for (let k = 0; k < waves; k++) ai.q.push({ t: k ? 0.5 : 0, fn: () => { const gap = g0 + dir * k * 0.5; for (let i = 0; i < n; i++) { const a = i * TAU / n; if (Math.abs(Math.atan2(Math.sin(a - gap), Math.cos(a - gap))) < 0.42) continue; shootAt(W, e, 'e_spore', a, 185, e.dmg * 0.5, { r: 10 }); } W.emit('sh', 2); } });
+    } else if (m === 2) {                        // 毒霧環：由內往外一圈一圈
+      for (let ring = 1; ring <= (p2 ? 4 : 3); ring++) ai.q.push({ t: ring > 1 ? 0.9 : 0, fn: () => { const n = 4 + ring * 2, rr = 110 + ring * 150; for (let i = 0; i < n; i++) W.addFog(e.x + Math.cos(i * TAU / n + ring * 0.6) * rr, e.y + Math.sin(i * TAU / n + ring * 0.6) * rr, 95, 1.2, 4, e.dmg * 0.22); } });
+    } else {                                     // 長出小菇，並在每個玩家腳下冒出菌刺
+      for (let i = 0; i < (p2 ? 9 : 7); i++) summon(W, e, i % 3 === 0 ? 'sporeflower' : 'sporeshroom', i * 0.9, 150 + (i % 3) * 60);
+      for (const q of W.alive()) for (let i = 0; i < 3; i++) warn(W, q.x + (i ? W.rng.range(-130, 130) : 0), q.y + (i ? W.rng.range(-130, 130) : 0), 92, 0.95 + i * 0.25, e.dmg * 1.2);
+    }
+  },
+  // 瘟疫領主：鐮刀大橫掃（面前半圈，接著反手半圈）、追人的瘴氣雲、召喚亡靈與骷髏、瞬移到玩家身後
+  boss_plaguelord(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.3 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.7 : 3.6; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 5;
+    const sweep = (a, dir) => { for (let i = -3; i <= 3; i++) for (const dd of [150, 290]) warn(W, e.x + Math.cos(a + i * 0.36) * dd, e.y + Math.sin(a + i * 0.36) * dd, dd > 200 ? 100 : 84, 0.5 + (dir > 0 ? i + 3 : 3 - i) * 0.09, e.dmg * 1.3); W.emit('sh', 6); };
+    if (m === 1 || m === 4) {
+      const a = Math.atan2(p.y - e.y, p.x - e.x);
+      sweep(a, 1); ai.q.push({ t: 1.25, fn: () => { const q = e.tgt || p; sweep(Math.atan2(q.y - e.y, q.x - e.x), -1); } });
+      if (p2) ai.q.push({ t: 1.2, fn: () => { for (let i = 0; i < 16; i++) shootAt(W, e, 'e_spore', i * TAU / 16, 220, e.dmg * 0.5, { r: 10 }); } });
+    } else if (m === 2) {                        // 瘴氣雲：一朵接一朵落在玩家當下的位置，逼人一直移動
+      for (let k = 0; k < (p2 ? 7 : 5); k++) ai.q.push({ t: k ? 0.7 : 0, fn: () => { for (const q of W.alive()) W.addFog(q.x, q.y, 105, 1.0, 4.5, e.dmg * 0.24); } });
+    } else if (m === 3) {                        // 瞬移到玩家身後，落點一圈
+      const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 170, ty = p.y + Math.sin(a) * 170;
+      if (!solidAt(W.L, tx, ty)) { W.emit('r', e.x | 0, e.y | 0, 100, 6); e.x = tx; e.y = ty; e.spawnT = 0.4; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); }
+      warn(W, e.x, e.y, 190, 0.85, e.dmg * 1.4);
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 0 ? 'skelarcher' : i % 3 === 1 ? 'wraith' : 'mudling', i * 1.05, 120);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

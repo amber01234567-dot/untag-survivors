@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -67,7 +67,15 @@ function carveShape(z, side, rng, COR, set, unset) {
       ell(ex, ey, rx, ry);
       for (let t = 0; t <= 1; t += 0.04) ell(cx + (ex - cx) * t, cy + (ey - cy) * t, 2.6, 2.6);
     }
-  } else if (z.shape === 'cave') {                      // 洞窟：不規則的圓
+  } else if (z.shape === 'crypt') {                     // 十字墓道：十字形走道，四個角落各一間獨立的小墓室，各有兩扇門通到走道
+    rect(cx - 5, Y, cx + 5, Y + h); rect(X, cy - 5, X + w, cy + 5);
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      const x0 = sx < 0 ? X + 1 : cx + 8, x1 = sx < 0 ? cx - 8 : X + w - 1, y0 = sy < 0 ? Y + 1 : cy + 8, y1 = sy < 0 ? cy - 8 : Y + h - 1;
+      rect(x0, y0, x1, y1);
+      const my = (y0 + y1) / 2, mx = (x0 + x1) / 2;
+      rect(sx < 0 ? x1 : cx + 5, my - 2, sx < 0 ? cx - 5 : x0, my + 2); rect(mx - 2, sy < 0 ? y1 : cy + 5, mx + 2, sy < 0 ? cy - 5 : y0);
+    }
+  } else if (z.shape === 'cave' || z.shape === 'grove') {                      // 洞窟：不規則的圓
     const p1 = rng.range(0, 6.28), p2 = rng.range(0, 6.28), p3 = rng.range(0, 6.28);
     for (let y = Y; y < Y + h; y++) for (let x = X; x < X + w; x++) {
       const dx = (x + 0.5 - cx) / (w / 2), dy = (y + 0.5 - cy) / (h / 2), a = Math.atan2(dy, dx);
@@ -195,6 +203,20 @@ export function buildLevel(stage, seed) {
         for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
         props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
       }
+    } else if (z.shape === 'grove') {                  // 蘑菇迷林：一圈圈巨菇圍成天然的隔間，每圈留幾個缺口
+      n = Math.floor(n * 0.4);
+      for (const [ox, oy] of [[-0.24, -0.22], [0.24, -0.22], [-0.24, 0.22], [0.24, 0.22]]) {
+        const rcx = midX + ox * z.w, rcy = midY + oy * z.h, gap = rng.int(0, 11), rr = rng.range(5, 6);
+        for (let i = 0; i < 12; i++) {
+          if (i === gap || i === (gap + 4) % 12 || i === (gap + 8) % 12) continue;
+          const px = Math.round(rcx + Math.cos(i * 0.5236) * rr - 1), py = Math.round(rcy + Math.sin(i * 0.5236) * rr * 0.85 - 1);
+          if (Math.abs(px + 1 - midX) < 5 && (py < z.y + 7 || py + 2 > z.y + z.h - 7)) continue;
+          if (Math.abs(py + 1 - midY) < 5 && (px < z.x + 7 || px + 2 > z.x + z.w - 7)) continue;
+          if (!clearAround(px, py, 2, 2, 0)) continue;
+          for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
+          props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
+        }
+      }
     } else if (z.shape === 'pier' || z.shape === 'islands') n = Math.floor(n * 0.6);
     for (let i = 0, tries = 0; i < n && tries < n * 12; tries++) {
       const shape = rng.weighted([[[1, 1], 4], [[2, 2], 3], [[2, 1], 2], [[1, 2], 2], [[3, 1], 1]]);
@@ -241,6 +263,12 @@ export function buildLevel(stage, seed) {
     }
   }
 
+  // ── 全圖連通檢查：從出生點走不到的地板（被障礙物圍死的小格子）填成牆。只在有特殊形狀的關卡做，舊章節的地圖不變 ──
+  if (stage.shapes) {
+    const st0 = zones.find((z) => z.kind === 'start'), seen = new Uint8Array(W * H), q = [idx(Math.floor(st0.cx / TILE), Math.floor(st0.cy / TILE))]; seen[q[0]] = 1;
+    for (let k = 0; k < q.length; k++) { const i = q[k]; for (const j of [i - 1, i + 1, i - W, i + W]) if (j >= 0 && j < seen.length && !seen[j] && (tiles[j] === T_FLOOR || tiles[j] === T_GATE)) { seen[j] = 1; q.push(j); } }
+    for (let i = 0; i < seen.length; i++) if (tiles[i] === T_FLOOR && !seen[i]) tiles[i] = T_WALL;
+  }
   // ── 區域歸屬與可走格清單 ──
   for (const z of zones) {
     const fl = [];

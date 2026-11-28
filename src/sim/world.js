@@ -98,7 +98,7 @@ export class World {
       if (this.hazT <= 0) {
         this.hazT = this.rng.range(9, 12);
         const z = this.L.zones.find((q) => q.state === 'active');
-        if (z) {
+        if (z && !(z.obj && z.obj.t === 'boss')) {      // 首領戰不放場地毒霧（首領自己會放）
           const pts = this.alive().filter((p) => this.L.zoneOf[Math.floor(p.y / TILE) * this.L.W + Math.floor(p.x / TILE)] === z.idx).map((p) => [p.x + this.rng.range(-90, 90), p.y + this.rng.range(-90, 90)]);
           while (pts.length < 3) { const i = z.floor[this.rng.int(0, z.floor.length - 1)]; pts.push([(i % this.L.W + 0.5) * TILE, (Math.floor(i / this.L.W) + 0.5) * TILE]); }
           for (const [x, y] of pts.slice(0, 3)) this.addFog(x, y, 150, 1.8, 5.5, 5 * this.dmgMul);

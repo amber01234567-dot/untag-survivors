@@ -99,3 +99,9 @@ E('mosquito', { name: '沼澤蚊', hp: 50, speed: 122, dmg: 13, r: 12, xp: 3, ai
 E('toad', { name: '毒蟾蜍', hp: 175, speed: 40, dmg: 21, r: 17, xp: 7, ai: 'lobber', kbRes: 0.6, shotCd: 3.4, shotRange: 460 });
 E('rotter', { name: '腐屍', hp: 300, speed: 50, dmg: 22, r: 18, xp: 9, ai: 'chase', kbRes: 0.7 });
 E('bogfrog', { name: '沼澤巨蛙', hp: 68000, speed: 54, dmg: 31, r: 52, xp: 1250, ai: 'boss_bogfrog', kbRes: 1, boss: true });
+E('sporeshroom', { name: '孢子菇', hp: 48, speed: 108, dmg: 23, r: 13, xp: 3, ai: 'exploder', boomR: 92 });
+E('sporeflower', { name: '噴孢花', hp: 350, speed: 44, dmg: 23, r: 19, xp: 11, ai: 'burst', kbRes: 0.85, proj: 'e_spore', shotCd: 4.0, shotSpeed: 180, shotCount: 8 });
+E('wraith', { name: '亡靈', hp: 100, speed: 88, dmg: 18, r: 14, xp: 6, ai: 'blink', fly: true });
+E('skelarcher', { name: '骷髏射手', hp: 78, speed: 60, dmg: 14, r: 14, xp: 5, ai: 'shooter', proj: 'e_spore', shotCd: 2.4, shotRange: 400, shotSpeed: 260 });
+E('sporemother', { name: '孢子母菇', hp: 64000, speed: 0, dmg: 32, r: 58, xp: 1300, ai: 'boss_sporemother', kbRes: 1, boss: true });
+E('plaguelord', { name: '瘟疫領主', hp: 70000, speed: 62, dmg: 33, r: 48, xp: 1500, ai: 'boss_plaguelord', kbRes: 1, boss: true });
