@@ -5,12 +5,13 @@ import { STAGES, DIFFS } from '../data/chapters.js';
 import { WEAPONS, SUB_WEAPONS } from '../data/weapons.js';
 import { EL, EL_IDS, SLOTS, ARMOR_SLOTS, MAX_STAR, DROP, gearId } from '../data/gear.js';
 
+import { CHARMS, CHARM, CHARM_MAX, CHARM_PRICE, CHARM_DROP } from '../data/charms.js';
 const KEY = 'untag_survivors_save';
 export const SAVE_VERSION = 2;
 const DEV = new URLSearchParams(location.search).get('dev') === '1' || (typeof window !== 'undefined' && !!window.__TEST);
 
 function fresh() {
-  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, subSel: [], unlocked: [], cleared: {}, char: 'tingge',
+  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, subSel: [], charms: {}, charmSel: '', unlocked: [], cleared: {}, char: 'tingge',
     settings: { sfx: 0.5, music: 0.35, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
 }
 function migrate(s) {
@@ -44,6 +45,7 @@ function sanitize(s) {
   const eq = {}; for (const c in s.equip) if (CHARS[c] && obj(s.equip[c])) { eq[c] = {}; for (const slot in s.equip[c]) { const el = s.equip[c][slot]; if (SLOTS.some((x) => x.id === slot) && EL[el] && gr[c] && gr[c][gearId(el, slot)]) eq[c][slot] = el; } } s.equip = eq;
   const ev = {}; for (const c in s.evos) if (CHARS[c] && Array.isArray(s.evos[c])) ev[c] = s.evos[c].filter((w) => WEAPONS[w] && WEAPONS[w].evoOf); s.evos = ev;
   const es = {}; for (const c in s.evoSel) if (ev[c] && ev[c].includes(s.evoSel[c])) es[c] = s.evoSel[c]; s.evoSel = es;
+  { const cm = {}; if (obj(s.charms)) for (const id in s.charms) if (CHARM[id]) cm[id] = int(s.charms[id], 0, CHARM_MAX); s.charms = cm; if (!cm[s.charmSel]) s.charmSel = ''; }
   s.subSel = s.subSel.filter((id) => SUB_WEAPONS.includes(id)).slice(0, 4);
   s.unlocked = s.unlocked.filter((id) => CHARS[id]);
   for (const k of ['sfx', 'music']) s.settings[k] = Math.max(0, Math.min(1, +s.settings[k] || 0));
@@ -68,6 +70,13 @@ export const save = {
     return this.data;
   },
   write() { if (DEV) return; try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch (e) { /* 無痕模式等情況：忽略 */ } },
+  // ── 御守（夥伴）：全角色共用。重複取得升星 ──
+  charmStar(id) { return this.data.charms[id] || 0; },
+  charmCost(id) { const st = this.charmStar(id); return st >= CHARM_MAX ? 0 : CHARM_PRICE[st]; },
+  addCharm(id) { const st = this.charmStar(id); if (st >= CHARM_MAX) return { id, star: st, maxed: true }; this.data.charms[id] = st + 1; if (!this.data.charmSel) this.data.charmSel = id; return { id, star: st + 1, isNew: st === 0 }; },
+  buyCharm(id) { const c = this.charmCost(id); if (!CHARM[id] || !c || this.data.coins < c) return false; this.data.coins -= c; this.addCharm(id); this.write(); return true; },
+  setCharm(id) { this.data.charmSel = id && this.charmStar(id) ? id : ''; this.write(); },
+  charmEquipped() { const id = this.data.charmSel, st = id ? this.charmStar(id) : 0; return st ? [id, st] : null; },
   // ── 存檔匯出 / 匯入 ──
   // 存檔碼 = "LUHAI1." + base64(JSON) + "." + 檢查碼。換瀏覽器、換裝置、清快取前先匯出，之後貼回來就能接續。
   exportCode() {
@@ -178,7 +187,7 @@ export const save = {
     for (const t of TALENTS) { const lv = this.talent(t.id); if (lv) t.apply(b, lv); }
     const r = this.rank(charId);
     b.hp += r * MASTERY.perRank.hp; b.dmg += r * MASTERY.perRank.dmg;
-    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId); b.subs = this.subPool();
+    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId); b.subs = this.subPool(); b.charm = this.charmEquipped();
     return b;
   },
   // 結算：回傳這一場拿到的東西
@@ -201,8 +210,11 @@ export const save = {
       if (Math.random() < Math.min(1, (boss ? DROP.armorBoss : DROP.armor) * luck)) drops.push(this.addGear(res.myChar, res.el, ARMOR_SLOTS[Math.floor(Math.random() * 3)]));
       if (boss && (st.accSure || Math.random() < Math.min(1, DROP.acc * luck))) drops.push(this.addGear(res.myChar, res.el, 'acc'));
     }
+    // 御守：打倒對應的首領有機率掉落（已滿星就不掉）
+    const charms = [];
+    if (won && st.kind === 'boss') for (const c of CHARMS) if (c.drop === res.stage && this.charmStar(c.id) < CHARM_MAX && Math.random() < Math.min(1, CHARM_DROP * diff.reward)) charms.push(this.addCharm(c.id));
     this.write();
-    return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops, newSubs };
+    return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops, newSubs, charms };
   },
 };
 export { CHAR_LIST, DEV, EL_IDS };

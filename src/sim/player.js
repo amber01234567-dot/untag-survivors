@@ -1,7 +1,7 @@
 import { CHARS } from '../data/characters.js';
 import { WEAPONS, SUB_WEAPONS, weaponStats } from '../data/weapons.js';
 import { PASSIVES, emptyBonus } from '../data/upgrades.js';
-import { charmVal, HEAL_CD } from '../data/charms.js';
+import { charmVal, HEAL_CD, GUARD_CD, MARK_CD, MARK_DUR, FROST_R } from '../data/charms.js';
 import { moveBody, solidAt } from './levelgen.js';
 import { dist2 } from '../core/util.js';
 import { BEH } from './weapons.js';
@@ -52,6 +52,9 @@ export function recalc(p) {
   s.healIn = 1;
   if (cv && cm[0] === 'charge') s.ultRate *= 1 + cv.a;
   if (cv && cm[0] === 'heal') s.healIn = 1 + cv.a;
+  if (cv && cm[0] === 'pick') s.magnet *= 1 + cv.a;
+  s.coinMul = cv && cm[0] === 'coin' ? 1 + cv.a : 1;
+  s.reviveRate = cv && cm[0] === 'revive' ? 1 + cv.a : 1;
   for (const w of p.weapons) { if (w.s.armorAdd) s.armor += w.s.armorAdd; if (w.s.hpMul) s.maxHp *= w.s.hpMul; }
   s.maxHp = Math.round(s.maxHp);
   p.st = s;
@@ -98,7 +101,12 @@ export function updatePlayer(W, p, dt) {
     // 隊友靠近 3 秒可救起
     let near = false;
     for (const q of W.players) if (q !== p && !q.down && !q.gone && dist2(p.x, p.y, q.x, q.y) < 80 * 80) near = true;
-    p.reviveP = Math.max(0, p.reviveP + (near ? dt / 3 : -dt / 2));
+    p.reviveP = Math.max(0, p.reviveP + (near ? dt / 3 * (p.st.reviveRate || 1) : -dt / 2));
+    // 續命守：每關一次，倒地一段時間後自動站起
+    if (p.bonus.charm && p.bonus.charm[0] === 'revive' && !p.charmUsed) {
+      p.charmT = (p.charmT === undefined || p.charmT <= 0 ? charmVal('revive', p.bonus.charm[1]).b : p.charmT) - dt;
+      if (p.charmT <= 0) { p.charmUsed = true; W.revive(p, 0.3); W.emit('t', p.x | 0, (p.y - 60) | 0, '續命守！', 2); W.emit('a', 'revive'); }
+    }
     if (p.reviveP >= 1) { W.revive(p, 0.4); W.emit('t', p.x | 0, (p.y - 60) | 0, '復活！', 2); W.emit('a', 'revive'); }
     return;
   }
@@ -108,6 +116,21 @@ export function updatePlayer(W, p, dt) {
   if (p.burnT > 0) { p.burnT -= dt; if (p.hp > 1) { p.hp = Math.max(1, p.hp - p.burn * dt); p.hurt = Math.max(p.hurt, 0.05); } }      // 燃燒 / 中毒：不會直接致死
   p.invuln -= dt; p.hurt -= dt; if (p.stealth > 0) p.stealth -= dt;
   let regen = p.st.regen;
+  // 其餘御守的定時效果
+  { const cm2 = p.bonus.charm, id = cm2 && cm2[0];
+    if (id === 'revive') p.charmT = 0;
+    else if ((id === 'guard' || id === 'mark' || id === 'frost') && !p.down) {
+      const v = charmVal(id, cm2[1]);
+      p.charmT = (p.charmT === undefined ? (id === 'frost' ? 0 : 4) : p.charmT) - dt;
+      if (p.charmT <= 0) {
+        if (id === 'guard') { p.charmT = GUARD_CD; p.shield = Math.min(p.st.maxHp * 0.4, p.shield + p.st.maxHp * v.a); W.emit('r', p.x | 0, p.y | 0, 40, 5); }
+        else if (id === 'mark') {
+          let best = null, bh = 0;
+          W.hash.query(p.x, p.y, 520, (e) => { if (!e.dead && !(e.spawnT > 0) && e.maxHp > bh) { bh = e.maxHp; best = e; } });
+          if (best) { p.charmT = MARK_CD; best.cmark = MARK_DUR; best.cmarkV = Math.max(best.cmarkV || 0, v.a); W.emit('t', best.x | 0, (best.y - best.r - 14) | 0, '✛', 3); } else p.charmT = 1;
+        } else { p.charmT = 0.4; W.hash.query(p.x, p.y, FROST_R, (e) => { if (e.dead) return; e.slowF = Math.max(e.slowT > 0 ? e.slowF : 0, v.a); e.slowT = Math.max(e.slowT, 0.6); }); }
+      }
+    } }
   // 癒療守：定時幫血量最低的隊友回血（不含自己；自己吃的是「受到的回復加成」）
   if (p.bonus.charm && p.bonus.charm[0] === 'heal' && !p.down) {
     p.charmT = (p.charmT === undefined ? HEAL_CD * 0.5 : p.charmT) - dt;

@@ -272,6 +272,7 @@ export class World {
   damageEnemy(e, amount, p, crit, o) {
     if (e.dead) return;
     if (e.mark > 0) amount *= 1.3;
+    if (e.cmark > 0) amount *= 1 + e.cmarkV;      // 鎖定守的標記
     if (e.corr > 0) amount *= 1 + e.corrV;
     e.hp -= amount; e.flash = 0.1;
     if (e.def.boss && e.hp > 0) {            // 首領每掉 25% 血噴出補給，讓長時間的首領戰撐得下去
@@ -660,7 +661,7 @@ export class World {
     this.pickups.delete(g.id);
     switch (g.type) {
       case 'g': this.giveXp(g.v * p.st.xp); break;
-      case 'c': this.coins += g.v; this.emit('a', 'coin'); break;
+      case 'c': this.coins += g.v * (p.st.coinMul || 1); this.emit('a', 'coin'); break;
       case 'h': this.heal(p, (g.v + p.st.maxHp * 0.12) * (1 + (p.bonus.pick || 0)), null); this.emit('a', 'heal'); break;
       case 'k': this.heal(p, g.v, g.src || null); addBuff(p, 'food', { t: 7, haste: g.buff || 0.15, dmg: g.bdmg || 0 }); this.emit('a', 'heal'); break;
       case 'm': for (const o of this.pickups.values()) if (o.type === 'g' || o.type === 'c') this.attract(o, p); this.emit('t', p.x | 0, (p.y - 60) | 0, '磁力吸收！', 1); break;

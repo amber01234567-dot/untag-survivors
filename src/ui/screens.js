@@ -9,6 +9,7 @@ import { OBJ_TEXT } from '../sim/stagectl.js';
 import { portrait, hasLook, loadSet } from '../render/chibi.js';
 import { ELEMENTS, EL, SLOTS, ARMOR_SLOTS, MAX_STAR, ACC, ADV, FOE, BEATS, BEATEN_BY, RESIST_PER_PIECE, SET_MUL, gearSummary, gearName, starMul } from '../data/gear.js';
 import { SLOT_COLORS } from '../render/renderer.js';
+import { CHARMS, CHARM, CHARM_MAX, charmDesc } from '../data/charms.js';
 import { save, DEV } from '../core/save.js';
 import { sfx, setVolume, setMusicVolume } from '../core/audio.js';
 import { NET_KIND } from '../net/transport.js';
@@ -98,6 +99,9 @@ export class Screens {
         case 'talent': if (save.buyTalent(v)) { sfx('levelup'); if (ses.lobby.players.length) ses.updateMe(); } else app.toast('金幣不足'); this.refresh(); break;
         case 'sheet': { const lb = document.createElement('div'); lb.className = 'lightbox'; lb.innerHTML = `<img src="assets/sheets/${v}.jpg" alt="">`; lb.onclick = () => lb.remove(); document.body.appendChild(lb); break; }
         case 'reset': if (confirm('確定要清除所有存檔進度嗎？\n（建議先到「存檔備份」匯出一份）')) { save.reset(); this.show('home'); } break;
+        case 'shop': this.back = this.cur; this.show('shop'); break;
+        case 'charmbuy': { const was = save.charmStar(v); if (save.buyCharm(v)) { sfx('chest'); app.toast(was ? `${CHARM[v].name} 升到 ${was + 1} 星` : `取得 ${CHARM[v].name}`); if (ses.lobby.players.length) ses.updateMe(); } else app.toast('金幣不足'); this.refresh(); break; }
+        case 'charmset': save.setCharm(save.data.charmSel === v ? '' : v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
         case 'backup': this.back = 'home'; this.bkMsg = ''; this.show('backup'); break;
         case 'bkcopy': {
           const code = save.exportCode(), ta = this.el.querySelector('#bkout');
@@ -150,6 +154,7 @@ export class Screens {
         <button class="btn ghost" data-a="roster">角色</button>
         <button class="btn ghost" data-a="talents">天賦強化</button>
         <button class="btn ghost" data-a="gear">裝備</button>
+        <button class="btn ghost" data-a="shop">商城</button>
       </div>
       <div class="sound"><button class="btn small ghost" data-a="vol" data-v="music">♪ 音樂：${lv(st.music)}</button><button class="btn small ghost" data-a="vol" data-v="sfx">🔊 音效：${lv(st.sfx)}</button></div>
       <div class="foot">WASD / 方向鍵移動・自動攻擊・空白鍵 技能・Q 寶具　｜　<a data-a="backup" style="cursor:pointer;text-decoration:underline">存檔備份</a>　｜　<a data-a="reset" style="cursor:pointer;text-decoration:underline">清除存檔</a>　｜　© 2026 LUHAI 倖存戰線・版權所有</div>
@@ -185,7 +190,7 @@ export class Screens {
     const allReady = ses.canLaunch();
     return `<div class="page">
       <div class="topbar"><button class="btn small ghost" data-a="leave">← 離開</button><div class="title">${ses.mode === 'solo' ? '單人出擊' : '作戰大廳'}</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${save.data.coins}</div>
-        <button class="btn small" data-a="roster">更換角色</button><button class="btn small" data-a="talents">天賦</button><button class="btn small" data-a="gear">裝備</button></div>
+        <button class="btn small" data-a="roster">更換角色</button><button class="btn small" data-a="talents">天賦</button><button class="btn small" data-a="shop">商城</button><button class="btn small" data-a="gear">裝備</button></div>
       <div class="lobby-grid">
         <div class="panel party">${ses.mode !== 'solo' ? `<div class="roomcode"><div class="sub">ROOM CODE</div><b>${ses.code}</b><div><button class="btn small ghost" data-a="copy" style="margin-top:6px">複製邀請連結</button></div></div>` : ''}${slots}
           ${ses.mode !== 'solo' ? '<div class="dim" style="font-size:11px;line-height:1.6">把房號或邀請連結傳給朋友即可加入。房主的瀏覽器就是主機，請保持分頁開啟。</div>' : ''}</div>
@@ -297,6 +302,27 @@ export class Screens {
   }
 
   // ───────── 天賦 ─────────
+  // ───────── 商城 ─────────
+  shop() {
+    const sel = save.data.charmSel, coins = save.data.coins;
+    const cards = CHARMS.map((c) => {
+      const st = save.charmStar(c.id), max = st >= CHARM_MAX, cost = save.charmCost(c.id), on = sel === c.id;
+      const stars = '★'.repeat(st) + '☆'.repeat(CHARM_MAX - st);
+      return `<div class="shopc panel ${on ? 'on' : ''} ${st ? '' : 'locked'}" style="--c:${c.color}">
+        <div class="pic"><img src="assets/fx/charm_${c.id}.png" alt="" onerror="this.style.visibility='hidden'"></div>
+        <div class="nm">${c.name}</div><div class="stars">${stars}</div>
+        <div class="ds">${st ? charmDesc(c.id, st) : charmDesc(c.id, 1)}</div>
+        ${st && !max ? `<div class="nx">下一星：${charmDesc(c.id, st + 1)}</div>` : ''}
+        <div class="acts">
+          ${st ? `<button class="btn small ${on ? 'primary' : ''}" data-a="charmset" data-v="${c.id}">${on ? '裝備中' : '裝備'}</button>` : ''}
+          ${max ? '<span class="dim">已滿星</span>' : `<button class="btn small" data-a="charmbuy" data-v="${c.id}" ${coins < cost ? 'disabled' : ''}>${st ? '升星' : '購買'} <span class="coin">${cost}</span></button>`}
+        </div></div>`;
+    }).join('');
+    return `<div class="page">
+      <div class="topbar"><button class="btn small ghost" data-a="back">← 返回</button><div class="title">商城</div><div class="dim" style="font-size:12px">御守：出戰時帶 1 個，全角色共用。重複購買或首領掉落都會升星</div><div class="sp"></div><div class="coin gold" style="font-weight:700">${coins}</div></div>
+      <div class="chtabs" style="padding:0 0 0 2px"><button class="chtab on">御守</button><button class="chtab" disabled>造型（製作中）</button></div>
+      <div class="shopgrid scroll">${cards}</div></div>`;
+  }
   // ───────── 存檔備份（匯出 / 匯入）─────────
   backup() {
     const i = save.summary(), code = save.exportCode();

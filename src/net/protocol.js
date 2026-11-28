@@ -33,7 +33,7 @@ export function snapOf(W) {
   for (const e of W.enemies) {
     if (e.dead) continue;
     s.en.push({ id: e.id, d: e.def.idx, x: e.x, y: e.y, hp: Math.max(0, Math.min(1, e.hp / e.maxHp)),
-      fl: (e.elite ? 1 : 0) | (e.flash > 0 ? 2 : 0) | (e.slowT > 0 ? 4 : 0) | (e.stunT > 0 ? 8 : 0) | (e.dotT > 0 ? 16 : 0) | (e.face < 0 ? 32 : 0) | (e.spawnT > 0 ? 64 : 0) | (e.mark > 0 ? 128 : 0),
+      fl: (e.elite ? 1 : 0) | (e.flash > 0 ? 2 : 0) | (e.slowT > 0 ? 4 : 0) | (e.stunT > 0 ? 8 : 0) | (e.dotT > 0 ? 16 : 0) | (e.face < 0 ? 32 : 0) | (e.spawnT > 0 ? 64 : 0) | (e.mark > 0 || e.cmark > 0 ? 128 : 0),
       st: e.st,
       sx: (e.dotT > 0 ? (e.dotEl === 2 ? 2 : e.dotEl === 3 ? 32 : 1) : 0) | (e.frzT > 0 && e.stunT > 0 ? 4 : 0) | (e.shkT > 0 ? 8 : 0) | (e.corr > 0 ? 16 : 0) });      // 狀態：1 燃燒 2 中毒 4 凍結 8 觸電 16 腐蝕 32 流血
   }

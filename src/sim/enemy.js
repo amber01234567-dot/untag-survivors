@@ -35,6 +35,7 @@ export function updateEnemy(W, e, dt) {
   if (e.chillCd > 0) e.chillCd -= dt;
   if (e.corr > 0) e.corr -= dt;
   if (e.frzT > 0) e.frzT -= dt;
+  if (e.cmark > 0) { e.cmark -= dt; if (e.cmark <= 0) e.cmarkV = 0; }
   if (e.shkT > 0) e.shkT -= dt;
   if (e.stunT > 0) { e.stunT -= dt; return; }
   let speed = e.speed;
