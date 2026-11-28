@@ -162,7 +162,8 @@ export function rollOptions(W, p, n) {
   if (evo && main.level >= main.def.maxLv && (p.passives[evo.passive] || 0) >= evo.need) forced.push(describe({ k: 'w', id: evo.to, lv: 1, main: true, evo: true, replace: main.def.id }));
   const subs = p.weapons.slice(1);
   for (const w of subs) if (w.level < w.def.maxLv) pool.push([{ k: 'w', id: w.def.id, lv: w.level + 1 }, 1.7]);
-  if (subs.length < 2) for (const id of SUB_WEAPONS) if (!subs.some((w) => w.def.id === id)) pool.push([{ k: 'w', id, lv: 1, isNew: true }, 0.8]);
+  const subPool = Array.isArray(p.bonus.subs) && p.bonus.subs.length ? p.bonus.subs.filter((id) => SUB_WEAPONS.includes(id)) : SUB_WEAPONS.filter((id) => !WEAPONS[id].unlock);      // 這一場的副武器池：出戰前選的（最多 4 把）；沒帶資料就是基本 4 把
+  if (subs.length < 2) for (const id of subPool) if (!subs.some((w) => w.def.id === id)) pool.push([{ k: 'w', id, lv: 1, isNew: true }, 0.8]);
   const owned = Object.keys(p.passives);
   for (const id in PASSIVES) {
     const ps = PASSIVES[id], lv = p.passives[id] || 0;

@@ -581,6 +581,39 @@ export const BEH = {
     }
   },
 
+  // 冰錐環：定時向四周射出一圈冰錐，命中緩速；滿級命中後碎裂
+  icering(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    if (!W.nearestEnemy(p.x, p.y, s.speed * s.life * 0.9)) return;
+    w.t = s.cd * p.st.cd; w.n++;
+    const off = (w.n % 2) * Math.PI / s.count;
+    for (let i = 0; i < s.count; i++) W.shoot(p, { kind: 'e_ice', a: off + i * 6.2832 / s.count, speed: s.speed, dmg: s.dmg, life: s.life * p.st.area, pierce: s.pierce, r: 9, slow: s.slow, slowDur: s.slowDur,
+      onEnd: s.shard ? (W2, pr) => { if (pr.age < pr.life - 0.02) for (let k = 0; k < s.shard; k++) W2.shoot(p, { kind: 'e_ice', x: pr.x, y: pr.y, a: pr.a + (k - 1) * 0.9 + 3.14, speed: 300, dmg: s.dmg * 0.4, life: 0.3, r: 6, slow: s.slow, slowDur: s.slowDur }); } : null });
+    W.emit('r', p.x | 0, p.y | 0, 46, 5);
+  },
+  // 雷鼓：每敲一下對最近的敵人放連鎖閃電，一隻跳一隻（傷害遞減）；滿級每第 4 下是全畫面落雷
+  drum(W, p, w, dt) {
+    const s = w.s;
+    w.t -= dt * bHaste(p);
+    if (w.t > 0) return;
+    let e = W.nearestEnemy(p.x, p.y, s.range);
+    if (!e) return;
+    w.t = s.cd * p.st.cd; w.n++;
+    if (s.bolt && w.n % s.bolt === 0) {
+      for (const q of W.randomEnemies(p.x, p.y, 620, 14)) { W.emit('l', q.x | 0, (q.y - 420) | 0, q.x | 0, q.y | 0, 1); W.strike(p, q, s.dmg * 1.2, { stun: 0.3 }); }
+      W.emit('sh', 3); return;
+    }
+    let px = p.x, py = p.y - 30, dmg = s.dmg; const hit = new Set();
+    for (let k = 0; k <= s.jumps && e; k++) {
+      hit.add(e.id); W.emit('l', px | 0, py | 0, e.x | 0, e.y | 0, 0); W.strike(p, e, dmg, { stun: 0.12 });
+      px = e.x; py = e.y; dmg *= s.falloff;
+      let best = null, bd = s.jumpR * s.jumpR;
+      W.hash.query(px, py, s.jumpR, (q) => { if (q.dead || hit.has(q.id)) return; const d = (q.x - px) ** 2 + (q.y - py) ** 2; if (d < bd) { bd = d; best = q; } });
+      e = best;
+    }
+  },
   nova(W, p, w, dt) {
     const s = w.s;
     w.t -= dt * bHaste(p);

@@ -494,6 +494,27 @@ EVO('beads', 'dharmawheel', 'armor', {
   mod: { m: { dmg: 4.2, radius: 1.25 }, s: { count: 1, hitCd: 0.24, wheelR: 58, throwCd: 4.5, throwDist: 430, throwDmg: 1.6 } },
 });
 
+// ───── 章節副武器：打倒特定首領後永久解鎖（unlock = 關卡 id，玩家事先不知道是哪一隻）。帶屬性 el：帶著上場時，對被該屬性克制的怪傷害 +1% ─────
+W('sub_icering', {
+  name: '冰錐環', glyph: '錐', beh: 'icering', sub: true, el: 'ice', unlock: '8-B',
+  base: { dmg: 13, cd: 3.0, count: 8, speed: 420, life: 0.75, pierce: 1, slow: 0.3, slowDur: 1.6, shard: 0 },
+  lv: [
+    ['冰錐 +4', { a: { count: 4 } }],
+    ['傷害 +40%', { m: { dmg: 1.4 } }],
+    ['冷卻 -25%，貫穿 +1', { m: { cd: 0.75 }, a: { pierce: 1 } }],
+    ['冰錐 +4，命中後碎裂成 3 片小冰片', { a: { count: 4 }, s: { shard: 3 } }],
+  ],
+});
+W('sub_drum', {
+  name: '雷鼓', glyph: '鼓', beh: 'drum', sub: true, el: 'thunder', unlock: '27-B',
+  base: { dmg: 20, cd: 1.5, jumps: 3, range: 380, jumpR: 190, falloff: 0.82, bolt: 0 },
+  lv: [
+    ['連鎖 +2', { a: { jumps: 2 } }],
+    ['傷害 +35%', { m: { dmg: 1.35 } }],
+    ['冷卻 -20%', { m: { cd: 0.8 } }],
+    ['連鎖 +2，每第 4 下改成全畫面落雷', { a: { jumps: 2 }, s: { bolt: 4 } }],
+  ],
+});
 export const SUB_WEAPONS = Object.values(WEAPONS).filter((w) => w.sub).map((w) => w.id);
 
 export function weaponStats(def, level) {

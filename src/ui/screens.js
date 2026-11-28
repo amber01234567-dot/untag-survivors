@@ -1,6 +1,6 @@
 // 選單畫面：主選單、大廳（隊伍 + 世界節點圖 + 關卡資訊）、角色圖鑑、天賦。
 import { CHARS, CHAR_LIST, ROLES, MASTERY } from '../data/characters.js';
-import { WEAPONS, EVO_NEED } from '../data/weapons.js';
+import { WEAPONS, EVO_NEED, SUB_WEAPONS } from '../data/weapons.js';
 import { PASSIVES } from '../data/upgrades.js';
 import { TALENTS, TALENT_PAGES } from '../data/upgrades.js';
 import { CHAPTERS, STAGES, LAYOUTS, DIFFS, NODE_KINDS, SERIES, nodeUnlocked } from '../data/chapters.js';
@@ -19,6 +19,15 @@ import { startLogoFire } from './logofire.js';
 
 const KIND_COL = { normal: '#2de2e6', elite: '#ff3d8b', bonus: '#ffd76b', boss: '#ff5a6b' };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// 角色頁：副武器池（全角色共用）。出戰前最多勾 4 把；沒勾就是全部已解鎖的。未解鎖的不透露是哪個首領
+function subPanel() {
+  const sel = save.data.subSel || [], on = (id) => sel.includes(id);
+  const cards = SUB_WEAPONS.map((id) => { const w = WEAPONS[id], un = save.subUnlocked(id), e = w.el && EL[w.el];
+    return un ? `<button class="subc ${on(id) ? 'on' : ''}" data-a="subsel" data-v="${id}" style="--c:${e ? e.color : '#ff8ad8'}">${icon('icons/w_' + id, w.glyph, e ? e.color : '#ff8ad8')}<b>${w.name}</b>${e ? `<i>${e.name}</i>` : ''}</button>`
+      : `<button class="subc lock" disabled>${icon('icons/none', '？', '#5a6274')}<b>？？？</b></button>`; }).join('');
+  return `<div class="kit" style="display:block"><b>副武器池</b>　<span class="dim">全角色共用・每場最多帶 2 把　${sel.length ? `已選 ${sel.length}/4` : '未指定：全部已解鎖的都會出現'}</span>
+    <div class="subgrid">${cards}</div><div class="dim" style="font-size:11px;line-height:1.6">點選最多 4 把放進這場的抽卡池。「？？？」要打倒某個首領後才會取得。帶屬性的副武器上場時，對被該屬性克制的怪傷害 +1%。</div></div>`;
+}
 // 角色頁：武器進化的配方與效果（還沒做進化的武器不顯示）
 function evoKit(w, cid) {
   if (!w.evo) return '';
@@ -65,6 +74,7 @@ export class Screens {
         case 'talents': this.back = this.cur; this.show('talents'); break;
         case 'gear': this.back = this.cur; this.show('gear'); break;
         case 'evosel': save.setEvoSel(this.sel, v); sfx('click'); if (ses.lobby.players.length && this.sel === save.data.char) ses.updateMe(); this.refresh(); break;
+        case 'subsel': if (!save.toggleSub(v)) app.toast('最多選 4 把'); else sfx('click'); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
         case 'gchar': save.data.char = v; save.write(); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break;
         case 'equip': { const [el, slot] = v.split('_'), c = save.data.char; if (!save.star(c, el, slot)) break; save.setEquip(c, slot, save.equipped(c, slot) === el ? null : el); sfx('click'); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
         case 'equipset': { const c = save.data.char; for (const s of SLOTS) if (save.star(c, v, s.id)) save.setEquip(c, s.id, v); if (ses.lobby.players.length) ses.updateMe(); this.refresh(); break; }
@@ -214,6 +224,7 @@ export class Screens {
           ${(w.branch || []).map((bid) => { const bw = WEAPONS[bid]; return `<div class="kit">${icon('icons/w_' + bid, bw.glyph, '#ff8a5a')}<div><b>${bw.name}</b>　<span class="dim">路線分支（二選一）</span><br>${bw.branchDesc}<ul class="lvlist">${bw.lv.map((l, i) => `<li data-l="${i + 2}">${l[0]}</li>`).join('')}</ul></div></div>${evoKit(bw, sel.id)}`; }).join('')}
           <div class="kit">${icon('skills/' + sel.skill.id, '技', '#2de2e6')}<div><b>${sel.skill.name}</b>　<span class="dim">冷卻 ${sel.skill.cd} 秒</span><br>${sel.skill.desc}</div></div>
           <div class="kit">${icon('skills/' + sel.ult.id, '寶', 'var(--gold2)')}<div><b>${sel.ult.name}</b>　<span class="dim">寶具・擊殺充能</span><br>${sel.ult.desc}</div></div>
+          ${subPanel()}
           ${sel.sheet ? `<img class="sheet-thumb" src="assets/sheets/${sel.id}.jpg" data-a="sheet" data-v="${sel.id}" alt="${sel.name} 設定圖">` : ''}
           <div style="margin-top:auto">${un ? `<button class="btn primary" style="width:100%" data-a="use" data-v="${sel.id}" ${sel.id === cur ? 'disabled' : ''}>${sel.id === cur ? '目前出戰中' : '選擇出戰'}</button>` : `<button class="btn primary" style="width:100%" data-a="buy" data-v="${sel.id}" ${save.data.coins >= sel.unlock ? '' : 'disabled'}>解鎖　${sel.unlock} 金幣</button>`}</div>
         </div>

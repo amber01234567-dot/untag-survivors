@@ -7,7 +7,7 @@ import { ENEMIES } from '../data/enemies.js';
 import { makePlayer, updatePlayer, rollOptions, applyOption, bDmg, addBuff, recalc } from './player.js';
 import { spawnEnemy, updateEnemy, warn } from './enemy.js';
 import { StageCtl } from './stagectl.js';
-import { ACC, FOE, CHAPTER_EL, advMul } from '../data/gear.js';
+import { ACC, FOE, CHAPTER_EL, advMul, BEATS } from '../data/gear.js';
 
 class Hash {
   constructor(w, h, cs) {
@@ -240,7 +240,8 @@ export class World {
     let d = base * (p ? p.st.dmg * bDmg(p) : 1), crit = false;
     if (p && p.bonus.boss && (e.def.boss || e.elite)) d *= 1 + p.bonus.boss;
     if (p && (o && o.crit || this.rng.next() < p.st.crit + (o && o.critAdd || 0))) { d *= p.st.critDmg; crit = true; }
-    if (this.el) { if (p && p.gs) d *= advMul(p.gs, this.el); if (this.foe.tough) d *= 1 - this.foe.tough; }      // 屬性克制 / 土屬性怪較耐打
+    if (this.el) { if (p && p.gs) d *= advMul(p.gs, this.el); if (p) for (const w of p.weapons) if (w.def.sub && w.def.el && BEATS[w.def.el] === this.el) d *= 1.01;      // 屬性副武器：對被克制的怪 +1%
+      if (this.foe.tough) d *= 1 - this.foe.tough; }      // 屬性克制 / 土屬性怪較耐打
     this.damageEnemy(e, d, p, crit, o);
     if (p && p.gs && p.gs.acc && !e.dead && !(o && o.noEl)) this.accProc(p, e, d);
   }

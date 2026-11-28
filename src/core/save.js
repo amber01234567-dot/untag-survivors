@@ -2,6 +2,7 @@
 import { CHARS, CHAR_LIST, MASTERY } from '../data/characters.js';
 import { TALENTS, TALENT_PAGES, emptyBonus } from '../data/upgrades.js';
 import { STAGES, DIFFS } from '../data/chapters.js';
+import { WEAPONS, SUB_WEAPONS } from '../data/weapons.js';
 import { EL, EL_IDS, SLOTS, ARMOR_SLOTS, MAX_STAR, DROP, gearId } from '../data/gear.js';
 
 const KEY = 'untag_survivors_save';
@@ -9,7 +10,7 @@ export const SAVE_VERSION = 2;
 const DEV = new URLSearchParams(location.search).get('dev') === '1' || (typeof window !== 'undefined' && !!window.__TEST);
 
 function fresh() {
-  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, unlocked: [], cleared: {}, char: 'tingge',
+  return { v: SAVE_VERSION, name: '', coins: 0, talents: {}, chars: {}, gear: {}, equip: {}, evos: {}, evoSel: {}, subSel: [], unlocked: [], cleared: {}, char: 'tingge',
     settings: { sfx: 0.5, music: 0.35, shake: true, dmgNum: true }, stats: { runs: 0, wins: 0, kills: 0 } };
 }
 function migrate(s) {
@@ -85,6 +86,18 @@ export const save = {
     for (const s of SLOTS) { const el = this.equipped(charId, s.id); if (el) g[s.id] = [el, this.star(charId, el, s.id)]; }
     return g;
   },
+  // ── 副武器：基本 4 把一開始就有；章節副武器打倒特定首領（通關該關卡）後永久解鎖，全角色共用。出戰前最多選 4 把放進抽卡池 ──
+  subUnlocked(id) { const u = WEAPONS[id].unlock; return !u || DEV || !!this.data.cleared[u]; },
+  subPool() {
+    const all = SUB_WEAPONS.filter((id) => this.subUnlocked(id)), sel = (this.data.subSel || []).filter((id) => all.includes(id));
+    return sel.length ? sel : all;
+  },
+  toggleSub(id) {
+    if (!this.subUnlocked(id)) return false;
+    const s = (this.data.subSel || []).filter((x) => SUB_WEAPONS.includes(x) && this.subUnlocked(x)), i = s.indexOf(id);
+    if (i >= 0) s.splice(i, 1); else { if (s.length >= 4) return false; s.push(id); }
+    this.data.subSel = s; this.write(); return true;
+  },
   // ── 武器進化：每個角色在戰鬥中進化過一次就永久解鎖，之後可在角色頁選擇開場就用進化型態 ──
   evoUnlocked(charId, wid) { return DEV || (this.data.evos[charId] || []).includes(wid); },
   unlockEvo(charId, wid) {
@@ -101,7 +114,7 @@ export const save = {
     for (const t of TALENTS) { const lv = this.talent(t.id); if (lv) t.apply(b, lv); }
     const r = this.rank(charId);
     b.hp += r * MASTERY.perRank.hp; b.dmg += r * MASTERY.perRank.dmg;
-    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId);
+    b.gear = this.gearFor(charId); b.evo = this.evoSel(charId); b.subs = this.subPool();
     return b;
   },
   // 結算：回傳這一場拿到的東西
@@ -114,6 +127,7 @@ export const save = {
     const xp = Math.round((won ? 60 + st.diff * 40 : 15 + res.zones * 10) * diff.reward);
     d.coins += coins;
     const ranksUp = this.addCharXp(res.myChar, xp);
+    const newSubs = won && !d.cleared[res.stage] ? SUB_WEAPONS.filter((id) => WEAPONS[id].unlock === res.stage) : [];      // 第一次打倒這個首領：解鎖牠身上的副武器
     if (won) d.cleared[res.stage] = Math.max(d.cleared[res.stage] || 0, res.diff + 1);
     d.stats.runs++; if (won) d.stats.wins++; d.stats.kills += res.kills;
     // 裝備掉落（給這一場用的角色）：通關屬性章節才會掉。防具有機率（首領關必掉），武器配件只有首領關機率掉
@@ -124,7 +138,7 @@ export const save = {
       if (boss && (st.accSure || Math.random() < Math.min(1, DROP.acc * luck))) drops.push(this.addGear(res.myChar, res.el, 'acc'));
     }
     this.write();
-    return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops };
+    return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops, newSubs };
   },
 };
 export { CHAR_LIST, DEV, EL_IDS };

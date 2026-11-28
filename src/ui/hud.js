@@ -161,6 +161,7 @@ export class Hud {
       <div class="dim" style="margin-top:4px">${res.stage} ${STAGES[res.stage].name}・${DIFFS[res.diff].name}　時間 ${Math.floor(res.time / 60)}:${String(res.time % 60).padStart(2, '0')}　隊伍等級 ${res.level}　擊殺 ${res.kills}</div>
       <table><tr><th>隊員</th><th>傷害</th><th>擊殺</th><th>治療</th><th>承傷</th><th>倒地</th></tr>${rows}</table>
       ${rw.drops && rw.drops.length ? `<div class="drops">${rw.drops.map((d) => `<div style="--c:${EL[d.el].color}">${d.maxed ? '（已滿星）' : d.isNew ? '獲得' : '升星'}　${gearName(d.el, d.slot)}　${'★'.repeat(d.star)}</div>`).join('')}</div>` : ''}
+      ${rw.newSubs && rw.newSubs.length ? `<div class="drops">${rw.newSubs.map((id) => `<div style="--c:#ff8ad8">★ 取得新副武器　${WEAPONS[id].name}（已加入抽卡池，可在角色頁調整）</div>`).join('')}</div>` : ''}
       <div class="rewards"><div><b>+${rw.coins}</b>金幣${rw.first ? '（首次通關 ×2）' : ''}</div><div><b>+${rw.xp}</b>${CHARS[me.charId].name} 熟練經驗</div><div><b style="color:var(--teal)">Rank ${rw.rank}</b>${rw.ranksUp ? '熟練度提升！' : '目前熟練度'}</div></div>
       <button class="btn primary" data-a="lobby">${host ? '返回大廳' : '返回大廳（等待房主）'}</button></div>`);
     sfx(won ? 'chest' : 'down');
