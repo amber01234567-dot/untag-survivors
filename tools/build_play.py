@@ -34,6 +34,7 @@ print('場景包', len(glob.glob(os.path.join(ROOT, 'dist/map/*.json'))))
 from PIL import Image
 import io
 SKIN_IDS = re.findall(r"\{ id: '([a-z0-9]+)'", open(os.path.join(ROOT, 'src/data/skins.js')).read())
+SKIN_IDS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder'] + SKIN_IDS      # 屬性套裝也一起打包（原本是 154 張獨立 PNG，佔掉測試頁一半容量）
 os.makedirs(os.path.join(ROOT, 'dist/skin'), exist_ok=True); n = 0
 for sk in SKIN_IDS:
     fs = sorted(glob.glob(os.path.join(ROOT, 'assets/sprites', '*_' + sk + '.png')))
