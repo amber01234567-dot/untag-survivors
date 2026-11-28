@@ -29,3 +29,20 @@ for d in sorted(glob.glob(os.path.join(ROOT, 'assets/map/*/'))):
     pk = {os.path.basename(f)[:-4]: 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode() for f in sorted(glob.glob(d + '*.png'))}
     open(os.path.join(ROOT, 'dist/map', th + '.json'), 'w').write(json.dumps(pk))
 print('場景包', len(glob.glob(os.path.join(ROOT, 'dist/map/*.json'))))
+
+# 獨立造型：每款打包成一個 JSON（dist/skin/<造型>.json，內含 22 隻角色，轉成 WebP 縮小體積），商城或進場用到才抓
+from PIL import Image
+import io
+SKIN_IDS = re.findall(r"\{ id: '([a-z0-9]+)'", open(os.path.join(ROOT, 'src/data/skins.js')).read())
+os.makedirs(os.path.join(ROOT, 'dist/skin'), exist_ok=True); n = 0
+for sk in SKIN_IDS:
+    fs = sorted(glob.glob(os.path.join(ROOT, 'assets/sprites', '*_' + sk + '.png')))
+    if not fs: continue
+    out = os.path.join(ROOT, 'dist/skin', sk + '.json')
+    if os.path.exists(out) and os.path.getmtime(out) > max(os.path.getmtime(f) for f in fs): n += 1; continue
+    pk = {}
+    for f in fs:
+        b = io.BytesIO(); Image.open(f).save(b, 'WEBP', quality=90, method=4)
+        pk[os.path.basename(f)[:-4]] = 'data:image/webp;base64,' + base64.b64encode(b.getvalue()).decode()
+    open(out, 'w').write(json.dumps(pk)); n += 1
+print('造型包', n)

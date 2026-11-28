@@ -259,6 +259,7 @@ const H = { qiqiu: 86, moumou_siege: 98, xia: 86, yingzhang: 76, gouqi: 74, laoj
 const IMG = {};
 // 套裝造型（<角色>_<套裝>）：圖片用到才載入，載入完成前先畫原造型
 export const SETS = ['ice', 'fire', 'poison', 'gold', 'wind', 'earth', 'thunder'];
+const COS_SET = new Set(SKINS_COS.map((s) => s.id)), PACKS = {};
 const SET_RE = new RegExp('_(' + SETS.concat(SKINS_COS.map((s) => s.id)).join('|') + ')$');
 function setSprite(charId, set) {
   const id = charId + '_' + set;
@@ -270,7 +271,10 @@ function loadImg(name) {
   if (IMG[name]) return IMG[name].p;
   const im = new Image(), rec = { im, ok: false };
   rec.p = new Promise((res) => { im.onload = () => { rec.ok = true; res(); }; im.onerror = () => res(); });
-  im.src = new URL(`../../assets/sprites/${name}.png`, import.meta.url).href;
+  const sk = name.slice(name.lastIndexOf('_') + 1);
+  if (typeof window !== 'undefined' && window.__MAPPACK && COS_SET.has(sk)) {      // 測試頁：獨立造型整款打包成一個檔（檔案數有上限）
+    (PACKS[sk] || (PACKS[sk] = fetch(`skin/${sk}.json`).then((r) => r.json()).catch(() => ({})))).then((pk) => { if (pk[name]) im.src = pk[name]; else im.onerror(); });
+  } else im.src = new URL(`../../assets/sprites/${name}.png`, import.meta.url).href;
   IMG[name] = rec;
   return rec.p;
 }
