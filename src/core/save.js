@@ -121,7 +121,7 @@ export const save = {
     if (won && res.el && EL[res.el]) {
       const boss = st.kind === 'boss', luck = diff.reward;
       if (Math.random() < Math.min(1, (boss ? DROP.armorBoss : DROP.armor) * luck)) drops.push(this.addGear(res.myChar, res.el, ARMOR_SLOTS[Math.floor(Math.random() * 3)]));
-      if (boss && Math.random() < Math.min(1, DROP.acc * luck)) drops.push(this.addGear(res.myChar, res.el, 'acc'));
+      if (boss && (st.accSure || Math.random() < Math.min(1, DROP.acc * luck))) drops.push(this.addGear(res.myChar, res.el, 'acc'));
     }
     this.write();
     return { coins, xp, first, ranksUp, rank: this.rank(res.myChar), drops };

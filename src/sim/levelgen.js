@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { plaza: [[50, 40], [52, 40]], bamboo: [[50, 38], [52, 40]], grid: [[52, 38], [52, 40]], slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { spiral: [[52, 40], [52, 40]], zigzag: [[54, 36], [54, 38]], plaza: [[50, 40], [52, 40]], bamboo: [[50, 38], [52, 40]], grid: [[52, 38], [52, 40]], slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -53,6 +53,19 @@ function carveShape(z, side, rng, COR, set, unset) {
     for (const [ex, ey, rx, ry] of isl) ell(ex, ey, rx, ry);
     const bridge = (p, q) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); for (let t = 0; t <= 1; t += 0.5 / d) ell(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, 3.1, 3.1); };
     for (let i = 1; i <= n; i++) { bridge(isl[i], isl[i % n + 1]); if (i % 2) bridge(isl[0], isl[i]); }      // 外圈相連 + 每隔一座連回中央
+  }
+  else if (z.shape === 'spiral') {                      // 螺旋塔層：兩圈方形隔牆，各開一個口（位置錯開），走道由外往內繞到中心
+    rect(X, Y, X + w, Y + h);
+    const ring = (inset, side) => {
+      const x0 = X + inset, x1 = X + w - inset, y0 = Y + Math.round(inset * 0.8), y1 = Y + h - Math.round(inset * 0.8);
+      for (let x = x0; x < x1; x++) { if (!(side === 0 && x >= x1 - 10 && x < x1 - 3)) { unset(x, y0); unset(x, y0 + 1); } if (!(side === 1 && x >= x0 + 3 && x < x0 + 10)) { unset(x, y1 - 1); unset(x, y1 - 2); } }
+      for (let y = y0; y < y1; y++) { unset(x0, y); unset(x0 + 1, y); unset(x1 - 1, y); unset(x1 - 2, y); }
+    };
+    ring(8, 0); ring(17, 1);
+  }
+  else if (z.shape === 'zigzag') {                      // 雷紋大殿：左右交錯的隔牆（一道從上、一道從下），走成 Z 字
+    rect(X, Y, X + w, Y + h);
+    for (let k = 1; k <= 4; k++) { const bx = Math.round(X + w * k / 5) - 1; for (let y = k % 2 ? Y : Y + 9; y < (k % 2 ? Y + h - 9 : Y + h); y++) { unset(bx, y); unset(bx + 1, y); } }
   }
   else if (z.shape === 'slot') {                        // 一線天：又長又窄的峽谷主道，中途有三處向兩側鼓出的寬敞岩窟
     const p1 = rng.range(0, 6.28);
@@ -127,10 +140,11 @@ function carveShape(z, side, rng, COR, set, unset) {
   }
   // 中心與通道口一定相通
   const thin = z.shape === 'bog' || z.shape === 'skyisles' || z.shape === 'pinwheel';
-  if (!thin) rect(cx - 5, cy - 5, cx + 5, cy + 5);
+  if (!thin && z.shape !== 'zigzag') rect(cx - 5, cy - 5, cx + 5, cy + 5);
   const b = thin ? 3.2 : COR / 2 + 1;      // 沼澤：通道口到中央也是一條棧道，不是大通道
-  if (side.U) rect(cx - b, Y, cx + b, cy); if (side.D) rect(cx - b, cy, cx + b, Y + h);
-  if (side.L) rect(X, cy - b, cx, cy + b); if (side.R) rect(cx, cy - b, X + w, cy + b);
+  const maze = z.shape === 'spiral' || z.shape === 'zigzag';      // 迷宮型：外圈本來就通到四邊，不要再開直通中心的通道（會把隔牆切穿）
+  if (side.U && !maze) rect(cx - b, Y, cx + b, cy); if (side.D && !maze) rect(cx - b, cy, cx + b, Y + h);
+  if (side.L && !maze) rect(X, cy - b, cx, cy + b); if (side.R && !maze) rect(cx, cy - b, X + w, cy + b);
   if (pool) {                                           // 池子最後挖：通道口到環上是通的，中心不可走
     for (let y = Math.floor(cy - pool[1]); y <= cy + pool[1]; y++) for (let x = Math.floor(cx - pool[0]); x <= cx + pool[0]; x++) if (((x + 0.5 - cx) / pool[0]) ** 2 + ((y + 0.5 - cy) / pool[1]) ** 2 <= 1) unset(x, y);
     return [cx, cy + (pool[1] + h / 2) / 2];             // 新的「區域中心」：池子正下方的環上（首領與目標物出現在這裡）

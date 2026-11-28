@@ -213,8 +213,8 @@ const VIS = { default: 2.7, bat: 2.4, roach: 2.2, bug: 2.6, cursor: 3, chip: 3, 
   coinling: 2.6, swordsman: 2.9, crossbow: 2.7, lionling: 2.7, stonelion: 3, shieldman: 3, dingmon: 2.8, goldguard: 3.1, mimic: 2.7, general: 3.5, emperor: 3.3,
   windling: 2.6, sparrow: 2.6, kitemon: 2.9, goat: 2.8, thunderbird: 3, dandelion: 2.7, millsoldier: 3.1, crowtengu: 2.9, yamabushi: 3.1, millgolem: 3.3, tengu: 3.6, tenguclone: 4.1,
   pebble: 2.6, rocklizard: 2.6, monkey: 3, pangolin: 2.6, rockturtle: 3, genin: 2.8, shurinin: 2.9, stonegolem: 3.1, haniwa: 2.7, spiderling: 2.5, tsuchigumo: 2.8, ninjamaster: 3.6,
-  sparkball: 2.6, weasel: 2.6, drumkid: 2.8, lantern: 2.8, raiju: 3 };
-const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7', icemine: 'nest8', icepalace: 'nest9', ashfoot: 'nest10', lavacave: 'nest11', firetemple: 'nest12', swamp: 'nest13', fungus: 'nest14', graveyard: 'nest15', goldroad: 'nest16', tomb: 'nest17', goldhall: 'nest18', skyisle: 'nest19', windmill: 'nest20', shrine: 'nest21', gorge: 'nest22', bamboo: 'nest23', undercastle: 'nest24', festival: 'nest25' };
+  sparkball: 2.6, weasel: 2.6, drumkid: 2.8, lantern: 2.8, raiju: 3, coilsentry: 3.2, eeldragon: 2.8, drumwarrior: 3.1, cloudsprite: 2.8, mechguard: 3.2, raijin: 3.8 };
+const NEST = { slums: 'nest1', arena: 'nest2', void: 'nest3', road: 'nest4', canyon: 'nest5', crater: 'nest6', harbor: 'nest7', icemine: 'nest8', icepalace: 'nest9', ashfoot: 'nest10', lavacave: 'nest11', firetemple: 'nest12', swamp: 'nest13', fungus: 'nest14', graveyard: 'nest15', goldroad: 'nest16', tomb: 'nest17', goldhall: 'nest18', skyisle: 'nest19', windmill: 'nest20', shrine: 'nest21', gorge: 'nest22', bamboo: 'nest23', undercastle: 'nest24', festival: 'nest25', spire: 'nest26', thunderhall: 'nest27' };
 const IMG = {};
 let theme = 'slums';
 const cache = new Map();

@@ -830,6 +830,60 @@ const AI = {
       W.emit('sh', 6); ring(0, 200); ai.q.push({ t: 0.45, fn: () => ring(0.2, 235) }); if (p2) ai.q.push({ t: 0.45, fn: () => ring(0.1, 270) });
     } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'lantern' : i % 3 === 1 ? 'weasel' : 'sparkball', i * 1.05, 110);
   },
+  // 雷電機兵：雙臂電弧（兩道對向的光束一步步旋轉）、電磁脈衝（由內往外的衝擊圈）、浮游電球（又大又慢）、召喚線圈哨兵
+  boss_mechguard(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.4 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 3.0 : 4.0; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) {                               // 雙臂電弧：兩（四）道光束轉五（七）步
+      const o = Math.atan2(p.y - e.y, p.x - e.x) + 0.8, dir = ai.n % 8 < 4 ? 1 : -1, arms = p2 ? 4 : 2, steps = p2 ? 7 : 5;
+      for (let k = 0; k < steps; k++) ai.q.push({ t: k ? 0.6 : 0, fn: () => { for (let i = 0; i < arms; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: o + dir * k * 0.36 + i * TAU / arms, len: 660, w: 54, delay: 0.55, dur: 0.8, tick: 9, dmg: e.dmg * 1.3 }); } });
+      W.emit('sh', 4);
+    } else if (m === 2) {                        // 電磁脈衝
+      warn(W, e.x, e.y, 180, 0.8, e.dmg * 1.4); W.emit('sh', 7);
+      for (let ring = 1; ring <= (p2 ? 4 : 3); ring++) ai.q.push({ t: 0.45, fn: () => { const n = 6 + ring * 3, rr = 150 + ring * 140; for (let i = 0; i < n; i++) warn(W, e.x + Math.cos(i * TAU / n + ring * 0.5) * rr, e.y + Math.sin(i * TAU / n + ring * 0.5) * rr, 84, 0.75, e.dmg * 1.1); } });
+    } else if (m === 3) {                        // 浮游電球：一圈又大又慢的球，接著一圈快的小球
+      for (let i = 0; i < (p2 ? 10 : 8); i++) shootAt(W, e, 'e_spark', i * TAU / (p2 ? 10 : 8), 130, e.dmg * 0.9, { r: 24 });
+      ai.q.push({ t: 0.9, fn: () => { for (let i = 0; i < 18; i++) shootAt(W, e, 'e_spark', (i + 0.5) * TAU / 18, 250, e.dmg * 0.5, { r: 10 }); } });
+    } else { for (let i = 0; i < (p2 ? 4 : 3); i++) summon(W, e, 'coilsentry', i * 2.1 + ai.n, 230); for (let i = 0; i < 5; i++) summon(W, e, 'sparkball', i * 1.25, 100); }
+  },
+  // 雷神（最終首領，三階段）：每敲一面鼓放一招。階段一：落雷、電環；階段二（60%）加：鼓聲彈幕、召喚；階段三（30%）加：瞬移、電弧牢籠。
+  // 一輪鼓全部敲完 → 全場連鎖雷擊（棋盤式兩波，要站到空格）
+  boss_raijin(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.3 ? 3 : hpP < 0.6 ? 2 : 1;
+    if (!e.tgt) return;
+    const p = e.tgt, d = Math.hypot(p.x - e.x, p.y - e.y) || 1;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (ph !== (ai.ph || 1)) { ai.ph = ph; ai.drum = 0; ai.cd = 1.8; W.emit('sh', 14); W.emit('t', e.x | 0, (e.y - e.r - 30) | 0, ph === 2 ? '雷神震怒！' : '萬雷齊鳴！', 3); warn(W, e.x, e.y, 280, 1.2, e.dmg * 1.5); for (let i = 0; i < 20; i++) shootAt(W, e, 'e_spark', i * TAU / 20, 220, e.dmg * 0.5, { r: 10 }); }
+    if (d > 380) seek(W, e, dt, sp, p.x, p.y); else if (d < 220) moveBody(W.L, e, (e.x - p.x) / d * sp * 0.7 * dt, (e.y - p.y) / d * sp * 0.7 * dt, e.r * 0.5);
+    e.face = p.x > e.x ? 1 : -1;
+    ai.cd = (ai.cd === undefined ? 2.2 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.q = ai.q || [];
+    const moves = ph === 1 ? ['bolt', 'ring'] : ph === 2 ? ['bolt', 'ring', 'beat', 'call'] : ['bolt', 'ring', 'beat', 'call', 'blink', 'cage'];
+    ai.drum = ai.drum || 0;
+    if (ai.drum >= moves.length) {               // 鼓敲完一輪：全場連鎖雷擊
+      ai.drum = 0; ai.cd = 4.2;
+      const z = W.L.zones[e.zone] || W.L.zones.find((q) => q.kind === 'final'), cols = 7, rows = 5, x0 = z.x * 32, y0 = z.y * 32, cw = z.w * 32 / cols, chh = z.h * 32 / rows;
+      W.emit('t', e.x | 0, (e.y - e.r - 30) | 0, '連鎖雷擊！', 3); W.emit('sh', 8);
+      for (let wave = 0; wave < (ph === 3 ? 3 : 2); wave++) ai.q.push({ t: wave ? 1.25 : 0.4, fn: () => { for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) if ((i + j + wave) % 2 === 0) warn(W, x0 + (i + 0.5) * cw, y0 + (j + 0.5) * chh, Math.min(cw, chh) * 0.47, 1.1, e.dmg * 1.4); W.emit('sh', 5); } });
+      return;
+    }
+    const mv = moves[ai.drum++]; ai.cd = ph === 3 ? 2.2 : ph === 2 ? 2.6 : 3.1;
+    W.emit('sh', 3);
+    if (mv === 'bolt') { for (let k = 0; k < 4 + ph * 2; k++) ai.q.push({ t: k ? 0.3 : 0, fn: () => { for (const q of W.alive()) { warn(W, q.x + W.rng.range(-25, 25), q.y + W.rng.range(-25, 25), 84, 0.75, e.dmg * 1.3); if (ph > 1) warn(W, q.x + W.rng.range(-200, 200), q.y + W.rng.range(-200, 200), 84, 0.95, e.dmg * 1.3); } } }); }
+    else if (mv === 'ring') { for (let ring = 0; ring < 2 + ph; ring++) ai.q.push({ t: ring ? 0.42 : 0, fn: () => { for (let i = 0; i < 16; i++) shootAt(W, e, 'e_spark', ring * 0.2 + i * TAU / 16, 200 + ring * 20, e.dmg * 0.55, { r: 10 }); } }); }
+    else if (mv === 'beat') { const fan = () => { const q = e.tgt || p, a = Math.atan2(q.y - e.y, q.x - e.x); for (let i = -4; i <= 4; i++) shootAt(W, e, 'e_spark', a + i * 0.13, 280, e.dmg * 0.55, { r: 10 }); }; fan(); for (let k = 1; k < 3 + ph; k++) ai.q.push({ t: 0.3, fn: fan }); }
+    else if (mv === 'call') { for (let i = 0; i < 4 + ph; i++) summon(W, e, i % 3 === 0 ? 'drumwarrior' : i % 3 === 1 ? 'cloudsprite' : 'eeldragon', i * 1.3, 140); }
+    else if (mv === 'blink') { for (let k = 0; k < 6; k++) { const a = W.rng.range(0, TAU), tx = p.x + Math.cos(a) * 240, ty = p.y + Math.sin(a) * 240; if (!solidAt(W.L, tx, ty)) { W.emit('r', e.x | 0, e.y | 0, 100, 6); e.x = tx; e.y = ty; e.spawnT = 0.3; W.emit('sp', e.x | 0, e.y | 0, e.r | 0); break; } } warn(W, e.x, e.y, 190, 0.8, e.dmg * 1.4); for (let i = 0; i < 6; i++) W.addZone({ kind: 'e_beam', team: 1, x: e.x, y: e.y, a: i * TAU / 6, len: 700, w: 50, delay: 0.9, dur: 1.15, tick: 9, dmg: e.dmg * 1.3 }); }
+    else { for (const q of W.alive()) { const o = W.rng.range(0, TAU); for (let i = 0; i < 4; i++) { const a0 = o + i * TAU / 4, a1 = o + (i + 1) * TAU / 4; if (i === 0) continue; W.addArc(q.x + Math.cos(a0) * 210, q.y + Math.sin(a0) * 210, q.x + Math.cos(a1) * 210, q.y + Math.sin(a1) * 210, 1.2, 3.5, e.dmg * 0.3); } } }      // 電弧牢籠：三面圍住，留一面出口
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

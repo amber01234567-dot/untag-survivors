@@ -149,3 +149,9 @@ E('weasel', { name: '雷鼬', hp: 78, speed: 124, dmg: 16, r: 12, xp: 3, ai: 'ch
 E('drumkid', { name: '小鼓童', hp: 96, speed: 60, dmg: 16, r: 14, xp: 5, ai: 'shooter', proj: 'e_spark', shotCd: 2.4, shotRange: 400, shotSpeed: 270 });
 E('lantern', { name: '提燈怪', hp: 58, speed: 110, dmg: 27, r: 13, xp: 3, ai: 'exploder', boomR: 96, fly: true });
 E('raiju', { name: '雷獸', hp: 54000, speed: 84, dmg: 41, r: 50, xp: 2500, ai: 'boss_raiju', kbRes: 1, boss: true });
+E('coilsentry', { name: '線圈哨兵', hp: 300, speed: 0, dmg: 22, r: 18, xp: 10, ai: 'burst', kbRes: 1, proj: 'e_spark', shotCd: 3.2, shotSpeed: 190, shotCount: 10 });
+E('eeldragon', { name: '電鰻龍', hp: 120, speed: 96, dmg: 21, r: 14, xp: 6, ai: 'blink', fly: true });
+E('drumwarrior', { name: '雷鼓武者', hp: 500, speed: 64, dmg: 29, r: 21, xp: 14, ai: 'charger', kbRes: 0.9 });
+E('cloudsprite', { name: '雷雲精', hp: 150, speed: 70, dmg: 24, r: 15, xp: 7, ai: 'lobber', fly: true, shotCd: 3.0, shotRange: 470 });
+E('mechguard', { name: '雷電機兵', hp: 56000, speed: 56, dmg: 42, r: 56, xp: 2700, ai: 'boss_mechguard', kbRes: 1, boss: true });
+E('raijin', { name: '雷神', hp: 76000, speed: 72, dmg: 44, r: 52, xp: 4000, ai: 'boss_raijin', kbRes: 1, boss: true, fly: true });
