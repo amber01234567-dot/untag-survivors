@@ -804,6 +804,32 @@ const AI = {
       ai.q.push({ t: 0.7, fn: () => { for (const q of W.alive()) warn(W, q.x, q.y, 110, 0.9, e.dmg * 1.3); } });
     } else for (let i = 0; i < (p2 ? 7 : 5); i++) summon(W, e, i % 3 === 0 ? 'stonegolem' : i % 3 === 1 ? 'shurinin' : 'genin', i * 1.25, 130);
   },
+  // 雷獸：高速折線衝刺（每段都會轉向）、追著玩家的連續落雷、咆哮放出兩圈電球、召喚
+  boss_raiju(W, e, dt, sp) {
+    const ai = e.ai, hpP = e.hp / e.maxHp, p2 = hpP < 0.5;
+    if (!e.tgt) return;
+    const p = e.tgt;
+    if (ai.q && ai.q.length) { ai.q[0].t -= dt; if (ai.q[0].t <= 0) ai.q.shift().fn(); }
+    if (e.st === 1) { ai.w -= dt; e.face = Math.cos(ai.a) > 0 ? 1 : -1; if (ai.w <= 0) { e.st = 2; ai.w = 0.34; } return; }
+    if (e.st === 2) {
+      const hit = moveBody(W.L, e, Math.cos(ai.a) * 1450 * dt, Math.sin(ai.a) * 1450 * dt, e.r * 0.6);
+      ai.w -= dt;
+      if (ai.w <= 0 || hit) { e.st = 0; warn(W, e.x, e.y, 120, 0.35, e.dmg * 1.1); if (ai.chain > 0) { ai.chain--; startDash(W, e, 0.3); ai.a += (ai.chain % 2 ? 0.5 : -0.5); } else W.emit('sh', 6); }
+      return;
+    }
+    seek(W, e, dt, sp * (p2 ? 1.25 : 1), p.x, p.y);
+    ai.cd = (ai.cd === undefined ? 2.3 : ai.cd) - dt;
+    if (ai.cd > 0) return;
+    ai.cd = p2 ? 2.6 : 3.5; ai.n = (ai.n || 0) + 1; ai.q = ai.q || [];
+    const m = ai.n % 4;
+    if (m === 1) { ai.chain = p2 ? 5 : 3; startDash(W, e, 0.6); }
+    else if (m === 2) {                          // 連續落雷：一道接一道劈在玩家當下的位置
+      for (let k = 0; k < (p2 ? 8 : 6); k++) ai.q.push({ t: k ? 0.32 : 0, fn: () => { for (const q of W.alive()) warn(W, q.x + W.rng.range(-25, 25), q.y + W.rng.range(-25, 25), 82, 0.75, e.dmg * 1.3); W.emit('sh', 2); } });
+    } else if (m === 3) {                        // 咆哮：兩（三）圈電球，角度錯開
+      const ring = (off, sp2) => { for (let i = 0; i < 16; i++) shootAt(W, e, 'e_spark', off + i * TAU / 16, sp2, e.dmg * 0.55, { r: 10 }); };
+      W.emit('sh', 6); ring(0, 200); ai.q.push({ t: 0.45, fn: () => ring(0.2, 235) }); if (p2) ai.q.push({ t: 0.45, fn: () => ring(0.1, 270) });
+    } else for (let i = 0; i < (p2 ? 8 : 6); i++) summon(W, e, i % 3 === 2 ? 'lantern' : i % 3 === 1 ? 'weasel' : 'sparkball', i * 1.05, 110);
+  },
   boss_wormqueen(W, e, dt, sp) {
     const ai = e.ai, hpP = e.hp / e.maxHp, ph = hpP < 0.33 ? 2 : hpP < 0.66 ? 1 : 0;
     if (!e.tgt) return;

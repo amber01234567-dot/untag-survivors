@@ -59,6 +59,7 @@ export const SERIES = [
   { id: 6, name: '黃金神殿', sub: 'GOLDEN TEMPLE', el: 'gold' },
   { id: 7, name: '浮空風島', sub: 'SKY ISLES', el: 'wind' },
   { id: 8, name: '巨岩峽谷', sub: 'STONE GORGE', el: 'earth' },
+  { id: 9, name: '雷雲尖塔', sub: 'STORM SPIRE', el: 'thunder' },
 ];
 
 export const DIFFS = [
@@ -598,6 +599,29 @@ export const CHAPTERS = [
         pool: [['genin', 4], ['shurinin', 4], ['stonegolem', 3], ['haniwa', 3]], objs: [nests(3), elite('stonegolem'), survive(60), kill(120)] },
       { id: '24-B', name: '天守', kind: 'boss', layout: 'gauntlet', diff: 7.45, pos: [4, 1], next: [], coins: 16150,
         pool: [['pebble', 5], ['genin', 3], ['shurinin', 3]], objs: [kill(120), boss('ninjamaster')] },
+    ],
+  },
+  // ───── 第九系列：雷雲尖塔（雷屬性：怪物打到會麻痺；掉落雷神太鼓）─────
+  {
+    id: 25, series: 9, name: '雷雲祭場', sub: 'THUNDER FESTIVAL', theme: 'festival', outdoor: true, hazard: 'arcs',
+    shapes: { combat: [['plaza', 4], ['cross', 2]], final: 'round' },      // 空間架構：中央太鼓台、一圈攤位隔出內外兩環的祭典廣場、十字；首領在鼓樓廣場
+    intro: '地底的天守上面是一道直通雲層的雷。雲上有人在打鼓、有人在點燈，而整場祭典等的客人就是你。',
+    devices: [['ground', 4], ['drumcharge', 3]],
+    nodes: [
+      { id: '25-1', name: '登雲鳥居', kind: 'normal', layout: 'snake', diff: 7.05, pos: [0, 1], next: ['25-2', '25-3'], coins: 9500,
+        pool: [['sparkball', 6], ['weasel', 4], ['drumkid', 2]], objs: [kill(85), survive(55), kill(130)] },
+      { id: '25-2', name: '提燈大道', kind: 'normal', layout: 'ring', diff: 7.12, pos: [1, 0.3], next: ['25-4'], coins: 9800,
+        pool: [['sparkball', 5], ['weasel', 4], ['lantern', 3], ['drumkid', 2]], objs: [kill(75), nests(3), survive(55), elite('weasel')] },
+      { id: '25-3', name: '攤位街', kind: 'normal', layout: 'hub', diff: 7.16, pos: [1, 1.7], next: ['25-4', '25-5'], coins: 9950,
+        pool: [['sparkball', 5], ['weasel', 4], ['drumkid', 3], ['lantern', 2]], objs: [kill(75), survive(55), nests(3), kill(135)] },
+      { id: '25-4', name: '太鼓舞台', kind: 'normal', layout: 'trident', diff: 7.25, pos: [2, 0.7], next: ['25-6'], coins: 10450,
+        pool: [['sparkball', 4], ['weasel', 4], ['lantern', 3], ['drumkid', 3]], objs: [kill(75), nests(3), survive(55), elite('drumkid'), kill(135)] },
+      { id: '25-5', name: '神轎倉', kind: 'bonus', layout: 'arena', diff: 7.2, pos: [2, 2], next: ['25-6'], coins: 6650,
+        pool: [['sparkball', 7], ['weasel', 3], ['lantern', 2]], objs: [{ t: 'goblins', s: 85 }] },
+      { id: '25-6', name: '避雷針林', kind: 'elite', layout: 'cross', diff: 7.35, pos: [3, 1.2], next: ['25-B'], coins: 11600,
+        pool: [['sparkball', 4], ['weasel', 4], ['lantern', 3], ['drumkid', 3]], objs: [nests(3), elite('weasel'), survive(60), kill(135)] },
+      { id: '25-B', name: '鼓樓廣場', kind: 'boss', layout: 'gauntlet', diff: 7.5, pos: [4, 1], next: [], coins: 18000,
+        pool: [['sparkball', 5], ['weasel', 4], ['lantern', 2], ['drumkid', 2]], objs: [kill(135), boss('raiju')] },
     ],
   },
 ];

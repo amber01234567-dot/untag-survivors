@@ -17,7 +17,7 @@ const DIMS = {
 };
 
 // 非矩形區域的大小 [戰鬥區, 終點區]（格）。必須塞得進戶外的一格 60x48，四周留通道。
-const SHAPE_SIZE = { bamboo: [[50, 38], [52, 40]], grid: [[52, 38], [52, 40]], slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
+const SHAPE_SIZE = { plaza: [[50, 40], [52, 40]], bamboo: [[50, 38], [52, 40]], grid: [[52, 38], [52, 40]], slot: [[54, 36], [54, 38]], pinwheel: [[52, 40], [52, 40]], torii: [[52, 38], [52, 40]], skyisles: [[52, 40], [52, 40]], ranks: [[50, 36], [52, 38]], courtyard: [[52, 40], [52, 40]], avenue: [[52, 38], [52, 40]], grove: [[50, 38], [52, 40]], crypt: [[50, 38], [52, 40]], bog: [[52, 40], [52, 40]], wind: [[52, 38], [52, 40]], ringpool: [[46, 38], [50, 40]], rift: [[50, 38], [52, 40]], pier: [[50, 36], [50, 38]], islands: [[50, 38], [52, 40]], round: [[40, 34], [46, 40]], cave: [[46, 36], [50, 40]], hall: [[44, 30], [50, 36]], cross: [[46, 38], [50, 40]] };
 // 在區域的外框裡挖出指定形狀的地板。set(x, y) 會自動裁在外框內。
 function carveShape(z, side, rng, COR, set, unset) {
   const { x: X, y: Y, w, h } = z, cx = X + w / 2, cy = Y + h / 2;
@@ -71,8 +71,8 @@ function carveShape(z, side, rng, COR, set, unset) {
     const A = h / 2 - 9;
     for (let t = 0; t <= 1; t += 0.004) ell(X + t * w, cy + A * Math.sin(t * Math.PI * 2), 6.2, 6.2);
     ell(X + w * 0.25, cy + A, 10, 7.5); ell(X + w * 0.75, cy - A, 10, 7.5);
-  } else if (z.shape === 'ringpool') {                  // 環形祭壇：中央是熔岩池（不能走），繞著池子打
-    ell(cx, cy, w / 2, h / 2); pool = [w * 0.19, h * 0.19];
+  } else if (z.shape === 'ringpool' || z.shape === 'plaza') {                  // 環形祭壇：中央是熔岩池（不能走），繞著池子打。祭典廣場：中央是比較小的太鼓台
+    ell(cx, cy, w / 2, h / 2); pool = z.shape === 'plaza' ? [w * 0.11, h * 0.12] : [w * 0.19, h * 0.19];
   }
   else if (z.shape === 'rift') {                        // 熔岩裂谷：一片空地被幾條彎曲的熔岩裂縫切開，只有幾處石橋能過
     ell(cx, cy, w / 2 + 3, h / 2 + 3); rect(X + 3, Y + 3, X + w - 3, Y + h - 3);
@@ -243,6 +243,19 @@ export function buildLevel(stage, seed) {
         for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
         props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
       }
+    } else if (z.shape === 'plaza') {                  // 祭典廣場：中段一圈攤位把廣場隔成內外兩環，每隔幾攤留一個缺口
+      n = Math.floor(n * 0.35);
+      const g0 = rng.int(0, 3);
+      for (let i = 0; i < 14; i++) {
+        if ((i + g0) % 4 === 0) continue;
+        const a = i * 6.2832 / 14, px = Math.round(midX + Math.cos(a) * z.w * 0.3 - 1), py = Math.round(midY + Math.sin(a) * z.h * 0.3 - 1);
+        if (Math.abs(px + 1 - midX) < 5 && Math.abs(py + 1 - midY) > 2) continue;
+        if (Math.abs(py + 1 - midY) < 5 && Math.abs(px + 1 - midX) > 2) continue;
+        if (z.pool && Math.abs(px + 1 - z.cx / TILE) < 5 && Math.abs(py + 1 - z.cy / TILE) < 4) continue;
+        if (!clearAround(px, py, 2, 2, 0)) continue;
+        for (let ty = py; ty < py + 2; ty++) for (let tx = px; tx < px + 2; tx++) tiles[idx(tx, ty)] = T_OBST;
+        props.push({ x: px, y: py, w: 2, h: 2, v: 500 });
+      }
     } else if (z.shape === 'bamboo') {                 // 竹林迷陣：一排排彎曲的竹叢把空地切成蜿蜒的小路，每排留幾個缺口
       n = Math.floor(n * 0.3);
       for (let base = z.y + 5, row = 0; base < z.y + z.h - 6; base += 6, row++) {
@@ -317,6 +330,19 @@ export function buildLevel(stage, seed) {
       const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE;
       if (vents.some((v) => (v.x - px) ** 2 + (v.y - py) ** 2 < 230 * 230)) continue;
       vents.push({ x: px, y: py, zone: z.idx, ph: rng.range(0, 9) }); i++;
+    }
+  }
+  // ── 避雷針（雷系列的場地危險）：每個戰鬥區幾根，之後會兩兩之間拉出電弧 ──
+  const rods = [];
+  if (stage.hazard === 'arcs') for (const z of zones) {
+    if (z.kind !== 'combat' && z.kind !== 'final') continue;
+    for (let i = 0, tries = 0; i < 5 && tries < 200; tries++) {
+      const x = rng.int(z.x + 4, z.x + z.w - 5), y = rng.int(z.y + 4, z.y + z.h - 5);
+      if (Math.abs(x - z.cx / TILE) < 5 && Math.abs(y - z.cy / TILE) < 4) continue;
+      if (!clearAround(x, y, 1, 1, 2)) continue;
+      const px = (x + 0.5) * TILE, py = (y + 0.5) * TILE;
+      if (rods.some((r) => r.zone === z.idx && (r.x - px) ** 2 + (r.y - py) ** 2 < 300 * 300)) continue;
+      tiles[idx(x, y)] = T_OBST; rods.push({ x: px, y: py, zone: z.idx }); i++;
     }
   }
   // ── 地刺（土系列的場地危險）：每個戰鬥區幾片 3x2 格的機關地磚，棋盤式交錯啟動 ──
@@ -403,7 +429,7 @@ export function buildLevel(stage, seed) {
   }
 
   const start = zones.find((z) => z.kind === 'start');
-  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, vents, spikes, outdoor: out, theme: stage.theme, seed,
+  return { W, H, pxW: W * TILE, pxH: H * TILE, tiles, zoneOf, zones, links, props, deco, lights, devices, vents, spikes, rods, outdoor: out, theme: stage.theme, seed,
     spawn: { x: start.cx, y: start.cy } };
 }
 

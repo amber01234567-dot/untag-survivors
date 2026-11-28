@@ -102,6 +102,22 @@ export class World {
         for (const p of this.players) if (!p.down && !p.gone && !(p.spikeCd > 0) && Math.abs(p.x - s.x) < SPIKE_SIZE / 2 && Math.abs(p.y - s.y) < SPIKE_SIZE / 2) { p.spikeCd = 0.6; this.damagePlayer(p, 17 * this.dmgMul); }
       }
     }
+    if (this.L.rods.length) {                                     // 場地危險：避雷針之間的電弧。先閃爍預警，再通電幾秒
+      this.hazT = (this.hazT === undefined ? 7 : this.hazT) - dt;
+      if (this.hazT <= 0) {
+        this.hazT = this.rng.range(7.5, 10);
+        const z = this.L.zones.find((q) => q.state === 'active');
+        if (z) {
+          const rs = this.L.rods.filter((r) => r.zone === z.idx), n = z.obj && z.obj.t === 'boss' ? 1 : 2, used = new Set();
+          for (let k = 0, tries = 0; k < n && tries < 20 && rs.length > 1; tries++) {
+            const a = rs[this.rng.int(0, rs.length - 1)], b = rs[this.rng.int(0, rs.length - 1)], key = Math.min(a.x, b.x) + ',' + Math.max(a.x, b.x) + ',' + (a.y + b.y);
+            if (a === b || used.has(key)) continue;
+            used.add(key); k++;
+            this.addArc(a.x, a.y - 40, b.x, b.y - 40, 1.4, 3.2, 8 * this.dmgMul);
+          }
+        }
+      }
+    }
     if (this.wind) {                                              // 陣風：st 1 = 預警（箭頭），st 2 = 吹（推動玩家，見 updatePlayer）
       const w = this.wind; w.t -= dt;
       if (w.t <= 0) { if (w.st === 1) { w.st = 2; w.t = w.dur; this.emit('a', 'gate'); } else this.wind = null; }
@@ -324,7 +340,7 @@ export class World {
     const f = this.foe;
     if (f.slow) addBuff(p, 'el_slow', { t: f.dur * k, speed: -f.slow });
     if (f.burn) { p.burn = Math.max(p.burnT > 0 ? p.burn : 0, amount * f.burn * k); p.burnT = f.dur; }
-    if (f.shock && !(p.shockCd > 0)) { p.shockCd = f.cd; addBuff(p, 'el_shock', { t: f.dur * k, speed: -f.shock }); this.emit('t', p.x | 0, (p.y - 60) | 0, '麻痺', 3); }
+    if (f.shock && !(p.shockCd > 0) && !p.buffs.ground) { p.shockCd = f.cd; addBuff(p, 'el_shock', { t: f.dur * k, speed: -f.shock }); this.emit('t', p.x | 0, (p.y - 60) | 0, '麻痺', 3); }
   }
   revive(p, frac, blast) {
     p.down = false; p.hp = Math.max(p.hp, p.st.maxHp * frac); p.invuln = 2.5; p.reviveP = 0;
@@ -440,6 +456,8 @@ export class World {
     if (pr.onEnd) pr.onEnd(this, pr);
   }
 
+  // 電弧：兩點之間的線段，delay 秒閃爍預警後通電 dur 秒，穿過會受傷（雷屬性關卡會順便麻痺）
+  addArc(x0, y0, x1, y1, delay, dur, dmg) { return this.addZone({ kind: 'e_arc', team: 1, x: x0, y: y0, a: Math.atan2(y1 - y0, x1 - x0), len: Math.hypot(x1 - x0, y1 - y0), w: 34, delay, dur: delay + dur, tick: 0.5, dmg }); }
   // 土牆術：從 (x, y) 沿角度 a 的垂直方向升起一排岩牆（n 格），dur 秒後消失。牆會擋住玩家、敵人和子彈；不會蓋在玩家身上
   addWall(x, y, a, n, dur) {
     const L = this.L, tiles = [], px = -Math.sin(a), py = Math.cos(a);
@@ -527,7 +545,7 @@ export class World {
   // ───────── 場地機關 ─────────
   // 玩家靠近待命中的機關站一下就會啟動；效果結束後進入冷卻。傷害隨關卡強度縮放，全隊共用。
   updateDevices(dt) {
-    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 }, chime: { arm: 0.7, run: 10, cd: 30 }, boulder: { arm: 0.7, run: 0.6, cd: 24 }, smoke: { arm: 0.7, run: 0.8, cd: 26 } };
+    const DEV = { barrel: { arm: 0.7, run: 1.0, cd: 26 }, turret: { arm: 0.7, run: 9, cd: 30 }, pylon: { arm: 0.7, run: 8, cd: 34 }, icebomb: { arm: 0.7, run: 1.0, cd: 26 }, brazier: { arm: 0.7, run: 10, cd: 30 }, water: { arm: 0.7, run: 1.0, cd: 26 }, totem: { arm: 0.7, run: 10, cd: 30 }, gas: { arm: 0.7, run: 1.0, cd: 26 }, drum: { arm: 0.7, run: 10, cd: 32 }, ballista: { arm: 0.7, run: 9, cd: 30 }, chime: { arm: 0.7, run: 10, cd: 30 }, boulder: { arm: 0.7, run: 0.6, cd: 24 }, smoke: { arm: 0.7, run: 0.8, cd: 26 }, ground: { arm: 0.7, run: 10, cd: 30 }, drumcharge: { arm: 0.7, run: 4, cd: 28 } };
     for (const d of this.devices) {
       const c = DEV[d.kind];
       if (d.st === 3) { d.t -= dt; if (d.t <= 0) { d.st = 0; d.t = 0; this.emit('r', d.x | 0, d.y | 0, 50, 1); } continue; }
@@ -536,12 +554,22 @@ export class World {
         if (this.L.zones[d.zone].state === 'active') for (const p of this.players) if (!p.down && !p.gone && dist2(p.x, p.y, d.x, d.y) < 74 * 74) { near = true; break; }
         if (!near) { d.st = 0; d.t = Math.max(0, d.t - dt * 2); continue; }
         d.st = 1; d.t += dt;
-        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！', chime: '風鈴響起！', boulder: '落石滾下！', smoke: '煙幕彈！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
+        if (d.t >= c.arm) { d.st = 2; d.t = c.run; d.tk = 0; this.emit('a', 'gate'); this.emit('t', d.x | 0, (d.y - 70) | 0, { barrel: '油罐引爆！', turret: '砲塔啟動！', pylon: '能量塔啟動！', icebomb: '冷凍彈引爆！', brazier: '火盆點燃！', water: '水塔潰堤！', totem: '圖騰啟動！', gas: '瓦斯罐引爆！', drum: '戰鼓擂響！', ballista: '弩砲啟動！', chime: '風鈴響起！', boulder: '落石滾下！', smoke: '煙幕彈！', ground: '接地完成！', drumcharge: '雷鼓轟鳴！' }[d.kind], 1); if (d.kind === 'barrel' || d.kind === 'icebomb' || d.kind === 'water' || d.kind === 'gas') this.addZone({ kind: 'e_slam', team: 2, x: d.x, y: d.y, r: 240, delay: 1.0, dur: 1.1, tick: 9 }); }
         continue;
       }
       d.t -= dt; d.tk -= dt;
       const pow = this.hpMul / (1 + 0.55 * (this.n - 1)) * this.devPow * (1 + 0.25 * (this.n - 1));
-      if (d.kind === 'chime' && d.tk <= 0) {                 // 風鈴塔：移動速度大幅提升，並且不受陣風影響
+      if (d.kind === 'ground' && d.tk <= 0) {                // 接地樁：範圍內隊友免疫麻痺，並把附近的電弧關掉
+        d.tk = 0.5;
+        this.playersIn(d.x, d.y, 320, (q) => { delete q.buffs.el_shock; addBuff(q, 'ground', { t: 1.0 }); });
+        for (const z of this.zones) if (!z.dead && z.kind === 'e_arc' && (dist2(z.x, z.y, d.x, d.y) < 420 * 420 || dist2(z.x + Math.cos(z.a) * z.len, z.y + Math.sin(z.a) * z.len, d.x, d.y) < 420 * 420)) z.dead = true;
+        this.emit('r', d.x | 0, d.y | 0, 320, 1);
+      } else if (d.kind === 'drumcharge' && d.tk <= 0) {     // 蓄電太鼓：連鎖閃電，一隻跳一隻
+        d.tk = 0.8;
+        let px = d.x, py = d.y - 50;
+        for (const e of this.randomEnemies(d.x, d.y, 460, 8)) { this.emit('l', px | 0, py | 0, e.x | 0, e.y | 0, 0); this.damageEnemy(e, e.def.boss ? 110 * pow : 70 * pow, null, false, { stun: 0.6 }); px = e.x; py = e.y; }
+        this.emit('sh', 3);
+      } else if (d.kind === 'chime' && d.tk <= 0) {                 // 風鈴塔：移動速度大幅提升，並且不受陣風影響
         d.tk = 0.5;
         this.playersIn(d.x, d.y, 340, (q) => addBuff(q, 'chime', { t: 1.0, speed: 0.35 }));
         this.emit('r', d.x | 0, d.y | 0, 340, 1);

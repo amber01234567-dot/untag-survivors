@@ -18,11 +18,11 @@ const PSPR = {
   starwave: ['evo_starwave', 150, 'aim'], kamikaze: ['drone', 26, 'aim'], meatslice: ['evo_meatslice', 26, 'spin'], moneybag: ['evo_moneybag', 30, 'spin'], tracer: ['evo_tracer', 78, 'aim'], lance: ['evo_lance', 120, 'aim'], glaive: ['evo_glaive', 70, 'spin'], nuke: ['evo_nuke', 92, 'aim'], wheel: ['evo_wheel', 118, 'spin'],
   baseball: ['ball', 15, 'spin'], missile: ['missile', 26, 'aim'], molotov: ['molotov', 17, 'spin'], grenade: ['grenade', 15, 'spin'],
   note: ['pk_c', 13, 'spin'], kart: ['kart', 46, 'aim'], wave: ['swordqi', 78, 'aim'], fireball: ['orb', 20, 'spin', '#ff8a2f'],
-  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], e_wind: ['orb', 16, '', '#8ff0d8'], e_rock: ['orb', 17, '', '#c79a5a'],
+  e_can: ['orb', 17, '', '#ff5a5a'], e_spore: ['orb', 16, '', '#9dff3c'], e_orb: ['orb', 17, '', '#ff2d86'], e_trash: ['orb', 19, '', '#b08a4a'], e_chain: ['orb', 17, '', '#c9ced8'], e_ice: ['orb', 16, '', '#9fe8ff'], e_fire: ['orb', 17, '', '#ff8a3c'], e_gold: ['orb', 16, '', '#ffd23c'], e_wind: ['orb', 16, '', '#8ff0d8'], e_rock: ['orb', 17, '', '#c79a5a'], e_spark: ['orb', 16, '', '#ffe65a'],
 };
 export const SLOT_COLORS = ['#2de2e6', '#ffc53d', '#ff5a8a', '#8dff6b'];
 const FONT = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", sans-serif';
-const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a", drum: "#ff6a4a", ballista: "#ffd24d", chime: "#8ff0d8", boulder: "#c9b08a", smoke: "#b8b8c8" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）", drum: "戰鼓（靠近敲響）", ballista: "弩砲（靠近啟動）", chime: "風鈴塔（靠近啟動）", boulder: "落石機關（靠近啟動）", smoke: "煙幕彈（靠近引爆）" };
+const DEV_COL = { barrel: "#ff8a3d", turret: "#ffd24d", pylon: "#3df2d2", icebomb: "#7fd8ff", brazier: "#ff9a3d", water: "#5ab8ff", totem: "#7dffd8", gas: "#b6e04a", drum: "#ff6a4a", ballista: "#ffd24d", chime: "#8ff0d8", boulder: "#c9b08a", smoke: "#b8b8c8", ground: "#7dffb0", drumcharge: "#ffe65a" }, DEV_NAME = { barrel: "油罐（靠近引爆）", turret: "砲塔（靠近啟動）", pylon: "能量塔（靠近啟動）", icebomb: "冷凍彈（靠近引爆）", brazier: "火盆（靠近點燃）", water: "水塔（靠近打破）", totem: "淨化圖騰（靠近啟動）", gas: "瓦斯罐（靠近引爆）", drum: "戰鼓（靠近敲響）", ballista: "弩砲（靠近啟動）", chime: "風鈴塔（靠近啟動）", boulder: "落石機關（靠近啟動）", smoke: "煙幕彈（靠近引爆）", ground: "接地樁（靠近啟動）", drumcharge: "蓄電太鼓（靠近敲響）" };
 
 export class Renderer {
   constructor(canvas, L, myId, roster) {
@@ -76,9 +76,10 @@ export class Renderer {
     if (f.hud && f.hud.L && f.hud.L.tw) for (const i of f.hud.L.tw) this.rockWall(g, (i % L.W) * 32, Math.floor(i / L.W) * 32);
     if (L.spikes && L.spikes.length) for (const s of L.spikes) if (vis(s.x, s.y, 80)) this.spike(g, s, f.time, L.zones[s.zone].state === 'active');
     if (L.vents && L.vents.length) for (const v of L.vents) if (vis(v.x, v.y, 120)) this.vent(g, v, f.time, L.zones[v.zone].state === 'active');
+    if (L.rods && L.rods.length) for (const r of L.rods) if (vis(r.x, r.y, 120)) list.push({ _rod: r, y: r.y + 10 });
     if (f.devs) for (const d of L.devices) if (vis(d.x, d.y, 160)) { this.deviceGround(g, d, f.devs[d.idx] || [0, 0], t); list.push({ _d: d, y: d.y + 10 }); }
     list.sort((a, b) => a.y - b.y);
-    for (const o of list) { if (o._d) this.device(g, o._d, f.devs[o._d.idx] || [0, 0], t); else if (o._p) this.player(g, o, t, dt); else if (o._s) this.summon(g, o, t); else this.enemy(g, o, t); }
+    for (const o of list) { if (o._rod) this.rod(g, o._rod, t); else if (o._d) this.device(g, o._d, f.devs[o._d.idx] || [0, 0], t); else if (o._p) this.player(g, o, t, dt); else if (o._s) this.summon(g, o, t); else this.enemy(g, o, t); }
     for (const s of f.summons) { const k = SUMMON_KINDS[s.k]; if (k === 'wisp' || k === 'drone') this.summon(g, s, t); }
 
     // 子彈與光束
@@ -570,6 +571,21 @@ export class Renderer {
       g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
       return;
     }
+    if (k === 'e_arc') {                             // 電弧：預警時是閃爍的細線，通電後是一條亂跳的粗閃電
+      g.save(); g.translate(z.x, z.y); g.rotate(z.a); g.lineCap = 'round'; g.lineJoin = 'round';
+      if (!z.on) { g.strokeStyle = `rgba(255,230,90,${0.35 + 0.45 * (Math.sin(t * 28) > 0 ? 1 : 0.2)})`; g.lineWidth = 2; g.setLineDash([8, 10]); g.beginPath(); g.moveTo(0, 0); g.lineTo(z.len, 0); g.stroke(); g.setLineDash([]); }
+      else {
+        g.globalCompositeOperation = 'lighter';
+        for (const [lw, col] of [[12, 'rgba(160,90,255,.35)'], [5, 'rgba(255,235,120,.9)'], [2, '#ffffff']]) {
+          g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.moveTo(0, 0);
+          const n = Math.max(4, Math.round(z.len / 34)), seed = Math.floor(t * 18);
+          for (let i = 1; i < n; i++) { const h = Math.sin((i * 12.9898 + seed * 78.233) * 43758.5453) * 43758.5453; g.lineTo(z.len * i / n, ((h - Math.floor(h)) - 0.5) * 30); }
+          g.lineTo(z.len, 0); g.stroke();
+        }
+      }
+      g.restore(); g.globalCompositeOperation = 'source-over';
+      return;
+    }
     if (k === 'e_beam') {
       g.save(); g.translate(z.x, z.y); g.rotate(z.a);
       if (!z.on) { g.fillStyle = 'rgba(255,60,60,.13)'; g.fillRect(0, -z.w / 2, z.len, z.w); g.strokeStyle = 'rgba(255,60,60,.8)'; g.lineWidth = 1.5; g.setLineDash([10, 8]); g.strokeRect(0, -z.w / 2, z.len, z.w); g.setLineDash([]); g.fillStyle = 'rgba(255,60,60,.35)'; g.fillRect(0, -z.w / 2 * z.dp, z.len, z.w * z.dp); }
@@ -675,6 +691,16 @@ export class Renderer {
     g.fillStyle = blowing ? '#8ff0d8' : '#ffe27a'; g.strokeStyle = 'rgba(5,6,10,.8)'; g.lineWidth = 3;
     g.beginPath(); g.moveTo(-44, -11); g.lineTo(10, -11); g.lineTo(10, -26); g.lineTo(46, 0); g.lineTo(10, 26); g.lineTo(10, 11); g.lineTo(-44, 11); g.closePath(); g.fill(); g.stroke();
     g.restore();
+  }
+  // 避雷針：銅柱加頂端的金屬球
+  rod(g, r, t) {
+    g.save(); g.translate(r.x, r.y + 12);
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(0, 0, 16, 6, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#4a3a5a'; g.strokeStyle = '#1a1424'; g.lineWidth = 2; g.beginPath(); g.roundRect(-11, -10, 22, 12, 3); g.fill(); g.stroke();
+    g.fillStyle = '#c98a4a'; g.beginPath(); g.roundRect(-4, -62, 8, 54, 2); g.fill(); g.stroke();
+    g.fillStyle = '#ffd98a'; g.beginPath(); g.arc(0, -66, 8, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(255,235,120,${0.25 + 0.2 * Math.sin(t * 6 + r.x)})`; g.beginPath(); g.arc(0, -66, 14, 0, Math.PI * 2); g.fill();
+    g.restore(); g.globalCompositeOperation = 'source-over';
   }
   // 土牆術升起的岩牆（一格）
   rockWall(g, x, y) {

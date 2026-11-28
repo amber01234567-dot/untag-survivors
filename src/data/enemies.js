@@ -143,3 +143,9 @@ E('haniwa', { name: '土偶', hp: 56, speed: 108, dmg: 26, r: 13, xp: 3, ai: 'ex
 E('spiderling', { name: '小蜘蛛', hp: 26, speed: 150, dmg: 10, r: 10, xp: 2, ai: 'swarm' });
 E('tsuchigumo', { name: '土蜘蛛', hp: 54000, speed: 64, dmg: 39, r: 56, xp: 2300, ai: 'boss_tsuchigumo', kbRes: 1, boss: true });
 E('ninjamaster', { name: '忍軍頭領', hp: 56000, speed: 78, dmg: 40, r: 44, xp: 2500, ai: 'boss_ninjamaster', kbRes: 1, boss: true });
+// ───── 第九系列：雷雲尖塔（雷屬性：打到會麻痺）─────
+E('sparkball', { name: '電氣球', hp: 25, speed: 148, dmg: 10, r: 10, xp: 2, ai: 'swarm', fly: true });
+E('weasel', { name: '雷鼬', hp: 78, speed: 124, dmg: 16, r: 12, xp: 3, ai: 'chase' });
+E('drumkid', { name: '小鼓童', hp: 96, speed: 60, dmg: 16, r: 14, xp: 5, ai: 'shooter', proj: 'e_spark', shotCd: 2.4, shotRange: 400, shotSpeed: 270 });
+E('lantern', { name: '提燈怪', hp: 58, speed: 110, dmg: 27, r: 13, xp: 3, ai: 'exploder', boomR: 96, fly: true });
+E('raiju', { name: '雷獸', hp: 54000, speed: 84, dmg: 41, r: 50, xp: 2500, ai: 'boss_raiju', kbRes: 1, boss: true });
